@@ -267,6 +267,78 @@ export function chroniclesBrezalHeatherGeometry() {
   return geometry;
 }
 
+/**
+ * V66: A separate low heath ROSETTE for B2's walkable groundcover.
+ * V65 reused the blocked-verge heather's seven upright pyramidal flower
+ * stems; in the real player POV those became conspicuous tiny fir trees.
+ * Spread each leaf and the tiny lilac blossoms over a horizontal footprint
+ * instead. The original blocked-verge plant geometry is deliberately
+ * unchanged. All coordinates are deterministic, local and knee-low.
+ * This is one reusable instanced family, not one mesh per flower.
+ */
+export function chroniclesBrezalGroundcoverGeometry() {
+  const positions = [];
+  const colors = [];
+  const foliage = [new THREE.Color('#697958'), new THREE.Color('#83906b'),
+    new THREE.Color('#667452'), new THREE.Color('#a09b76')];
+  const blooms = [new THREE.Color('#a88fa9'),
+    new THREE.Color('#c2a8bc'), new THREE.Color('#8c7899')];
+  const triangle = (a, b, c, color) => {
+    positions.push(...a, ...b, ...c);
+    for (let i = 0; i < 3; i += 1) colors.push(color.r, color.g, color.b);
+  };
+  for (let patch = 0; patch < 9; patch += 1) {
+    const angle = patch * Math.PI * 2 / 9 + 0.28;
+    const radius = 0.12 + (patch % 3) * 0.085;
+    const cx = Math.cos(angle) * radius;
+    const cz = Math.sin(angle) * radius;
+    // Pair of broad, low, splayed leaves per clump. Their tips are only
+    // slightly elevated; they do not share a tall central conical apex.
+    for (let leaf = 0; leaf < 2; leaf += 1) {
+      const turn = angle + (leaf ? 0.72 : -0.61);
+      const fx = Math.cos(turn), fz = Math.sin(turn);
+      const sx = -fz, sz = fx;
+      const reach = 0.15 + (patch % 3) * 0.024;
+      const spread = 0.068 + (patch % 2) * 0.018;
+      const root = [cx, 0.023, cz];
+      const tip = [cx + fx * reach, 0.060 + (patch % 3) * 0.018,
+        cz + fz * reach];
+      const left = [cx + fx * reach * 0.45 - sx * spread, 0.046,
+        cz + fz * reach * 0.45 - sz * spread];
+      const right = [cx + fx * reach * 0.45 + sx * spread, 0.046,
+        cz + fz * reach * 0.45 + sz * spread];
+      const color = foliage[(patch + leaf) % foliage.length];
+      triangle(root, left, tip, color);
+      triangle(root, tip, right, color);
+    }
+    // Five flattened flowers distributed between leaves, not one large
+    // purple point above each green cone. Petals face mostly upward and
+    // create small fragmented mauve highlights from the player's eye.
+    if (patch % 2 === 0) {
+      const bx = cx + Math.cos(angle + 0.5) * 0.055;
+      const bz = cz + Math.sin(angle + 0.5) * 0.055;
+      const h = 0.086 + (patch % 3) * 0.016;
+      for (let petal = 0; petal < 4; petal += 1) {
+        const a = petal * Math.PI / 2 + 0.23;
+        const dx = Math.cos(a), dz = Math.sin(a);
+        const sideX = -dz, sideZ = dx;
+        const color = blooms[(patch + petal) % blooms.length];
+        triangle([bx, h, bz],
+          [bx + dx * 0.052 + sideX * 0.036, h + 0.008,
+            bz + dz * 0.052 + sideZ * 0.036],
+          [bx + dx * 0.052 - sideX * 0.036, h + 0.008,
+            bz + dz * 0.052 - sideZ * 0.036], color);
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Uneven clustered silhouettes replace the old perfect green spheres on
 // broadleaf trees and bushes. Reuse the same 20/80 triangle budget and one
 // shared geometry per part; displacement is deterministic and baked once.
@@ -983,6 +1055,9 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     fallenWood: () => [chroniclesFallenWoodGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    // A different low rosette only for B2 walkable foothills. Retains the
+    // original authored blocked-verge heather *geometry and matrices*.
+    heatherGroundcover: () => [chroniclesBrezalGroundcoverGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
     ember: () => [new THREE.BoxGeometry(0.12, 0.06, 0.12), lit(0xff7a2a, { emissive: 0xff5a10, emissiveIntensity: 1.2 })],
     // Camps.
@@ -1417,12 +1492,11 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
   if (noise(x, y, 1491) >= coverage * (coarsePointer ? 0.66 : 1)) return;
   const ox = (noise(x, y, 1493) - 0.5) * 1.72;
   const oz = (noise(y, x, 1495) - 0.5) * 1.72;
-  // Real 390px WebGL review caught the first v65 plants reading as tall
-  // green/purple pyramids at the player's feet. Broaden the aspect ratio
-  // and keep the blooms at groundcover height: <0.26m above the surface.
-  const height = 0.37 + noise(x, y, 1497) * 0.10;
-  const spread = 0.79 + noise(x, y, 1499) * 0.15;
-  p.add('heather', [wx + ox, 0.012, wz + oz], {
+  // Keep the v65 distribution exactly, but flatten the actual silhouette:
+  // this dedicated rosette geometry grows sideways, not into seven cones.
+  const height = 1.05 + noise(x, y, 1497) * 0.18;
+  const spread = 0.94 + noise(x, y, 1499) * 0.16;
+  p.add('heatherGroundcover', [wx + ox, 0.012, wz + oz], {
     yaw: noise(x, y, 1501) * Math.PI * 2,
     scale: [spread, height, spread * 0.96],
   });
@@ -1430,12 +1504,12 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
   // location; no second mesh or draw call, no tall plant over a pathway.
   if (!coarsePointer && noise(x, y, 1503) < 0.28) {
     const angle = noise(x, y, 1505) * Math.PI * 2;
-    p.add('heather', [
+    p.add('heatherGroundcover', [
       wx + Math.cos(angle) * 1.06, 0.012,
       wz + Math.sin(angle) * 1.06,
     ], {
       yaw: angle + 0.42,
-      scale: [0.62, 0.35, 0.60],
+      scale: [0.72, 0.92, 0.70],
     });
   }
 }
@@ -2251,7 +2325,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       mesh.instanceColor.needsUpdate = true;
     }
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood', 'meadowSedge', 'forestHerb'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'heatherGroundcover', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood', 'meadowSedge', 'forestHerb'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
