@@ -3,6 +3,8 @@ import { PRESENCE_DOCUMENT_OWNER_KEY, PRESENCE_SESSION_KEY, getPresenceSessionId
 import { APP_RELEASE } from './release.js';
 import { PROFILE_PREFERENCE_KEYS, setProfileStorageItem } from './profileKeys.js';
 import { matthiasLoginGreetingPending } from './matthiasSession.js';
+import { getChroniclesMusicVolume, setChroniclesMusicVolume } from './chronicles/chroniclesMusicPreferences.js';
+import { getChroniclesFxVolume, setChroniclesFxVolume } from './chronicles/chroniclesAudioSettings.js';
 
 function mockFetchOnce(status, body) {
   global.fetch = vi.fn().mockResolvedValue({
@@ -60,6 +62,44 @@ describe('register/login', () => {
     await login('melomano', 'clave123456');
     expect(matthiasLoginGreetingPending()).toBe(true);
     expect(sessionStorage.getItem('chess-study-ambient-theme-session')).toBeTruthy();
+  });
+
+  it('recupera los niveles propios de música y SFX tras logout/relogin sin aplicarlos a otro jugador', async () => {
+    mockFetchOnce(200, { token: 'alice-token', username: 'alice' });
+    await login('alice', 'clave123456');
+    expect(getChroniclesMusicVolume()).toBe(1);
+    expect(getChroniclesFxVolume()).toBe(1);
+    setChroniclesMusicVolume(0.25);
+    setChroniclesFxVolume(0.6);
+    expect(getChroniclesMusicVolume()).toBeCloseTo(0.25);
+    expect(getChroniclesFxVolume()).toBeCloseTo(0.6);
+
+    logout();
+    // Auth deliberately erases old profile cache, not the durable
+    // account-specific levels in standalone Chronicles.
+    expect(localStorage.getItem('chess-study-music-volume')).toBeNull();
+    mockFetchOnce(200, { token: 'alice-second-token', username: 'alice' });
+    await login('alice', 'clave123456');
+    expect(getChroniclesMusicVolume()).toBeCloseTo(0.25);
+    expect(getChroniclesFxVolume()).toBeCloseTo(0.6);
+
+    // The next account must not inherit Alice's volume in this browser.
+    mockFetchOnce(200, { token: 'bob-token', username: 'bob' });
+    await login('bob', 'clave123456');
+    expect(getChroniclesMusicVolume()).toBe(1);
+    expect(getChroniclesFxVolume()).toBe(1);
+    setChroniclesMusicVolume(0);
+    setChroniclesFxVolume(0);
+    logout();
+    mockFetchOnce(200, { token: 'bob-second-token', username: 'bob' });
+    await login('bob', 'clave123456');
+    expect(getChroniclesMusicVolume()).toBe(0);
+    expect(getChroniclesFxVolume()).toBe(0);
+
+    mockFetchOnce(200, { token: 'alice-third-token', username: 'alice' });
+    await login('alice', 'clave123456');
+    expect(getChroniclesMusicVolume()).toBeCloseTo(0.25);
+    expect(getChroniclesFxVolume()).toBeCloseTo(0.6);
   });
 
   it('envía el código de invitación cuando se registra', async () => {
