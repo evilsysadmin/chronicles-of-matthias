@@ -159,6 +159,10 @@ jobs:
           # Real first-person Terra visual evidence: mountain and meadow
           # tile families photographed at mobile and desktop budgets.
           node smoke/run-timed.mjs smoke/terra-landscape-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
+          # Second real traversable eye, facing a different cardinal direction.
+          # Keep the original four baseline frames; include four extra 390/1280
+          # screenshots in the SAME compact chronicles-terra-landscape-pov artifact.
+          node smoke/run-timed.mjs smoke/terra-landscape-flank-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
