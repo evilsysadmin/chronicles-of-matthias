@@ -152,6 +152,10 @@ export function chroniclesMountainCragGeometry({
       { x: 0.38, z: 0.24, width: 0.55, height: 0.83 },
     ];
   const geometries = peaks.map((peak, peakIndex) => {
+    // Shorten the weather-worn highland summit itself, not its instance
+    // position or the shared v61 saddle profile. The first real WebGL
+    // review showed that wider shoulders alone left a tall dark needle.
+    const heightScale = weatheredHighland ? 0.89 : 1;
     const vertices = [];
     const uvs = [];
     const indices = [];
@@ -169,7 +173,7 @@ export function chroniclesMountainCragGeometry({
         const shift = rise * (peakIndex === 0 ? -0.10 : 0.13);
         vertices.push(
           peak.x + (Math.cos(angle) * radius * rough + shift) * peak.width,
-          peak.height * (rise + (ringIndex > 0 && ringIndex < 3
+          peak.height * heightScale * (rise + (ringIndex > 0 && ringIndex < 3
             ? 0.065 * Math.sin(i * 2.2 + peakIndex) : 0)),
           peak.z + Math.sin(angle) * radius * rough * peak.width,
         );
@@ -193,7 +197,7 @@ export function chroniclesMountainCragGeometry({
       const summitShift = peakIndex === 0 ? -0.06 : 0.08;
       vertices.push(
         peak.x + summitShift * peak.width,
-        peak.height,
+        peak.height * heightScale * 0.96,
         peak.z + 0.035 * peak.width,
       );
       uvs.push(0.5, 1);
