@@ -51,11 +51,11 @@ describe('Terra v65 B2 heather on real walkable foothills', () => {
       expect(withLow.children.filter(m => m.name === 'chronicles-terra-heather')).toHaveLength(1);
       for (const plant of plants) {
         expect(plant.pos.y).toBeCloseTo(0.012, 5);
-        expect(plant.scale.y).toBeLessThan(0.83);
-        expect(plant.scale.y).toBeGreaterThan(0.61);
+        expect(plant.scale.y).toBeLessThan(0.48);
+        expect(plant.scale.y).toBeGreaterThan(0.34);
         expect(Math.abs(plant.pos.x - (plant.x - center.x) * 4)).toBeLessThan(1.1);
         expect(Math.abs(plant.pos.z - (plant.y - center.y) * 4)).toBeLessThan(1.1);
-        expect(plant.scale.x).toBeLessThanOrEqual(1.25);
+        expect(plant.scale.x).toBeLessThanOrEqual(0.95);
       }
       const repeated = render({ coarsePointer });
       expect(entries(repeated).map(item => item.elements))
