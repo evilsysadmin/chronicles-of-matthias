@@ -50,6 +50,43 @@ describe('destination-aware exterior area thresholds', () => {
     },
   );
 
+  it.each([true, false])('seals wilderness-side city approaches at coarse=%s without altering exits', (coarsePointer) => {
+    const palette = {
+      stone: new THREE.MeshStandardMaterial(),
+      timber: new THREE.MeshStandardMaterial(),
+      plaque: new THREE.MeshStandardMaterial(),
+    };
+    const root = buildChroniclesExteriorExit(new THREE.Group(), {
+      ...palette, style: 'settlement', closedApproach: true, coarsePointer,
+    });
+    const fortification = root.getObjectByName('chronicles-exit-city-approach-fortification');
+    expect(fortification).toBeDefined();
+    expect(fortification.position.z).toBe(-2);
+    expect(fortification.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(root.userData.chroniclesExitGatewayStyle).toBe('settlement');
+
+    const leaves = fortification.children.filter(child => child.name === 'chronicles-exit-city-closed-leaf');
+    const walls = fortification.children.filter(child => child.name === 'chronicles-exit-city-curtain-wall');
+    expect(leaves).toHaveLength(2);
+    expect(leaves[0].position.x).toBeLessThan(0);
+    expect(leaves[1].position.x).toBeGreaterThan(0);
+    expect(fortification.getObjectByName('chronicles-exit-city-gate-solid-backing')).toBeDefined();
+    expect(walls).toHaveLength(2);
+    expect(walls[0].position.x).toBeLessThan(-2);
+    expect(walls[1].position.x).toBeGreaterThan(2);
+    expect(fortification.getObjectByName('chronicles-exit-gate-open-hinge')).toBeUndefined();
+    expect(root.getObjectByName('chronicles-exit-gate-arch-stone')).toBeDefined();
+
+    // The same threshold from inside the settlement still opens normally.
+    const interior = buildChroniclesExteriorExit(new THREE.Group(), { ...palette, style: 'settlement' });
+    expect(interior.getObjectByName('chronicles-exit-gate-open-hinge')).toBeDefined();
+    expect(interior.getObjectByName('chronicles-exit-city-closed-leaf')).toBeUndefined();
+    const dungeon = buildChroniclesExteriorExit(new THREE.Group(), {
+      ...palette, style: 'dungeon', closedApproach: true,
+    });
+    expect(dungeon.getObjectByName('chronicles-exit-city-curtain-wall')).toBeUndefined();
+  });
+
   it('keeps both fortified leaves visibly open and the wilderness path unbarred', () => {
     const palette = {
       stone: new THREE.MeshStandardMaterial(),

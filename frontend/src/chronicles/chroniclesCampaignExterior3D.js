@@ -1361,7 +1361,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
             regionKind: scenePlan.regionKind,
           },
         );
-        buildChroniclesExteriorExit(root, { style, stone, timber, plaque, coarsePointer });
+        // A wilderness-to-city threshold is a sealed entrance set into the
+        // perimeter wall. City-side exits still display an open passage.
+        buildChroniclesExteriorExit(root, {
+          style, stone, timber, plaque, coarsePointer,
+          closedApproach: style === 'settlement' && !settlement,
+        });
       }
     } else if ((!village || !String(entry.visualType || '').startsWith('building-'))
       && !(scenePlan.mapId === 'swordhaven-first-book' && entry.id === 'sealed-order')) {
