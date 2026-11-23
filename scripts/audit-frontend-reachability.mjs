@@ -46,6 +46,13 @@ export function analyzeSourceGraph(files, runtimeEntry = RUNTIME_ENTRY) {
     if (/\bimport\s*\(\s*(?!['"])/.test(content) || /\bimport\.meta\.glob\s*\(/.test(content)) dynamic.push(name);
     edges.set(name, [...deps]);
   }
+  // Direct reverse edges make a test-only dependency chain visible. A module
+  // can be absent from the game bundle and still be required by legacy tests.
+  const importedBy = Object.fromEntries([...names].map(name => [name, []]));
+  for (const [source, dependencies] of edges) {
+    for (const dependency of dependencies) importedBy[dependency].push(source);
+  }
+  for (const consumers of Object.values(importedBy)) consumers.sort();
   function walk(roots) {
     const seen = new Set(), stack = [...roots];
     while (stack.length) {
@@ -59,10 +66,10 @@ export function analyzeSourceGraph(files, runtimeEntry = RUNTIME_ENTRY) {
   const production = walk([runtimeEntry]);
   const tests = walk([...names].filter(isTest));
   const unused = [...names].filter(name => !isTest(name) && !production.has(name))
-    .map(name => ({ name, category: tests.has(name) ? 'test-only' : 'unreferenced', bytes: Buffer.byteLength(sources.get(name)) }))
+    .map(name => ({ name, category: tests.has(name) ? 'test-only' : 'unreferenced', bytes: Buffer.byteLength(sources.get(name)), importers: importedBy[name] }))
     .sort((a, b) => b.bytes - a.bytes || a.name.localeCompare(b.name));
   return { total: names.size, reachable: production.size, testOnly: unused.filter(x => x.category === 'test-only').length,
-    unused, unresolved, dynamic };
+    unused, unresolved, dynamic, importedBy };
 }
 
 export function readFrontendSources(root = ROOT) {
@@ -86,7 +93,14 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   console.log('Chronicles frontend static reachability (advisory; not proof of dead code)');
   console.log('Modules ' + report.total + '; runtime reachable ' + report.reachable + '; test-only ' + report.testOnly + '; review ' + report.unused.length);
   console.log('Nonliteral import/glob owners: ' + report.dynamic.length + '; unresolved relative imports: ' + report.unresolved.length);
-  for (const row of report.unused.slice(0, 25)) console.log('  ' + row.category.padEnd(12) + ' ' + String(row.bytes).padStart(7) + ' B ' + row.name);
+  for (const row of report.unused.slice(0, 25)) {
+    console.log('  ' + row.category.padEnd(12) + ' ' + String(row.bytes).padStart(7) + ' B ' + row.name
+      + ' <- ' + (row.importers.join(', ') || '[no literal imports]'));
+  }
+  const orphaned = report.unused.filter(row => row.category === 'unreferenced');
+  console.log('Unreferenced candidates (' + orphaned.length + '; review nonliteral and tooling entrypoints manually):');
+  for (const row of orphaned) console.log('  ' + String(row.bytes).padStart(7) + ' B ' + row.name
+    + ' <- ' + (row.importers.join(', ') || '[no literal imports]'));
   if (report.unresolved.length) for (const row of report.unresolved.slice(0, 10)) console.log('  unresolved ' + row.from + ' => ' + row.specifier);
   // Reporting-only until imports and dynamic entrypoints are verified manually.
 }
