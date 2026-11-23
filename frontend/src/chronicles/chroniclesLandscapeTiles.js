@@ -126,3 +126,30 @@ export function chroniclesFoothillTileAt({ grid = [], biome, x, y } = {}) {
   const recipe = options[tileHash(Math.floor(x / 3), Math.floor(y / 3)) % options.length];
   return Object.freeze({ ...recipe, family });
 }
+
+
+// A woodland fringe is a composition placed ONLY on existing blocked
+// forest roots touching walkable meadow. It is not a new collision tile.
+// Group choices into 3x3 patches so fern/scrub communities drift naturally
+// along the woodline instead of alternating at every grid square.
+function woodlandVergeTile(id, rockRetention, shrubChance, herbChance) {
+  return Object.freeze({ id, rockRetention, shrubChance, herbChance });
+}
+
+export const CHRONICLES_WOODLAND_VERGE_TILES = Object.freeze([
+  woodlandVergeTile('fern-understory', 0.25, 0.46, 0.91),
+  woodlandVergeTile('low-scrub', 0.40, 0.80, 0.58),
+  woodlandVergeTile('open-forest-floor', 0.18, 0.52, 0.72),
+]);
+
+export function chroniclesWoodlandVergeTileAt({ grid = [], biome, x, y } = {}) {
+  if (biome !== 'plains' || !Number.isSafeInteger(x) || !Number.isSafeInteger(y)
+      || grid[y]?.[x] !== '#') return null;
+  const touchesMeadow = grid[y - 1]?.[x] === '.' || grid[y + 1]?.[x] === '.'
+    || grid[y]?.[x - 1] === '.' || grid[y]?.[x + 1] === '.';
+  if (!touchesMeadow) return null;
+  const recipe = CHRONICLES_WOODLAND_VERGE_TILES[
+    tileHash(Math.floor(x / 3), Math.floor(y / 3)) % CHRONICLES_WOODLAND_VERGE_TILES.length
+  ];
+  return Object.freeze({ ...recipe, family: 'verge' });
+}
