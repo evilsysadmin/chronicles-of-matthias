@@ -141,7 +141,9 @@ export function chroniclesOrganicRockGeometry({ coarsePointer = false, weathered
 // cones. Merge both desktop peaks once into the SAME 'crag' instancing batch.
 // Every vertex/UV is authored locally and the footprint stays inside its
 // blocked 4m cell even when rotated. Mobile uses one cheaper peak.
-export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
+export function chroniclesMountainCragGeometry({
+  coarsePointer = false, weatheredHighland = false,
+} = {}) {
   const sides = coarsePointer ? 5 : 7;
   const peaks = coarsePointer
     ? [{ x: 0, z: 0, width: 0.88, height: 1.15 }]
@@ -153,7 +155,13 @@ export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
     const vertices = [];
     const uvs = [];
     const indices = [];
-    const rings = [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.05, 1]];
+    // E2-style natural highlands: wider ledges and a short, weather-worn
+    // summit replace the near-zero-radius needle. Keep four side rings and
+    // the existing one/two-peak mobile/desktop batches. Other maps use the
+    // original crag contour, retaining their exact old pixels.
+    const rings = weatheredHighland
+      ? [[1, 0], [0.86, 0.30], [0.62, 0.68], [0.26, 0.91]]
+      : [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.05, 1]];
     rings.forEach(([radius, rise], ringIndex) => {
       for (let i = 0; i < sides; i += 1) {
         const angle = i * Math.PI * 2 / sides + 0.31 * peakIndex;
@@ -177,6 +185,23 @@ export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
         }
       }
     });
+    if (weatheredHighland) {
+      // Close the formerly open, needle-like summit with a tiny eroded
+      // shoulder. This adds just 5/7 triangles per peak (35 mobile /
+      // 98 desktop in total), staying within the original CI budgets.
+      const summitIndex = vertices.length / 3;
+      const summitShift = peakIndex === 0 ? -0.06 : 0.08;
+      vertices.push(
+        peak.x + summitShift * peak.width,
+        peak.height,
+        peak.z + 0.035 * peak.width,
+      );
+      uvs.push(0.5, 1);
+      const topRing = 3 * sides;
+      for (let i = 0; i < sides; i += 1) {
+        indices.push(topRing + i, summitIndex, topRing + (i + 1) % sides);
+      }
+    }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
@@ -908,7 +933,9 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       weatheredHighland: naturalHighlands }), roundedRock(0xd8d2c4)],
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
-    crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
+    crag: () => [chroniclesMountainCragGeometry({
+      coarsePointer, weatheredHighland: naturalHighlands,
+    }), rock(0xc8c0b0)],
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
