@@ -37,7 +37,10 @@ const targets = Object.freeze({
 try {
   const map = maps[mapId];
   if (!map) throw new Error('Unsupported terrain capture: ' + mapId);
-  if (!['canonical', 'flank', 'ruin'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
+  if (!['canonical', 'flank', 'ruin', 'heath'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
+  if (view === 'heath' && mapId !== 'terra-b2') {
+    throw new Error('Heath second-eye view is only valid on authored B2');
+  }
   const center = { x: 10, y: 7 };
   // The generic plains spawn faces the generated cobblestone crossroads,
   // hiding almost every low herb in a narrow portrait viewport. A real,
@@ -50,12 +53,23 @@ try {
   });
   const cameraCell = view === 'ruin'
     ? ruinEyes[mapId]
-    : view === 'flank'
+    : view === 'heath'
+      ? { x: 9, y: 10 } // Four walkable steps from spawn, off the protected cobblestone road.
+      : view === 'flank'
       ? (mapId === 'terra-c4' ? { x: 5, y: 5 } : { x: 12, y: 7 })
       : mapId === 'terra-c4'
         ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
         : { x: map.partyStart.x, y: map.partyStart.y };
-  if (!cameraCell) throw new Error('No authored ruin inspection camera on ' + mapId);
+  if (!cameraCell) throw new Error('No authored observation camera on ' + mapId);
+  if (view === 'heath') {
+    // A REAL cardinal walk route from B2 spawn, never a camera teleported
+    // into a blocked tile or into a patch of fabricated scenery.
+    const path = [[10, 7], [10, 8], [10, 9], [10, 10], [9, 10]];
+    if (map.partyStart.x !== path[0][0] || map.partyStart.y !== path[0][1]
+      || path.some(([x, y]) => map.grid[y]?.[x] !== '.')) {
+      throw new Error('B2 heath eye must remain reachable by four walkable steps');
+    }
+  }
   if (map.grid[cameraCell.y]?.[cameraCell.x] !== '.') {
     throw new Error('Real party start must remain traversable on ' + mapId);
   }
@@ -128,7 +142,9 @@ try {
   // woodland: turning towards the cobbled crossroad would defeat this QA.
   const yaw = view === 'ruin'
     ? (mapId === 'terra-b2' ? Math.PI / 2 : -Math.PI / 2)
-    : view === 'flank'
+    : view === 'heath'
+      ? Math.PI // Face SOUTH from an off-road B2 foothill cell, into the vegetation.
+      : view === 'flank'
       ? (mapId === 'terra-c4' ? Math.PI / 2 : -Math.PI / 2)
       : mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
         facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
@@ -210,14 +226,14 @@ try {
     }
   }
 
-  // B2 v66 foreground QA: the *dedicated* low-heath rosette part is now
-  // one instanced mesh. Toggle ONLY that batch off while reading genuine
-  // WebGL pixels, then restore it. Blocked-border heather, all mountains,
-  // authored ruins and real movement/collision remain exactly untouched.
+  // B2 low-heath QA: inspect the dedicated rosette part both from the
+  // authored ruin sightline and from an accessible off-road cell facing SOUTH. Toggle
+  // ONLY that batch off during genuine framebuffer comparison, then restore
+  // it. All blocked-border heather, mountains, ruins and collision stay intact.
   let lowHeatherInstances = 0;
   let lowHeatherVisiblePixels = 0;
   let lowHeatherVertices = 0;
-  if (mapId === 'terra-b2' && view === 'ruin') {
+  if (mapId === 'terra-b2' && (view === 'ruin' || view === 'heath')) {
     const mesh = scenery.getObjectByName('chronicles-terra-heatherGroundcover');
     if (!mesh?.isInstancedMesh) throw new Error('Missing real B2 low heather rosette batch');
     const old = scenery.getObjectByName('chronicles-terra-heather');
