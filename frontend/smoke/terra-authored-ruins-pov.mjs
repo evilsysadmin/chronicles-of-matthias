@@ -62,6 +62,15 @@ try {
           'Exactly the three existing blocked-cell boulders, no new draw batches');
         assert.ok(Number(state.ruinVisiblePixels) > 15,
           'Hiding only the authored ruin must change real visible framebuffer pixels');
+        if (mapId === 'terra-b2') {
+          assert.ok(Number(state.lowHeatherInstances) > 10,
+            'B2 must re-use the existing heather batch on walkable foothill cells');
+          assert.ok(Number(state.lowHeatherVisiblePixels) > 25,
+            'Low B2 heather must change genuine player-eye pixels, not exist offscreen');
+        } else {
+          assert.equal(Number(state.lowHeatherInstances), 0);
+          assert.equal(Number(state.lowHeatherVisiblePixels), 0);
+        }
         assert.ok(Number(state.batchCount) > 2 && Number(state.batchCount) < 45);
         assert.ok(Number(state.drawCalls) > 0 && Number(state.drawCalls) < 160);
         assert.ok(Number(state.pixelVariants) > 20);
@@ -72,6 +81,8 @@ try {
           + ' ruin=' + state.authoredRuinCell
           + ' visiblePixels=' + state.ruinVisiblePixels
           + ' instances=' + state.ruinInstances
+          + ' lowHeath=' + state.lowHeatherInstances
+          + ' heathPixels=' + state.lowHeatherVisiblePixels
           + ' batches=' + state.batchCount + ' calls=' + state.drawCalls
           + ' file=' + filename);
       } finally {

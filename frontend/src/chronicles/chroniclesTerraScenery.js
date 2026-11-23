@@ -1404,6 +1404,42 @@ function addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer) {
   });
 }
 
+// B2 v65: the original lilac heather lives ONLY on blocked rock verges,
+// leaving an empty green/brown floor from the real (7,8) first-person eye.
+// Add scattered knee-low patches on eligible walkable foothill cells,
+// reusing the existing vertex-coloured, single-batch heather geometry.
+// Never touch protected road/content cells (filtered by the caller), grids,
+// physics, rocks or the old border heather positions. Mobile is a strict
+// deterministic subset of desktop, with one small cluster per chosen cell.
+function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
+  if (!recipe) return;
+  const coverage = recipe.family === 'rockline' ? 0.61 : 0.40;
+  if (noise(x, y, 1491) >= coverage * (coarsePointer ? 0.66 : 1)) return;
+  const ox = (noise(x, y, 1493) - 0.5) * 1.72;
+  const oz = (noise(y, x, 1495) - 0.5) * 1.72;
+  // Real 390px WebGL review caught the first v65 plants reading as tall
+  // green/purple pyramids at the player's feet. Broaden the aspect ratio
+  // and keep the blooms at groundcover height: <0.26m above the surface.
+  const height = 0.37 + noise(x, y, 1497) * 0.10;
+  const spread = 0.79 + noise(x, y, 1499) * 0.15;
+  p.add('heather', [wx + ox, 0.012, wz + oz], {
+    yaw: noise(x, y, 1501) * Math.PI * 2,
+    scale: [spread, height, spread * 0.96],
+  });
+  // Desktop sometimes receives a small satellite at a separated sub-cell
+  // location; no second mesh or draw call, no tall plant over a pathway.
+  if (!coarsePointer && noise(x, y, 1503) < 0.28) {
+    const angle = noise(x, y, 1505) * Math.PI * 2;
+    p.add('heather', [
+      wx + Math.cos(angle) * 1.06, 0.012,
+      wz + Math.sin(angle) * 1.06,
+    ], {
+      yaw: angle + 0.42,
+      scale: [0.62, 0.35, 0.60],
+    });
+  }
+}
+
 
 /**
  * Fill the 4m meadow cells with several staggered leaf clusters. Planting
@@ -2054,8 +2090,11 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         } else if (biome === 'hills' && tile === '.') {
           // Continuous low scree and grasses bridge the natural rock edges
           // and upland path cells, without changing traversal/collision.
-          addReusableFoothillPatch(p, wx, wz, x, y,
-            chroniclesFoothillTileAt({ grid, biome, x, y }), coarsePointer);
+          const foothill = chroniclesFoothillTileAt({ grid, biome, x, y });
+          addReusableFoothillPatch(p, wx, wz, x, y, foothill, coarsePointer);
+          if (mapId === 'terra-b2') {
+            addBrezalLowHeather(p, wx, wz, x, y, foothill, coarsePointer);
+          }
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
           clutter(p, wx + (noise(x, y, 78) - 0.5) * 3,
