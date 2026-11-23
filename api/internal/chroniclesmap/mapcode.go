@@ -2,16 +2,15 @@ package chroniclesmap
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/pyval"
 )
 
-// MapCode mirrors chronicles_map_code.py, error messages included (the
-// preview route answers them as 400 details).
+
+// MapCode recipe validation and encoding feed the active procedural
+// dungeon generator. The old public preview parser was retired.
 const (
 	MapCodeVersion   = 1
 	MapCodePrefix    = "CM1"
@@ -60,8 +59,6 @@ var fieldOrder = []string{
 	"theme", "size", "verbs", "enemies", "treasures", "secrets", "difficulty", "seed",
 }
 
-var sizePattern = regexp.MustCompile("^([0-9]{1,2})x([0-9]{1,2})$")
-
 // Error is ChroniclesMapCodeError.
 type Error struct{ msg string }
 
@@ -106,22 +103,6 @@ func normalizeVerbs(raw string) ([]string, error) {
 		}
 	}
 	return values, nil
-}
-
-// boundedInt is _bounded_int over an ASCII digit string.
-func boundedInt(raw, field string, minimum, maximum int) (int, error) {
-	if raw == "" || strings.Trim(raw, "0123456789") != "" {
-		return 0, codeErr("%s must be an integer", field)
-	}
-	digits := strings.TrimLeft(raw, "0")
-	value := maximum + 1
-	if len(digits) <= 12 {
-		value, _ = strconv.Atoi("0" + digits)
-	}
-	if value < minimum || value > maximum {
-		return 0, codeErr("%s must be between %d and %d", field, minimum, maximum)
-	}
-	return value, nil
 }
 
 // Validate is validate_chronicles_map_code.
@@ -174,83 +155,4 @@ func Encode(recipe Recipe) (string, error) {
 		parts = append(parts, key+"="+fields[key])
 	}
 	return strings.Join(parts, "|"), nil
-}
-
-// Parse is parse_chronicles_map_code.
-func Parse(raw string) (Recipe, error) {
-	code := pyval.Strip(raw)
-	if code == "" || utf8.RuneCountInString(code) > MapCodeMaxLength {
-		return Recipe{}, codeErr("MapCode length must be 1..%d", MapCodeMaxLength)
-	}
-	parts := strings.Split(code, "|")
-	if strings.ToUpper(parts[0]) != MapCodePrefix {
-		return Recipe{}, codeErr("MapCode must start with %s", MapCodePrefix)
-	}
-	known := map[string]bool{}
-	for _, key := range fieldOrder {
-		known[key] = true
-	}
-	fields := map[string]string{}
-	for _, token := range parts[1:] {
-		key, value, found := strings.Cut(token, "=")
-		if !found {
-			return Recipe{}, codeErr("MapCode fields must use key=value")
-		}
-		key = strings.ToLower(pyval.Strip(key))
-		if !known[key] {
-			if key == "" {
-				key = "<empty>"
-			}
-			return Recipe{}, codeErr("unknown MapCode field: %s", key)
-		}
-		if _, exists := fields[key]; exists {
-			return Recipe{}, codeErr("duplicate MapCode field: %s", key)
-		}
-		fields[key] = pyval.Strip(value)
-	}
-	for _, key := range fieldOrder {
-		if _, exists := fields[key]; !exists {
-			return Recipe{}, codeErr("missing MapCode field: %s", key)
-		}
-	}
-	size := sizePattern.FindStringSubmatch(strings.ToLower(fields["size"]))
-	if size == nil {
-		return Recipe{}, codeErr("size must use WIDTHxHEIGHT")
-	}
-	var recipe Recipe
-	var err error
-	if recipe.Theme, err = normalizeTheme(fields["theme"]); err != nil {
-		return Recipe{}, err
-	}
-	for _, f := range []struct {
-		raw, field string
-		lo, hi     int
-		dst        *int
-	}{
-		{size[1], "width", 7, 19, &recipe.Width},
-		{size[2], "height", 7, 15, &recipe.Height},
-	} {
-		if *f.dst, err = boundedInt(f.raw, f.field, f.lo, f.hi); err != nil {
-			return Recipe{}, err
-		}
-	}
-	if recipe.Verbs, err = normalizeVerbs(fields["verbs"]); err != nil {
-		return Recipe{}, err
-	}
-	for _, f := range []struct {
-		field  string
-		lo, hi int
-		dst    *int
-	}{
-		{"enemies", 2, 8, &recipe.Enemies},
-		{"treasures", 0, 4, &recipe.Treasures},
-		{"secrets", 0, 3, &recipe.Secrets},
-		{"difficulty", 1, 5, &recipe.Difficulty},
-		{"seed", 0, MapCodeMaxSeed, &recipe.Seed},
-	} {
-		if *f.dst, err = boundedInt(fields[f.field], f.field, f.lo, f.hi); err != nil {
-			return Recipe{}, err
-		}
-	}
-	return Validate(recipe)
 }
