@@ -83,7 +83,6 @@ func NewSession(cfg SessionConfig) (*SessionHandler, error) {
 		return nil, errors.New("session API needs accounts and presence sessions")
 	}
 	baseCfg := cfg.Config
-	baseCfg.Store = readOnlyStore{}
 	base, err := New(baseCfg)
 	if err != nil {
 		return nil, err

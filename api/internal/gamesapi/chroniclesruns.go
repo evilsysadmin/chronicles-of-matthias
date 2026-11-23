@@ -114,7 +114,6 @@ func NewChroniclesRuns(cfg ChroniclesRunsConfig) (*ChroniclesRunsHandler, error)
 	if cfg.Runs == nil {
 		return nil, errors.New("chronicles runs: nil store")
 	}
-	cfg.Store = readOnlyStore{}
 	base, err := New(cfg.Config)
 	if err != nil {
 		return nil, err

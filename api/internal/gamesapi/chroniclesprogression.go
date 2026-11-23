@@ -43,7 +43,6 @@ func NewChroniclesProgression(cfg ChroniclesProgressionConfig) (*ChroniclesProgr
 	if cfg.Progression == nil {
 		return nil, errors.New("chronicles progression API needs a store")
 	}
-	cfg.Store = readOnlyStore{}
 	base, err := New(cfg.Config)
 	if err != nil {
 		return nil, err

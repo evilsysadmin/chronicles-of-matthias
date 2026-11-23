@@ -110,7 +110,6 @@ func NewAccount(cfg AccountConfig) (*AccountHandler, error) {
 		return nil, errors.New("account API needs accounts, the purge and the IP guard")
 	}
 	baseCfg := cfg.Config
-	baseCfg.Store = readOnlyStore{}
 	base, err := New(baseCfg)
 	if err != nil {
 		return nil, err
