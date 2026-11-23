@@ -1,7 +1,6 @@
-// Package chroniclesrun mirrors backend-python/chronicles_run_store.py: the
-// authoritative identity and world binding of Chronicles runs (collection
-// "chronicles_runs"). Mongo is the production store; Memory mirrors the
-// Python in-memory mode and backs the parity tests.
+// Package chroniclesrun owns the identity and world binding of Chronicles
+// runs in the "chronicles_runs" MongoDB collection. The production store
+// and API use MongoDB; no in-memory run store is registered.
 package chroniclesrun
 
 import (
