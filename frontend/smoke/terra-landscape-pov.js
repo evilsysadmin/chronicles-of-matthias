@@ -37,7 +37,10 @@ const targets = Object.freeze({
 try {
   const map = maps[mapId];
   if (!map) throw new Error('Unsupported terrain capture: ' + mapId);
-  if (!['canonical', 'flank', 'ruin'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
+  if (!['canonical', 'flank', 'ruin', 'heath'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
+  if (view === 'heath' && mapId !== 'terra-b2') {
+    throw new Error('Heath second-eye view is only valid on authored B2');
+  }
   const center = { x: 10, y: 7 };
   // The generic plains spawn faces the generated cobblestone crossroads,
   // hiding almost every low herb in a narrow portrait viewport. A real,
@@ -50,7 +53,9 @@ try {
   });
   const cameraCell = view === 'ruin'
     ? ruinEyes[mapId]
-    : view === 'flank'
+    : view === 'heath'
+      ? { x: map.partyStart.x, y: map.partyStart.y }
+      : view === 'flank'
       ? (mapId === 'terra-c4' ? { x: 5, y: 5 } : { x: 12, y: 7 })
       : mapId === 'terra-c4'
         ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
@@ -128,7 +133,9 @@ try {
   // woodland: turning towards the cobbled crossroad would defeat this QA.
   const yaw = view === 'ruin'
     ? (mapId === 'terra-b2' ? Math.PI / 2 : -Math.PI / 2)
-    : view === 'flank'
+    : view === 'heath'
+      ? -Math.PI / 2 // Face east from B2's real spawn, away from the ruin test sightline.
+      : view === 'flank'
       ? (mapId === 'terra-c4' ? Math.PI / 2 : -Math.PI / 2)
       : mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
         facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
@@ -210,14 +217,14 @@ try {
     }
   }
 
-  // B2 v66 foreground QA: the *dedicated* low-heath rosette part is now
-  // one instanced mesh. Toggle ONLY that batch off while reading genuine
-  // WebGL pixels, then restore it. Blocked-border heather, all mountains,
-  // authored ruins and real movement/collision remain exactly untouched.
+  // B2 low-heath QA: inspect the dedicated rosette part both from the
+  // authored ruin sightline and from the real spawn facing EAST. Toggle
+  // ONLY that batch off during genuine framebuffer comparison, then restore
+  // it. All blocked-border heather, mountains, ruins and collision stay intact.
   let lowHeatherInstances = 0;
   let lowHeatherVisiblePixels = 0;
   let lowHeatherVertices = 0;
-  if (mapId === 'terra-b2' && view === 'ruin') {
+  if (mapId === 'terra-b2' && (view === 'ruin' || view === 'heath')) {
     const mesh = scenery.getObjectByName('chronicles-terra-heatherGroundcover');
     if (!mesh?.isInstancedMesh) throw new Error('Missing real B2 low heather rosette batch');
     const old = scenery.getObjectByName('chronicles-terra-heather');
