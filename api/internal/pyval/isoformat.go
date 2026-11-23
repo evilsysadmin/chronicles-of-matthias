@@ -7,19 +7,9 @@ import (
 	"time"
 )
 
-// FromISOFormat is CPython 3.13's datetime.fromisoformat: extended or basic
-// dates (YYYY-MM-DD, YYYYMMDD, ISO weeks), any single character between date
-// and time, HH[:MM[:SS[.f+]]] (or basic), a ',' or '.' fraction truncated to
-// microseconds and an optional ±HH[:MM[:SS[.f]]] or Z offset. aware reports
-// whether an offset was given; a naive value comes back in UTC.
-func FromISOFormat(s string) (t time.Time, aware bool, ok bool) {
-	t, aware, err := ParseISOFormat(s)
-	return t, aware, err == nil
-}
-
-// ParseISOFormat is FromISOFormat with the ValueError fromisoformat raises:
-// "Invalid isoformat string: '…'" for the shape, then the offset bound, then
-// the date and time constructor's range checks, in CPython's order.
+// ParseISOFormat reproduces CPython 3.13's datetime.fromisoformat for
+// extended/basic dates, fractions and UTC offsets. It returns whether the
+// input included an offset and preserves Python-compatible error messages.
 func ParseISOFormat(s string) (time.Time, bool, error) {
 	p, ok := parseISO([]rune(s))
 	if !ok {
