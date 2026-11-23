@@ -128,7 +128,7 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
       .toBeLessThanOrEqual(scenic.getObjectByName('chronicles-terra-crag').count);
   });
 
-  it('preserves B2 mountains outside its authored ruin, C4 habitat and every collision grid', () => {
+  it('preserves B2 authored mountains and C4 habitat, excluding only B2 decorative outer rings', () => {
     const b2Args = sceneArgs('terra-b2');
     const e2Args = sceneArgs('terra-e2');
     const c4Args = sceneArgs('terra-c4');
@@ -136,8 +136,8 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
       const current = buildTerraScenery(args);
       // C4's existing woodland composition is map-specific; compare it
       // with a repeat build, not a different forest mapId. B2's heather
-      // hillside stays identical to unnamed hills *except its three ruined
-      // stones*, now using the same low Terra rubble as C4/A1/E2.
+      // hillside stays identical on real blocked cells except for its three
+      // v63 ruin stones; only non-colliding outer rows get v64 relief.
       const original = buildTerraScenery({
         ...args, mapId: args.biome === 'hills' ? null : args.mapId,
       });
@@ -152,10 +152,18 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
           b.getMatrixAt(i, matB);
           const px = Math.round(matA.elements[12] / 4) + center.x;
           const py = Math.round(matA.elements[14] / 4) + center.y;
-          if (args.mapId === 'terra-b2' && part === 'boulder'
+          const outside = px < 0 || py < 0
+            || px >= args.grid[0].length || py >= args.grid.length;
+          if (args.mapId === 'terra-b2' && outside) {
+            // The v64 exterior bands, not real blocked terrain, now have
+            // soft lowered shoulders. The same world cell remains rooted.
+            expect(new THREE.Vector3().setFromMatrixScale(matA).y)
+              .toBeLessThan(new THREE.Vector3().setFromMatrixScale(matB).y);
+            expect(matA.elements[12]).toBe(matB.elements[12]);
+            expect(matA.elements[14]).toBe(matB.elements[14]);
+          } else if (args.mapId === 'terra-b2' && part === 'boulder'
               && px === 3 && py === 8) {
-            // The only B2 exception is the authored 3-stone ruin, not a
-            // different procedural mountain or path-facing outcrop.
+            // The 3 authored rubble stones remain the only real B2 change.
             expect(new THREE.Vector3().setFromMatrixScale(matA).y)
               .toBeLessThan(1.65);
           } else {
