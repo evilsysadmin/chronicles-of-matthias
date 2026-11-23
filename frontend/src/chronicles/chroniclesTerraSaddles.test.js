@@ -119,7 +119,7 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
     expect(map.grid).toEqual(chroniclesMapById('terra-e2').grid);
   });
 
-  it('keeps the special B2 heath mountains identical outside the authored ruin', () => {
+  it('keeps B2 interior rock exact while lowering only its three non-colliding outer rings', () => {
     const map = chroniclesMapById('terra-b2');
     const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery };
     const natural = buildTerraScenery({ ...args, mapId: map.id });
@@ -134,11 +134,19 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
         b.getMatrixAt(i, ref);
         const px = Math.round(m.elements[12] / 4) + center.x;
         const py = Math.round(m.elements[14] / 4) + center.y;
-        if (part === 'boulder' && px === 3 && py === 8) {
-          // B2's authored ruin now shares the same three low rubble stones
-          // as E2/C4/A1; the rest of the heather hills must be unchanged.
-          const nowHeight = new THREE.Vector3().setFromMatrixScale(m).y;
-          expect(nowHeight).toBeLessThan(1.65);
+        const outside = px < 0 || py < 0
+          || px >= map.grid[0].length || py >= map.grid.length;
+        if (outside) {
+          // V64: ONLY decorative rings outside the authored collision grid
+          // become lower rolling foothills. Their footprint never moves.
+          const a = new THREE.Vector3().setFromMatrixScale(m).y;
+          const b = new THREE.Vector3().setFromMatrixScale(ref).y;
+          expect(a).toBeLessThan(b);
+          expect(m.elements[12]).toBe(ref.elements[12]);
+          expect(m.elements[14]).toBe(ref.elements[14]);
+        } else if (part === 'boulder' && px === 3 && py === 8) {
+          // The v63 low authored ruin remains unchanged.
+          expect(new THREE.Vector3().setFromMatrixScale(m).y).toBeLessThan(1.65);
         } else {
           expect(m.elements).toEqual(ref.elements);
         }
