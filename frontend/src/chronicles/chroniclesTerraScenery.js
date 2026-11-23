@@ -1115,6 +1115,19 @@ const DRESS = {
     // undergrowth scale. Reuse the existing bush instances and materials:
     // forest trunks, authored blocked roots and walkable routes are unchanged.
     const woodlandBackdrop = naturalWoodline && tile?.family === 'backdrop' ? tile : null;
+    // The v57 stone reduction revealed empty sightlines under the distant
+    // canopy, especially on touch devices. Use a few *existing* broadleaf
+    // trunk/crown instances as knee-to-head-height coppice in naturally open
+    // gaps. Select stable clusters from the reusable 4x4 landscape recipe,
+    // not from the camera or platform. Only the first two NON-COLLIDING
+    // exterior rings qualify: routes, authored forest roots, and the distant
+    // third ring retain their original transforms and population.
+    if (woodlandBackdrop && ringDepth <= 2 && roll >= canopyThreshold
+        && noise(x, y, 961) < woodlandBackdrop.saplingChance) {
+      const coppiceScale = woodlandBackdrop.saplingScale
+        * (0.84 + noise(x, y, 963) * 0.24);
+      broadleaf(p, wx, wz, x, y, 17, coppiceScale);
+    }
     if (roll >= 0.35) {
       const shrubScale = woodlandBackdrop?.shrubScale ?? 1;
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
