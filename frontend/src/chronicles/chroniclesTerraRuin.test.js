@@ -91,9 +91,13 @@ describe('Terra v62 authored ruin no longer masquerades as a giant rock needle',
         expect(Math.max(...rubble.map(yScale))).toBeLessThan(1.65);
         expect(Math.min(...rubble.map(yScale))).toBeGreaterThan(0.85);
         const boulder = natural.getObjectByName('chronicles-terra-boulder');
-        expect(boulder.count).toBe(generic.getObjectByName('chronicles-terra-boulder').count);
+        // C4 has a different *native woodland* rock population than an
+        // unnamed plains map. Compare its own repeated native terrain,
+        // while inspecting generic solely as the old authored ruin shape.
+        expect(boulder.count)
+          .toBe(repeated.getObjectByName('chronicles-terra-boulder').count);
         expect(natural.children.map(mesh => mesh.name))
-          .toEqual(generic.children.map(mesh => mesh.name));
+          .toEqual(repeated.children.map(mesh => mesh.name));
         expect(natural.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
         for (const stone of rubble) {
           const pos = new THREE.Vector3();
