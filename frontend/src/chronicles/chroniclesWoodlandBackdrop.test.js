@@ -35,6 +35,10 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
       expect(recipe.rockScale).toBeLessThan(0.8);
       expect(recipe.shrubScale).toBeGreaterThan(0.8);
       expect(recipe.shrubScale).toBeLessThan(1.4);
+      expect(recipe.saplingChance).toBeGreaterThan(0.20);
+      expect(recipe.saplingChance).toBeLessThan(0.65);
+      expect(recipe.saplingScale).toBeGreaterThan(0.35);
+      expect(recipe.saplingScale).toBeLessThan(0.60);
     }
     const get = (x, y, ringDepth = 2, biome = 'plains') =>
       chroniclesWoodlandBackdropTileAt({ biome, x, y, ringDepth });
@@ -64,6 +68,7 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
     const duplicate = buildTerraScenery({ ...args, mapId: map.id });
     const original = buildTerraScenery(args);
     const mobile = buildTerraScenery({ ...args, mapId: map.id, coarsePointer: true });
+    const oldMobile = buildTerraScenery({ ...args, coarsePointer: true });
     const previousRocks = outsideInstances(original, 'boulder', map);
     const sparseRocks = outsideInstances(current, 'boulder', map);
     expect(previousRocks.length).toBeGreaterThan(80);
@@ -84,9 +89,34 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
       expect(group.children.filter(mesh => mesh.name === 'chronicles-terra-boulder'))
         .toHaveLength(1);
     }
-    expect(outsideInstances(current, 'bush', map).length)
-      .toBe(outsideInstances(original, 'bush', map).length);
-    // Same tree/shrub roots and stable placement matrices per render.
+    // A small, explicit tranche of saplings now fills canopy gaps in the
+    // FIRST TWO non-colliding woodland rings, reusing existing trunk/crown
+    // meshes. They must not appear in authored interior or ring 3.
+    const ring = ({ x, y }) => Math.max(-x, x - map.grid[0].length + 1,
+      -y, y - map.grid.length + 1);
+    const count = (group, part, depth) => outsideInstances(group, part, map)
+      .filter(instance => ring(instance) === depth).length;
+    const saplings = outsideInstances(current, 'broadleafTrunk', map).length
+      - outsideInstances(original, 'broadleafTrunk', map).length;
+    const mobileSaplings = outsideInstances(mobile, 'broadleafTrunk', map).length
+      - outsideInstances(oldMobile, 'broadleafTrunk', map).length;
+    expect(saplings).toBeGreaterThan(8);
+    expect(saplings).toBeLessThan(90);
+    expect(mobileSaplings).toBeGreaterThan(3);
+    expect(mobileSaplings).toBeLessThanOrEqual(saplings);
+    expect(count(current, 'broadleafTrunk', 3))
+      .toBe(count(original, 'broadleafTrunk', 3));
+    expect(count(mobile, 'broadleafTrunk', 3))
+      .toBe(count(oldMobile, 'broadleafTrunk', 3));
+    expect(outsideInstances(current, 'crown', map).length
+      - outsideInstances(original, 'crown', map).length).toBe(saplings);
+    // Sapling bases can add foliage but the shared bush batch remains
+    // bounded. V57's sparse, non-colliding boulders still stay sparse.
+    const bushes = outsideInstances(current, 'bush', map).length
+      - outsideInstances(original, 'bush', map).length;
+    expect(bushes).toBeGreaterThan(0);
+    expect(bushes).toBeLessThan(saplings + 1);
+    // Stable placement matrices per render, no new draw batches.
     for (const mesh of current.children) {
       const twin = duplicate.getObjectByName(mesh.name);
       expect(twin.count).toBe(mesh.count);
