@@ -31,6 +31,21 @@ test('unresolved and computed imports are visible, never silently claimed dead',
   assert.deepEqual(result.unresolved, [{ from: 'standalone/main.jsx', specifier: './missing.js' }]);
   assert.deepEqual(result.dynamic, ['standalone/main.jsx']);
   assert.equal(result.unused[0].name, 'orphan.js');
+  assert.deepEqual(result.importedBy['orphan.js'], []);
+});
+
+test('shows reverse imports for transitive test-only composition modules', () => {
+  const report = analyzeSourceGraph({
+    'standalone/main.jsx': 'export const game = true',
+    'radio/registry.js': "import { install } from './composer.js'; install();",
+    'radio/composer.js': 'export function install() {}',
+    'radio/registry.test.js': "import './registry.js'",
+  });
+  assert.deepEqual(report.importedBy['radio/composer.js'], ['radio/registry.js']);
+  assert.deepEqual(report.importedBy['radio/registry.js'], ['radio/registry.test.js']);
+  const composer = report.unused.find(row => row.name === 'radio/composer.js');
+  assert.equal(composer.category, 'test-only');
+  assert.deepEqual(composer.importers, ['radio/registry.js']);
 });
 
 test('produce an informational inventory of the real Chronicles frontend', t => {
@@ -39,5 +54,12 @@ test('produce an informational inventory of the real Chronicles frontend', t => 
   assert.ok(report.reachable > 20, 'the standalone game entrypoint should resolve');
   t.diagnostic('Modules: ' + report.total + ', runtime reachable: ' + report.reachable +
     ', review: ' + report.unused.length + ', nonliteral imports: ' + report.dynamic.length);
-  for (const row of report.unused.slice(0, 12)) t.diagnostic(row.category + ' ' + row.bytes + ' B ' + row.name);
+  for (const row of report.unused.slice(0, 12)) {
+    t.diagnostic(row.category + ' ' + row.bytes + ' B ' + row.name
+      + ' <- ' + (row.importers.join(', ') || '[no literal imports]'));
+  }
+  const orphans = report.unused.filter(row => row.category === 'unreferenced');
+  t.diagnostic('Unreferenced review candidates: ' + orphans.length);
+  for (const row of orphans) t.diagnostic('unreferenced ' + row.bytes + ' B ' + row.name
+    + ' <- ' + (row.importers.join(', ') || '[no literal imports]'));
 });
