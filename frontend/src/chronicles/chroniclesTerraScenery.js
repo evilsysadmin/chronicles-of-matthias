@@ -141,9 +141,7 @@ export function chroniclesOrganicRockGeometry({ coarsePointer = false, weathered
 // cones. Merge both desktop peaks once into the SAME 'crag' instancing batch.
 // Every vertex/UV is authored locally and the footprint stays inside its
 // blocked 4m cell even when rotated. Mobile uses one cheaper peak.
-export function chroniclesMountainCragGeometry({
-  coarsePointer = false, weatheredHighland = false,
-} = {}) {
+export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
   const sides = coarsePointer ? 5 : 7;
   const peaks = coarsePointer
     ? [{ x: 0, z: 0, width: 0.88, height: 1.15 }]
@@ -152,20 +150,10 @@ export function chroniclesMountainCragGeometry({
       { x: 0.38, z: 0.24, width: 0.55, height: 0.83 },
     ];
   const geometries = peaks.map((peak, peakIndex) => {
-    // Shorten the weather-worn highland summit itself, not its instance
-    // position or the shared v61 saddle profile. The first real WebGL
-    // review showed that wider shoulders alone left a tall dark needle.
-    const heightScale = weatheredHighland ? 0.89 : 1;
     const vertices = [];
     const uvs = [];
     const indices = [];
-    // E2-style natural highlands: wider ledges and a short, weather-worn
-    // summit replace the near-zero-radius needle. Keep four side rings and
-    // the existing one/two-peak mobile/desktop batches. Other maps use the
-    // original crag contour, retaining their exact old pixels.
-    const rings = weatheredHighland
-      ? [[1, 0], [0.86, 0.30], [0.62, 0.68], [0.26, 0.91]]
-      : [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.05, 1]];
+    const rings = [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.05, 1]];
     rings.forEach(([radius, rise], ringIndex) => {
       for (let i = 0; i < sides; i += 1) {
         const angle = i * Math.PI * 2 / sides + 0.31 * peakIndex;
@@ -173,7 +161,7 @@ export function chroniclesMountainCragGeometry({
         const shift = rise * (peakIndex === 0 ? -0.10 : 0.13);
         vertices.push(
           peak.x + (Math.cos(angle) * radius * rough + shift) * peak.width,
-          peak.height * heightScale * (rise + (ringIndex > 0 && ringIndex < 3
+          peak.height * (rise + (ringIndex > 0 && ringIndex < 3
             ? 0.065 * Math.sin(i * 2.2 + peakIndex) : 0)),
           peak.z + Math.sin(angle) * radius * rough * peak.width,
         );
@@ -189,23 +177,6 @@ export function chroniclesMountainCragGeometry({
         }
       }
     });
-    if (weatheredHighland) {
-      // Close the formerly open, needle-like summit with a tiny eroded
-      // shoulder. This adds just 5/7 triangles per peak (35 mobile /
-      // 98 desktop in total), staying within the original CI budgets.
-      const summitIndex = vertices.length / 3;
-      const summitShift = peakIndex === 0 ? -0.06 : 0.08;
-      vertices.push(
-        peak.x + summitShift * peak.width,
-        peak.height * heightScale * 0.96,
-        peak.z + 0.035 * peak.width,
-      );
-      uvs.push(0.5, 1);
-      const topRing = 3 * sides;
-      for (let i = 0; i < sides; i += 1) {
-        indices.push(topRing + i, summitIndex, topRing + (i + 1) % sides);
-      }
-    }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
@@ -937,9 +908,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       weatheredHighland: naturalHighlands }), roundedRock(0xd8d2c4)],
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
-    crag: () => [chroniclesMountainCragGeometry({
-      coarsePointer, weatheredHighland: naturalHighlands,
-    }), rock(0xc8c0b0)],
+    crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
@@ -1896,10 +1865,30 @@ const SET_PIECES = {
     p.add('pole', [wx, 1.6, wz], { scale: [1, 3.2, 1] });
     p.add('banner', [wx + 0.45, 2.6, wz], { yaw: noise(x, y, 83) * 0.6, scale: [0.9, 1.2, 1] });
   },
-  ruin(p, wx, wz, x, y) {
+  ruin(p, wx, wz, x, y, { weatheredHighland = false } = {}) {
     for (let k = 0; k < 3; k += 1) {
-      const h = 1 + noise(x, y, 90 + k) * 2.5;
-      p.add('boulder', [wx + (k - 1) * 1.2, h / 2, wz + (noise(x, y, 93 + k) - 0.5)], { yaw: k * 0.4, scale: [0.55, h, 0.55] });
+      if (weatheredHighland) {
+        // The E2 side-on 'needle' is an AUTHORED ruin, not a procedural
+        // mountain crag: the legacy 3.5m-tall boulder was stretched into a
+        // 0.55m-wide obelisk. Keep all three real ruin stones on the same
+        // impassable cell, but let them read as collapsed glacial masonry.
+        // Wider, half-buried stones fit inside the 4m blocked tile without
+        // inventing a walkable obstruction or an extra draw batch.
+        const h = 0.90 + noise(x, y, 90 + k) * 0.65;
+        const width = 0.67 + noise(x, y, 101 + k) * 0.15;
+        p.add('boulder', [
+          wx + (k - 1) * 0.90, h * 0.38,
+          wz + (noise(x, y, 93 + k) - 0.5) * 0.65,
+        ], {
+          yaw: k * 0.4,
+          tilt: (noise(x, y, 105 + k) - 0.5) * 0.12,
+          scale: [width, h, width * (0.89 + noise(x, y, 109 + k) * 0.10)],
+        });
+      } else {
+        // B2 and every non-natural-highland authored ruin stay unchanged.
+        const h = 1 + noise(x, y, 90 + k) * 2.5;
+        p.add('boulder', [wx + (k - 1) * 1.2, h / 2, wz + (noise(x, y, 93 + k) - 0.5)], { yaw: k * 0.4, scale: [0.55, h, 0.55] });
+      }
     }
   },
 };
@@ -1937,7 +1926,9 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       const [wx, wz] = toWorld(x, y);
       const piece = authored.get(x + ',' + y);
       if (piece) {
-        SET_PIECES[piece.type](p, wx, wz, x, y);
+        SET_PIECES[piece.type](p, wx, wz, x, y, {
+          weatheredHighland: naturalHighlands,
+        });
         continue;
       }
       if (tile === '#') {
