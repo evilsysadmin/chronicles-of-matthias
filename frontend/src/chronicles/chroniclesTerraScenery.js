@@ -1413,7 +1413,7 @@ function addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer) {
 // deterministic subset of desktop, with one small cluster per chosen cell.
 function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
   if (!recipe) return;
-  const coverage = recipe.family === 'rockline' ? 0.77 : 0.58;
+  const coverage = recipe.family === 'rockline' ? 0.61 : 0.40;
   if (noise(x, y, 1491) >= coverage * (coarsePointer ? 0.66 : 1)) return;
   const ox = (noise(x, y, 1493) - 0.5) * 1.72;
   const oz = (noise(y, x, 1495) - 0.5) * 1.72;
@@ -1425,7 +1425,7 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
   });
   // Desktop sometimes receives a small satellite at a separated sub-cell
   // location; no second mesh or draw call, no tall plant over a pathway.
-  if (!coarsePointer && noise(x, y, 1503) < 0.42) {
+  if (!coarsePointer && noise(x, y, 1503) < 0.28) {
     const angle = noise(x, y, 1505) * Math.PI * 2;
     p.add('heather', [
       wx + Math.cos(angle) * 1.06, 0.012,
