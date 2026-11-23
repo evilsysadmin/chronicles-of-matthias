@@ -1417,8 +1417,11 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
   if (noise(x, y, 1491) >= coverage * (coarsePointer ? 0.66 : 1)) return;
   const ox = (noise(x, y, 1493) - 0.5) * 1.72;
   const oz = (noise(y, x, 1495) - 0.5) * 1.72;
-  const height = 0.67 + noise(x, y, 1497) * 0.15;
-  const spread = 1.02 + noise(x, y, 1499) * 0.22;
+  // Real 390px WebGL review caught the first v65 plants reading as tall
+  // green/purple pyramids at the player's feet. Broaden the aspect ratio
+  // and keep the blooms at groundcover height: <0.26m above the surface.
+  const height = 0.37 + noise(x, y, 1497) * 0.10;
+  const spread = 0.79 + noise(x, y, 1499) * 0.15;
   p.add('heather', [wx + ox, 0.012, wz + oz], {
     yaw: noise(x, y, 1501) * Math.PI * 2,
     scale: [spread, height, spread * 0.96],
@@ -1432,7 +1435,7 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
       wz + Math.sin(angle) * 1.06,
     ], {
       yaw: angle + 0.42,
-      scale: [0.85, 0.62, 0.82],
+      scale: [0.62, 0.35, 0.60],
     });
   }
 }
