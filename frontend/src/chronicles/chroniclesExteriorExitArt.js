@@ -121,7 +121,7 @@ function column(root, name, position, topRadius, bottomRadius, height, surface, 
   return mesh;
 }
 
-function fortifiedGate(root, { style, stone, timber, plaque, coarsePointer }) {
+function fortifiedGate(root, { style, stone, timber, plaque, coarsePointer, closedApproach = false }) {
   const dungeon = style === 'dungeon';
   const iron = new THREE.MeshStandardMaterial({
     color: dungeon ? 0x29272b : 0x4a4037, roughness: 0.58, metalness: 0.55,
@@ -129,7 +129,9 @@ function fortifiedGate(root, { style, stone, timber, plaque, coarsePointer }) {
   const oak = new THREE.MeshStandardMaterial({
     color: dungeon ? 0x30251f : 0x65442d, roughness: 0.9,
   });
-  // Piers are on the outer 40cm of a 4m cell; the centre stays clear.
+  // The city-side threshold stays open. Approaching a city from the wilds
+  // instead shows a CLOSED gate: the player transitions by interacting, not by
+  // walking through a transparent arch with forest visible behind it.
   for (const side of [-1, 1]) {
     box(root, 'chronicles-exit-gate-pier', [0.5, 3.03, 0.72],
       [side * 1.52, 1.515, 0], stone, !coarsePointer);
@@ -138,21 +140,54 @@ function fortifiedGate(root, { style, stone, timber, plaque, coarsePointer }) {
     box(root, 'chronicles-exit-gate-impost', [0.66, 0.2, 0.82],
       [side * 1.52, 2.94, 0], stone);
 
-    // Two leaves are visibly hinged *open* against the jambs, never a fake
-    // closed door that the party can mysteriously walk through.
-    const pivot = new THREE.Group();
-    pivot.name = 'chronicles-exit-gate-open-hinge';
-    pivot.position.set(side * 1.25, 0, 0.29);
-    pivot.rotation.y = side * 1.15;
-    const door = box(pivot, 'chronicles-exit-gate-open-leaf', [0.76, 2.4, 0.13],
-      [-side * 0.38, 1.29, 0], oak, !coarsePointer);
-    door.receiveShadow = true;
-    for (const y of [0.47, 2.10]) {
-      box(pivot, 'chronicles-exit-gate-iron-strap', [0.72, 0.075, 0.04],
-        [-side * 0.38, y, 0.09], iron);
+    if (!closedApproach) {
+      // City-side exits remain visibly open, not phantom solid doors.
+      const pivot = new THREE.Group();
+      pivot.name = 'chronicles-exit-gate-open-hinge';
+      pivot.position.set(side * 1.25, 0, 0.29);
+      pivot.rotation.y = side * 1.15;
+      const door = box(pivot, 'chronicles-exit-gate-open-leaf', [0.76, 2.4, 0.13],
+        [-side * 0.38, 1.29, 0], oak, !coarsePointer);
+      door.receiveShadow = true;
+      for (const y of [0.47, 2.10]) {
+        box(pivot, 'chronicles-exit-gate-iron-strap', [0.72, 0.075, 0.04],
+          [-side * 0.38, y, 0.09], iron);
+      }
+      root.add(pivot);
     }
-    root.add(pivot);
   }
+
+  if (closedApproach) {
+    // Seal the entire opening, including the curved space above the timber
+    // leaves. Otherwise foliage still shows through the arch from the road.
+    box(root, 'chronicles-exit-city-gate-solid-backing',
+      [2.48, 3.85, 0.18], [0, 1.925, -0.20], iron);
+    for (const side of [-1, 1]) {
+      box(root, 'chronicles-exit-city-closed-leaf',
+        [1.23, 3.20, 0.20], [side * 0.615, 1.60, 0.04], oak, !coarsePointer);
+      for (const y of [0.48, 1.65, 2.86]) {
+        box(root, 'chronicles-exit-city-iron-band',
+          [1.19, 0.095, 0.055], [side * 0.615, y, 0.17], iron);
+      }
+      // Restrained hardware gives the player a legible sealed double door.
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.032, 6, 10), iron);
+      ring.name = 'chronicles-exit-city-door-ring';
+      ring.position.set(side * 0.22, 1.47, 0.20);
+      root.add(ring);
+
+      // Continuation of the city curtain wall, rather than a freestanding
+      // portal. Mounted on the impassable perimeter, behind the exit tile.
+      box(root, 'chronicles-exit-city-curtain-wall',
+        [14.5, 4.15, 1.1], [side * 9.05, 2.075, -0.20], stone, !coarsePointer);
+      box(root, 'chronicles-exit-city-wall-coping',
+        [14.5, 0.20, 1.28], [side * 9.05, 4.20, -0.20], stone);
+      for (let index = 0; index < 8; index += 1) {
+        box(root, 'chronicles-exit-city-wall-merlon',
+          [0.96, 0.55, 1.25], [side * (2.75 + index * 1.7), 4.50, -0.20], stone);
+      }
+    }
+  }
+
   // Chunky voussoirs read as a true stone arch, not a flat crossbar.
   const segments = coarsePointer ? 5 : 7;
   for (let index = 0; index < segments; index += 1) {
@@ -173,7 +208,6 @@ function fortifiedGate(root, { style, stone, timber, plaque, coarsePointer }) {
     }
   }
 }
-
 function forestTrail(root, { timber, coarsePointer }) {
   const leaves = new THREE.MeshStandardMaterial({
     color: 0x3c5a36, roughness: 1, flatShading: true,
@@ -231,9 +265,21 @@ function wildernessTrail(root, { stone, timber, plaque, coarsePointer }) {
 
 export function buildChroniclesExteriorExit(root, {
   style = 'wilderness', stone, timber, plaque, coarsePointer = false,
+  closedApproach = false,
 } = {}) {
   root.userData.chroniclesExitGatewayStyle = style;
-  if (style === 'settlement' || style === 'dungeon') {
+  if (style === 'settlement' && closedApproach) {
+    // The exit cell stays walkable. The decorative fortification sits at the
+    // adjacent blocked perimeter boundary, not across a traversable street.
+    const fortification = new THREE.Group();
+    fortification.name = 'chronicles-exit-city-approach-fortification';
+    fortification.position.z = -2;
+    fortification.userData.chroniclesDecorativeOnly = true;
+    fortifiedGate(fortification, {
+      style, stone, timber, plaque, coarsePointer, closedApproach: true,
+    });
+    root.add(fortification);
+  } else if (style === 'settlement' || style === 'dungeon') {
     fortifiedGate(root, { style, stone, timber, plaque, coarsePointer });
   } else if (style === 'forest') {
     forestTrail(root, { timber, coarsePointer });
