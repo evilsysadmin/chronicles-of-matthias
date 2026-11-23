@@ -1865,15 +1865,14 @@ const SET_PIECES = {
     p.add('pole', [wx, 1.6, wz], { scale: [1, 3.2, 1] });
     p.add('banner', [wx + 0.45, 2.6, wz], { yaw: noise(x, y, 83) * 0.6, scale: [0.9, 1.2, 1] });
   },
-  ruin(p, wx, wz, x, y, { weatheredHighland = false } = {}) {
+  ruin(p, wx, wz, x, y, { weatheredTerraRuin = false } = {}) {
     for (let k = 0; k < 3; k += 1) {
-      if (weatheredHighland) {
-        // The E2 side-on 'needle' is an AUTHORED ruin, not a procedural
-        // mountain crag: the legacy 3.5m-tall boulder was stretched into a
-        // 0.55m-wide obelisk. Keep all three real ruin stones on the same
-        // impassable cell, but let them read as collapsed glacial masonry.
-        // Wider, half-buried stones fit inside the 4m blocked tile without
-        // inventing a walkable obstruction or an extra draw batch.
+      if (weatheredTerraRuin) {
+        // Terra's four authored ruins share the same old 3.5m-high,
+        // 0.55m-wide obelisk recipe. Keep all three stones on each existing
+        // blocked root, but make the silhouette low collapsed masonry.
+        // Reuse the previous v62 E2 geometry and existing boulder batch,
+        // also for C4 meadow, A1 plain and B2 heath landmarks.
         const h = 0.90 + noise(x, y, 90 + k) * 0.65;
         const width = 0.67 + noise(x, y, 101 + k) * 0.15;
         p.add('boulder', [
@@ -1885,7 +1884,7 @@ const SET_PIECES = {
           scale: [width, h, width * (0.89 + noise(x, y, 109 + k) * 0.10)],
         });
       } else {
-        // B2 and every non-natural-highland authored ruin stay unchanged.
+        // Non-Terra and non-plains/hills authored ruins stay unchanged.
         const h = 1 + noise(x, y, 90 + k) * 2.5;
         p.add('boulder', [wx + (k - 1) * 1.2, h / 2, wz + (noise(x, y, 93 + k) - 0.5)], { yaw: k * 0.4, scale: [0.55, h, 0.55] });
       }
@@ -1914,6 +1913,12 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   // non-Terra hills and all other maps retain the previous transforms.
   const naturalHighlands = biome === 'hills' && typeof mapId === 'string'
     && mapId.startsWith('terra-') && mapId !== 'terra-b2';
+  // Terra ruins are landmarks in BOTH its open plains and its special
+  // heather/highland regions. The v62 E2 exception left equally tall stone
+  // needles in C4, A1 and B2. Reuse exactly that bounded 3-stone geometry
+  // only on the already-blocked authored ruin roots, never for other maps.
+  const weatheredTerraRuin = typeof mapId === 'string'
+    && mapId.startsWith('terra-') && (biome === 'hills' || biome === 'plains');
 
   const authored = new Map((scenery || [])
     .filter((entry) => entry && Number.isInteger(entry.x) && Number.isInteger(entry.y) && SET_PIECES[entry.type])
@@ -1927,7 +1932,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       const piece = authored.get(x + ',' + y);
       if (piece) {
         SET_PIECES[piece.type](p, wx, wz, x, y, {
-          weatheredHighland: naturalHighlands,
+          weatheredTerraRuin: weatheredTerraRuin && tile === '#',
         });
         continue;
       }
