@@ -1,6 +1,6 @@
 // Terra v67: a second, genuinely playable sightline for reusable B2 heath tiles.
-// The historical ruin camera points WEST; this one uses the actual B2 spawn,
-// facing EAST, with the unchanged production Three.js map and foliage batches.
+// The historical ruin camera points WEST; this one walks four passable cells
+// from B2 spawn into off-road foothills, looking SOUTH at native heath.
 import assert from 'node:assert/strict';
 import { stat } from 'node:fs/promises';
 import { chromium } from 'playwright';
@@ -39,10 +39,10 @@ try {
       assert.equal(state.view, 'heath');
       assert.equal(state.mapId, 'terra-b2');
       assert.equal(state.biome, 'hills');
-      assert.equal(state.cameraCell, '10,7',
-        'The observation point must be the playable, authored B2 party spawn');
-      assert.ok(Math.abs(Number(state.cameraYaw) + Math.PI / 2) < 0.00001,
-        'The real east-facing POV must differ from the west-facing ruin eye');
+      assert.equal(state.cameraCell, '9,10',
+        'Use a reachable off-road B2 habitat eye, not a cobblestone road');
+      assert.ok(Math.abs(Number(state.cameraYaw) - Math.PI) < 0.00001,
+        'The south-facing POV must differ from the west-facing ruin eye');
       assert.ok(Math.abs(Number(state.cameraPitch)) < 0.00001,
         'Do not tilt the camera to manufacture a pleasing screenshot');
       assert.equal(state.coarsePointer, String(coarse));
@@ -60,8 +60,14 @@ try {
         'The same B2 reusable groundcover must be instantiated from the spawn');
       assert.equal(Number(state.lowHeatherVertices), 168,
         'The v66 low, branched rosette geometry must remain unchanged');
+      console.log('CHRONICLES_TERRA_B2_HEATH_PIXELS width=' + width
+        + ' visible=' + state.lowHeatherVisiblePixels
+        + ' instances=' + state.lowHeatherInstances
+        + ' targetChanged=' + state.targetChangedSamples
+        + ' batches=' + state.batchCount + ' calls=' + state.drawCalls);
       assert.ok(Number(state.lowHeatherVisiblePixels) > 25,
-        'Hiding ONLY the rosette batch must change genuine east-facing player pixels');
+        'Hiding ONLY the rosette batch must change genuine off-road player pixels: '
+          + JSON.stringify(state));
       assert.ok(Number(state.targetChangedSamples) > 15
         && Number(state.targetPixelDifference) > 5,
       'Real rock and vegetation landscape tiles must remain perceptible');
