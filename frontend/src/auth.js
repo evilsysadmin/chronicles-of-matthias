@@ -11,6 +11,7 @@ import { APP_RELEASE } from './release.js';
 import { STORAGE_LOCAL, STORAGE_SESSION, getStorageItem, listStorageKeys, removeStorageItem, setStorageItem } from './safeStorage.js';
 import { setUiLanguage } from './userPreferences.js';
 import { clearMatthiasSessionSignals, queueMatthiasLoginGreeting } from './matthiasSession.js';
+import { preserveChroniclesAudioVolumesBeforeSessionClear } from './chronicles/chroniclesVolumePreferences.js';
 
 export const TOKEN_KEY = 'chess-study-auth-token';
 const USERNAME_KEY = 'chess-study-auth-username';
@@ -144,6 +145,7 @@ function saveSession(token, username) {
   // actualmente figura en localStorage antes de limpiarla. Las pestañas viejas
   // no pasan por aquí salvo que el usuario inicie sesión en ellas de verdad.
   bindProfileStorageIdentity(getUsername());
+  preserveChroniclesAudioVolumesBeforeSessionClear();
   clearLocalUserState();
   clearSessionRuntimeState();
   setStorageItem(STORAGE_LOCAL, TOKEN_KEY, token);
@@ -189,6 +191,7 @@ export function logout() {
   sessionEpoch += 1;
   clearAmbientThemeSessionStorage();
   clearSessionRuntimeState();
+  preserveChroniclesAudioVolumesBeforeSessionClear();
   clearLocalUserState();
   clearMatthiasSessionSignals();
   if (getToken()) void ssoLogout();
