@@ -1082,10 +1082,50 @@ export function chroniclesBannerRoadGatewayGrove(grid, center, x, y) {
     && grid[y + 1]?.[center.x] === '.';
 }
 
+/**
+ * V60: close occasional empty woodland silhouettes from mobile eye-level
+ * without filling every gap with a rock or planting on authored walkable
+ * cells. Look inward from the SECOND, non-colliding scenery ring and require
+ * two consecutive missing mature canopies: the authored blocked forest root
+ * and its first exterior neighbour. A chance from the immutable 4x4 habitat
+ * recipe permits only scattered repairs, rather than a uniform crown fence.
+ *
+ * A gap in a forest is not a rendering error by itself: retain plenty of
+ * natural openings. Desktop, map interiors, corners and other biomes keep
+ * their previous instance population.
+ */
+export function chroniclesTerraWoodlandCanopyGapAt({
+  grid = [], x, y, ringDepth, coarsePointer = false, tile = null,
+} = {}) {
+  if (!coarsePointer || ringDepth !== 2 || tile?.family !== 'backdrop'
+      || !Number.isSafeInteger(x) || !Number.isSafeInteger(y)) return false;
+  const width = grid[0]?.length || 0;
+  const height = grid.length;
+  if (!width || !height) return false;
+  let edgeX, edgeY, nearX, nearY;
+  if (x === -2 && y >= 0 && y < height) {
+    edgeX = 0; edgeY = y; nearX = -1; nearY = y;
+  } else if (x === width + 1 && y >= 0 && y < height) {
+    edgeX = width - 1; edgeY = y; nearX = width; nearY = y;
+  } else if (y === -2 && x >= 0 && x < width) {
+    edgeX = x; edgeY = 0; nearX = x; nearY = -1;
+  } else if (y === height + 1 && x >= 0 && x < width) {
+    edgeX = x; edgeY = height - 1; nearX = x; nearY = height;
+  } else return false;
+  if (grid[edgeY]?.[edgeX] !== '#') return false;
+  // An authored mature tree, or an unculled mature first-ring tree, already
+  // covers the horizon. Do not add overlapping crowns just for density.
+  const firstRingHasTree = noise(nearX, nearY, 99) >= 0.45
+    && noise(nearX, nearY, 1) < 0.5;
+  return noise(edgeX, edgeY, 1) >= 0.5 && !firstRingHasTree
+    && noise(x, y, 1) >= 0.5
+    && noise(x, y, 1175) > 1 - tile.canopyGapChance;
+}
+
 const DRESS = {
   plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0,
     woodlandGateway = false, gatewayGrove = false, tile = null, naturalWoodline = false,
-    _naturalHighlands = false, coarsePointer = false) {
+    _naturalHighlands = false, coarsePointer = false, grid = []) {
     const roll = noise(x, y, 1);
     // A deepening forest horizon outside the authored map: the first row
     // still has gaps, but more distant rows interlock their crowns. Only the
@@ -1116,13 +1156,24 @@ const DRESS = {
     // undergrowth scale. Reuse the existing bush instances and materials:
     // forest trunks, authored blocked roots and walkable routes are unchanged.
     const woodlandBackdrop = naturalWoodline && tile?.family === 'backdrop' ? tile : null;
+    const canopyBridge = woodlandBackdrop && chroniclesTerraWoodlandCanopyGapAt({
+      grid, x, y, ringDepth, coarsePointer, tile: woodlandBackdrop,
+    });
+    if (canopyBridge) {
+      // The second-ring root stands two cells farther from the camera than
+      // the authored border. A modest scale lift lets its leafy crown bridge
+      // the skyline at eye-level without creating a level forest wall.
+      // Still only the SAME shared trunk/crown instance batches.
+      broadleaf(p, wx, wz, x, y, 0, size * 1.19);
+    }
     // The v57 stone reduction revealed empty sightlines under the distant
     // canopy on mobile. Add a few existing broadleaf trunk/crown instances as
     // low coppice ONLY at coarse quality. Desktop retains its v57 canopy
     // counts and poses; don't accidentally change Banner Road comparisons.
     // Only the first two NON-COLLIDING exterior rings qualify: routes,
     // authored forest roots and the far third ring remain unchanged.
-    if (coarsePointer && woodlandBackdrop && ringDepth <= 2 && roll >= canopyThreshold
+    if (coarsePointer && woodlandBackdrop && !canopyBridge
+        && ringDepth <= 2 && roll >= canopyThreshold
         && noise(x, y, 961) < woodlandBackdrop.saplingChance) {
       const coppiceScale = woodlandBackdrop.saplingScale
         * (0.84 + noise(x, y, 963) * 0.24);
@@ -1842,7 +1893,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
             : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
           woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline,
-          naturalHighlands, coarsePointer);
+          naturalHighlands, coarsePointer, grid);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
