@@ -1865,10 +1865,30 @@ const SET_PIECES = {
     p.add('pole', [wx, 1.6, wz], { scale: [1, 3.2, 1] });
     p.add('banner', [wx + 0.45, 2.6, wz], { yaw: noise(x, y, 83) * 0.6, scale: [0.9, 1.2, 1] });
   },
-  ruin(p, wx, wz, x, y) {
+  ruin(p, wx, wz, x, y, { weatheredHighland = false } = {}) {
     for (let k = 0; k < 3; k += 1) {
-      const h = 1 + noise(x, y, 90 + k) * 2.5;
-      p.add('boulder', [wx + (k - 1) * 1.2, h / 2, wz + (noise(x, y, 93 + k) - 0.5)], { yaw: k * 0.4, scale: [0.55, h, 0.55] });
+      if (weatheredHighland) {
+        // The E2 side-on 'needle' is an AUTHORED ruin, not a procedural
+        // mountain crag: the legacy 3.5m-tall boulder was stretched into a
+        // 0.55m-wide obelisk. Keep all three real ruin stones on the same
+        // impassable cell, but let them read as collapsed glacial masonry.
+        // Wider, half-buried stones fit inside the 4m blocked tile without
+        // inventing a walkable obstruction or an extra draw batch.
+        const h = 0.90 + noise(x, y, 90 + k) * 0.65;
+        const width = 0.67 + noise(x, y, 101 + k) * 0.15;
+        p.add('boulder', [
+          wx + (k - 1) * 0.90, h * 0.38,
+          wz + (noise(x, y, 93 + k) - 0.5) * 0.65,
+        ], {
+          yaw: k * 0.4,
+          tilt: (noise(x, y, 105 + k) - 0.5) * 0.12,
+          scale: [width, h, width * (0.89 + noise(x, y, 109 + k) * 0.10)],
+        });
+      } else {
+        // B2 and every non-natural-highland authored ruin stay unchanged.
+        const h = 1 + noise(x, y, 90 + k) * 2.5;
+        p.add('boulder', [wx + (k - 1) * 1.2, h / 2, wz + (noise(x, y, 93 + k) - 0.5)], { yaw: k * 0.4, scale: [0.55, h, 0.55] });
+      }
     }
   },
 };
@@ -1906,7 +1926,9 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       const [wx, wz] = toWorld(x, y);
       const piece = authored.get(x + ',' + y);
       if (piece) {
-        SET_PIECES[piece.type](p, wx, wz, x, y);
+        SET_PIECES[piece.type](p, wx, wz, x, y, {
+          weatheredHighland: naturalHighlands,
+        });
         continue;
       }
       if (tile === '#') {
