@@ -37,7 +37,6 @@ require (
 )
 
 require (
-	github.com/corentings/chess/v2 v2.6.1
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/xdg-go/scram v1.4.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
