@@ -8,7 +8,6 @@ import {
 } from './ambientCatalog.js';
 import { installRadioMatthiasExpansion } from './ambientRadioMatthiasExpansion.js';
 import { radioMatthiasStructuredFeel } from './ambientRadioMatthiasProfiles.js';
-import { installRadioMatthiasRecompositions } from './ambientRadioMatthiasRecompositions.js';
 import { installTropicalHouseMelodies } from './ambientTropicalHouseMelody.js';
 import { installLofiSongbook } from './ambientLofiSongbook.js';
 import { installHouseAfro, withHouseAfroProduction } from './ambientHouseAfro.js';
@@ -42,7 +41,6 @@ installHouseAfro({
   groups: AMBIENT_THEME_GROUPS,
   genreOrder: AMBIENT_GENRE_ORDER,
 });
-installRadioMatthiasRecompositions({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OPTIONS });
 installLofiSongbook({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OPTIONS });
 installTropicalHouseMelodies({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OPTIONS });
 installSynthMetalAnthems({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OPTIONS });
