@@ -153,3 +153,27 @@ export function chroniclesWoodlandVergeTileAt({ grid = [], biome, x, y } = {}) {
   ];
   return Object.freeze({ ...recipe, family: 'verge' });
 }
+
+
+// Existing non-colliding 3-cell woodland scenery ring. Instead of painting a
+// nearly continuous grey boulder fence behind every tree, compose broader
+// patches of leaf litter, shrubs and occasional embedded stone. Selection is
+// deterministic and world-coordinate based, independent of F5 and quality.
+function woodlandBackdropTile(id, rockChance, rockScale, shrubScale) {
+  return Object.freeze({ id, rockChance, rockScale, shrubScale });
+}
+
+export const CHRONICLES_WOODLAND_BACKDROP_TILES = Object.freeze([
+  woodlandBackdropTile('shadowed-wood', 0.12, 0.60, 1.15),
+  woodlandBackdropTile('dense-thicket', 0.17, 0.68, 1.32),
+  woodlandBackdropTile('stony-clearing', 0.25, 0.75, 0.92),
+]);
+
+export function chroniclesWoodlandBackdropTileAt({ biome, x, y, ringDepth } = {}) {
+  if (biome !== 'plains' || !Number.isSafeInteger(x) || !Number.isSafeInteger(y)
+      || !Number.isInteger(ringDepth) || ringDepth < 1 || ringDepth > 3) return null;
+  const recipe = CHRONICLES_WOODLAND_BACKDROP_TILES[
+    tileHash(Math.floor(x / 4), Math.floor(y / 4)) % CHRONICLES_WOODLAND_BACKDROP_TILES.length
+  ];
+  return Object.freeze({ ...recipe, family: 'backdrop' });
+}

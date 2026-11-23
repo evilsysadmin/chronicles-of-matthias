@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
-import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt, chroniclesFoothillTileAt, chroniclesWoodlandVergeTileAt } from './chroniclesLandscapeTiles.js';
+import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt, chroniclesFoothillTileAt, chroniclesWoodlandVergeTileAt, chroniclesWoodlandBackdropTileAt } from './chroniclesLandscapeTiles.js';
 
 // Terra's scenery: what an impassable cell of the overworld looks like in
 // each biome (boulders on the hills, snowy pines, reeds and dead trees in
@@ -1111,12 +1111,17 @@ const DRESS = {
     if (woodlandGateway || gatewayGrove || roll < canopyThreshold) {
       broadleaf(p, wx, wz, x, y, 0, size, bannerRoad, woodlandGateway);
     }
+    // Only native Terra's NON-COLLIDING outer ring receives an alternate
+    // undergrowth scale. Reuse the existing bush instances and materials:
+    // forest trunks, authored blocked roots and walkable routes are unchanged.
+    const woodlandBackdrop = naturalWoodline && tile?.family === 'backdrop' ? tile : null;
     if (roll >= 0.35) {
+      const shrubScale = woodlandBackdrop?.shrubScale ?? 1;
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
         { yaw: noise(x, y, 3) * 6.28,
-          scale: [1.14 + noise(x, y, 5) * 0.34,
-            0.65 + noise(x, y, 6) * 0.28,
-            0.94 + noise(x, y, 7) * 0.36] });
+          scale: [(1.14 + noise(x, y, 5) * 0.34) * shrubScale,
+            (0.65 + noise(x, y, 6) * 0.28) * shrubScale,
+            (0.94 + noise(x, y, 7) * 0.36) * shrubScale] });
     }
     // Reusable native-Terra forest/verge recipe: retain a strict subset of
     // the old rubble on actual blocked meadow borders, and fill some gaps
@@ -1136,13 +1141,20 @@ const DRESS = {
         });
       }
     }
-    // Existing inner forest and non-colliding outer ring remain untouched;
-    // verge boulders are now a deterministic subset, not a grey stone wall.
-    const rockVisible = woodlandVerge
-      ? roll >= 0.7 && noise(x, y, 905) < woodlandVerge.rockRetention
-      : roll >= 0.7 || (big && (!naturalWoodline || noise(x, y, 847) > 0.30));
+    // Deep rock rows are caused by the outer ring's old ~70% probability,
+    // not by actual rocks beside walkable paths. Native woodland backdrop
+    // tiles now leave connected visual gaps and smaller, scattered stones.
+    // The existing inner forest/verge, Banner Road and other biomes are left
+    // on their previous deterministic logic.
+    const rockVisible = woodlandBackdrop
+      ? noise(x, y, 927) < woodlandBackdrop.rockChance
+      : woodlandVerge
+        ? roll >= 0.7 && noise(x, y, 905) < woodlandVerge.rockRetention
+        : roll >= 0.7 || (big && (!naturalWoodline || noise(x, y, 847) > 0.30));
     if (rockVisible) {
-      boulders(p, wx, wz, x, y, { count: 1, size: 1.0 });
+      boulders(p, wx, wz, x, y, {
+        count: 1, size: woodlandBackdrop?.rockScale ?? 1,
+      });
     }
     if (roll < 0.2) {
       broadleaf(p, wx, wz, x, y, 9,
@@ -1810,8 +1822,10 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           && chroniclesBannerRoadGatewayGrove(grid, center, x, y);
         const landscapeTile = biome === 'hills'
           ? chroniclesLandscapeTileAt({ grid, biome, x, y, outside: !inside })
-          : naturalWoodline && inside
-            ? chroniclesWoodlandVergeTileAt({ grid, biome, x, y })
+          : naturalWoodline
+            ? inside
+              ? chroniclesWoodlandVergeTileAt({ grid, biome, x, y })
+              : chroniclesWoodlandBackdropTileAt({ biome, x, y, ringDepth })
             : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
           woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline,
