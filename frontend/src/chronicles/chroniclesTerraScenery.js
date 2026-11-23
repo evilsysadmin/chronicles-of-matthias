@@ -1133,15 +1133,13 @@ const DRESS = {
     // Reuse EXACTLY the same topology-aware per-blocked-cell recipes.
     // Natural Terra E2-style interiors and NON-COLLIDING outer rings now
     // form coherent crests and saddles, rather than a ruler-flat stone row.
-    // Verdes beside actual walkable ground, B2 heath and other biomes are
+    // Verges beside actual walkable ground, B2 heath and other biomes are
     // deliberately unchanged. No new meshes, instances or grid blockers.
     if (!tileRecipe) return;
     const ridge = naturalHighlands
       ? chroniclesHighlandRidgeProfile(x, y, tileRecipe.family) : 1;
-    const ridgeFoot = tileRecipe.family === 'backdrop'
-      ? 0.92 + (ridge - 1) * 0.68 : 0.97 + (ridge - 1) * 0.50;
-    const ridgeRise = tileRecipe.family === 'backdrop'
-      ? 0.94 + (ridge - 1) * 0.58 : 0.98 + (ridge - 1) * 0.36;
+    const ridgeFoot = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.68 : 0.50);
+    const ridgeRise = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.58 : 0.36);
     boulders(p, wx, wz, x, y, {
       count: tileRecipe.boulderCount,
       size: tileRecipe.boulderSize * ridgeFoot,
@@ -1158,9 +1156,9 @@ const DRESS = {
         yaw: noise(x, y, 6) * 6.28,
         tilt: stagger * (noise(x, y, 902) - 0.5) * 0.13,
         roll: stagger * (noise(x, y, 903) - 0.5) * 0.12,
-        scale: [(0.90 + noise(x, y, 9) * 0.20) * (0.98 + (ridge - 1) * 0.14),
+        scale: [(0.90 + noise(x, y, 9) * 0.20) * (1 + (ridge - 1) * 0.14),
           ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge,
-          (0.87 + noise(x, y, 10) * 0.25) * (0.98 + (ridge - 1) * 0.11)],
+          (0.87 + noise(x, y, 10) * 0.25) * (1 + (ridge - 1) * 0.11)],
       });
     }
     if (noise(x, y, 7) < tileRecipe.bushChance) {
