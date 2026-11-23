@@ -1,9 +1,10 @@
-// Command chronicles-api is Chronicles of Matthias' own API.
+// Command chronicles-api serves Chronicles of Matthias' own API.
 //
-// It is the only authored Go code in api/: every package under api/internal
-// is Chess Studio's backend copied byte for byte (api/VENDOR.lock.json).
-// This file wires exactly the handlers the game uses, with the same
-// configuration as chess-studio/backend-go/cmd/pvp-edge/native_runtime.go:
+// Chronicles' Go backend was originally extracted from Chess Studio, but this
+// repository now owns and evolves its commands and internal packages independently.
+// See docs/PROVENANCE.md for the historical split. The retained chess-studio
+// Go module path is a compatibility detail, not a source-of-truth dependency.
+// This executable wires the application's HTTP routes:
 //
 //	identity  GET /, /api/health, /api/release, /api/ready
 //	system    /api/status, /api/features, ...
