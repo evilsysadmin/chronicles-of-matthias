@@ -54,13 +54,22 @@ try {
   const cameraCell = view === 'ruin'
     ? ruinEyes[mapId]
     : view === 'heath'
-      ? { x: map.partyStart.x, y: map.partyStart.y }
+      ? { x: 9, y: 10 } // Four walkable steps from spawn, off the protected cobblestone road.
       : view === 'flank'
       ? (mapId === 'terra-c4' ? { x: 5, y: 5 } : { x: 12, y: 7 })
       : mapId === 'terra-c4'
         ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
         : { x: map.partyStart.x, y: map.partyStart.y };
-  if (!cameraCell) throw new Error('No authored ruin inspection camera on ' + mapId);
+  if (!cameraCell) throw new Error('No authored observation camera on ' + mapId);
+  if (view === 'heath') {
+    // A REAL cardinal walk route from B2 spawn, never a camera teleported
+    // into a blocked tile or into a patch of fabricated scenery.
+    const path = [[10, 7], [10, 8], [10, 9], [10, 10], [9, 10]];
+    if (map.partyStart.x !== path[0][0] || map.partyStart.y !== path[0][1]
+      || path.some(([x, y]) => map.grid[y]?.[x] !== '.')) {
+      throw new Error('B2 heath eye must remain reachable by four walkable steps');
+    }
+  }
   if (map.grid[cameraCell.y]?.[cameraCell.x] !== '.') {
     throw new Error('Real party start must remain traversable on ' + mapId);
   }
@@ -134,7 +143,7 @@ try {
   const yaw = view === 'ruin'
     ? (mapId === 'terra-b2' ? Math.PI / 2 : -Math.PI / 2)
     : view === 'heath'
-      ? -Math.PI / 2 // Face east from B2's real spawn, away from the ruin test sightline.
+      ? Math.PI // Face SOUTH from an off-road B2 foothill cell, into the vegetation.
       : view === 'flank'
       ? (mapId === 'terra-c4' ? Math.PI / 2 : -Math.PI / 2)
       : mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
@@ -218,7 +227,7 @@ try {
   }
 
   // B2 low-heath QA: inspect the dedicated rosette part both from the
-  // authored ruin sightline and from the real spawn facing EAST. Toggle
+  // authored ruin sightline and from an accessible off-road cell facing SOUTH. Toggle
   // ONLY that batch off during genuine framebuffer comparison, then restore
   // it. All blocked-border heather, mountains, ruins and collision stay intact.
   let lowHeatherInstances = 0;
