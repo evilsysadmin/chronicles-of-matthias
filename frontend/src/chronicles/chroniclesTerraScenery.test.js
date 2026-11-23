@@ -1867,7 +1867,14 @@ describe('Terra scenery', () => {
     }
     expect(lowAuthoredRuinStones).toBe(3);
     expect(variations.size).toBeGreaterThan(1);
-    expect(themed.children.length).toBe(plain.children.length + 1); // Heather already exclusive to B2.
+    // B2 retains its original blocked-verge heather AND one bounded
+    // walkable rosette batch. Every generic rock/lichen batch remains exact.
+    expect(themed.children.length).toBe(plain.children.length + 2);
+    expect(themed.children.filter(mesh => mesh.name === 'chronicles-terra-heather'))
+      .toHaveLength(1);
+    expect(themed.children.filter(mesh => mesh.name === 'chronicles-terra-heatherGroundcover'))
+      .toHaveLength(1);
+    expect(plain.getObjectByName('chronicles-terra-heatherGroundcover')).toBeUndefined();
   });
 
   it('is deterministic', () => {
