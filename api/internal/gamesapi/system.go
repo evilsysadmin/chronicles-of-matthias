@@ -129,7 +129,6 @@ func NewSystem(cfg SystemConfig) (*SystemHandler, error) {
 		return nil, errors.New("system API needs the users store")
 	}
 	baseCfg := cfg.Config
-	baseCfg.Store = readOnlyStore{}
 	base, err := New(baseCfg)
 	if err != nil {
 		return nil, err

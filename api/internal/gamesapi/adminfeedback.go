@@ -133,7 +133,6 @@ func NewAdminFeedback(cfg AdminFeedbackConfig) (*AdminFeedbackHandler, error) {
 	if cfg.Feedback == nil {
 		return nil, errors.New("admin feedback API needs a store")
 	}
-	cfg.Store = readOnlyStore{}
 	base, err := New(cfg.Config)
 	if err != nil {
 		return nil, err

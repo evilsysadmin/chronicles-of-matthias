@@ -87,7 +87,6 @@ func NewRecovery(cfg RecoveryConfig) (*RecoveryHandler, error) {
 		return nil, errors.New("recovery needs accounts and a mailer")
 	}
 	baseCfg := cfg.Config
-	baseCfg.Store = readOnlyStore{}
 	base, err := New(baseCfg)
 	if err != nil {
 		return nil, err

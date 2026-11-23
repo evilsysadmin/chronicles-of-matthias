@@ -83,7 +83,6 @@ func NewIdentity(cfg IdentityConfig) (*IdentityHandler, error) {
 	if cfg.Ready == nil {
 		cfg.Ready = func() {}
 	}
-	cfg.Store = readOnlyStore{}
 	base, err := New(cfg.Config)
 	if err != nil {
 		return nil, err

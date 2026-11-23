@@ -94,7 +94,6 @@ func NewLogin(cfg LoginConfig) (*LoginHandler, error) {
 		return nil, errors.New("login needs accounts and both guards")
 	}
 	baseCfg := cfg.Config
-	baseCfg.Store = readOnlyStore{}
 	base, err := New(baseCfg)
 	if err != nil {
 		return nil, err

@@ -87,7 +87,6 @@ func NewFeedback(cfg FeedbackConfig) (*FeedbackHandler, error) {
 		return nil, errors.New("feedback API needs a store")
 	}
 	baseCfg := cfg.Config
-	baseCfg.Store = readOnlyStore{}
 	base, err := New(baseCfg)
 	if err != nil {
 		return nil, err

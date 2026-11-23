@@ -18,7 +18,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/corspolicy"
-	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamestore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/ssoauth"
@@ -26,13 +25,6 @@ import (
 
 func preflightMethod(r *http.Request) string {
 	return strings.ToUpper(strings.TrimSpace(r.Header.Get("Access-Control-Request-Method")))
-}
-
-// Store is the part of gamestore the routes need.
-type Store interface {
-	ListSummariesByOwner(ctx context.Context, owner string, limit int) ([]gamestore.Summary, error)
-	GetDocumentForOwner(ctx context.Context, id, owner string) (bson.M, bool, error)
-	DeleteForOwner(ctx context.Context, id, owner string) (bool, error)
 }
 
 // Accounts answers users_store.get_auth_state.
@@ -46,7 +38,6 @@ type Presence interface {
 }
 
 type Config struct {
-	Store          Store
 	Accounts       Accounts
 	Presence       Presence
 	JWTSecret      string
@@ -67,7 +58,6 @@ type Config struct {
 }
 
 type Handler struct {
-	store    Store
 	accounts Accounts
 	presence Presence
 	secret   []byte
@@ -80,8 +70,8 @@ type Handler struct {
 }
 
 func New(cfg Config) (*Handler, error) {
-	if cfg.Store == nil || cfg.Accounts == nil {
-		return nil, errors.New("games API needs a store and accounts")
+	if cfg.Accounts == nil {
+		return nil, errors.New("chronicles API needs accounts")
 	}
 	secret := strings.TrimSpace(cfg.JWTSecret)
 	if secret == "" {
@@ -102,7 +92,6 @@ func New(cfg Config) (*Handler, error) {
 		}
 	}
 	return &Handler{
-		store:    cfg.Store,
 		accounts: cfg.Accounts,
 		presence: cfg.Presence,
 		secret:   []byte(secret),
