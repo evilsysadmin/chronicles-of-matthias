@@ -1727,7 +1727,7 @@ describe('Terra scenery', () => {
     expect(compact.children.every((m) => m.isInstancedMesh)).toBe(true);
   });
 
-  it('adds B2 heather on blocked verges and small plants on unreserved walkable foothills', () => {
+  it('keeps original B2 heather exclusively on blocked verges, with separate flat groundcover on walkable foothills', () => {
     const b2 = chroniclesMapById('terra-b2');
     const center = { x: 10, y: 7 };
     const args = { grid: b2.grid, center, biome: b2.biome, mapId: b2.id, scenery: b2.scenery };
@@ -1735,50 +1735,57 @@ describe('Terra scenery', () => {
     const mobile = buildTerraScenery({ ...args, coarsePointer: true });
     const heather = detailed.getObjectByName('chronicles-terra-heather');
     const reduced = mobile.getObjectByName('chronicles-terra-heather');
+    const low = detailed.getObjectByName('chronicles-terra-heatherGroundcover');
+    const lowMobile = mobile.getObjectByName('chronicles-terra-heatherGroundcover');
     expect(heather).toBeInstanceOf(THREE.InstancedMesh);
-    expect(reduced).toBeInstanceOf(THREE.InstancedMesh);
+    expect(low).toBeInstanceOf(THREE.InstancedMesh);
     expect(heather.count).toBeGreaterThan(5);
+    expect(heather.count).toBeLessThan(70); // v64 border plants untouched
     expect(reduced.count).toBeGreaterThan(0);
     expect(reduced.count).toBeLessThan(heather.count);
-    expect(heather.count).toBeLessThan(235); // Same single batch, sparse foreground.
+    expect(low.count).toBeGreaterThan(30);
+    expect(low.count).toBeLessThan(220);
+    expect(lowMobile.count).toBeGreaterThan(10);
+    expect(lowMobile.count).toBeLessThan(low.count);
     expect(heather.castShadow).toBe(false);
+    expect(low.castShadow).toBe(false);
     expect(heather.material.vertexColors).toBe(true);
+    expect(low.material.vertexColors).toBe(true);
     expect(detailed.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
     const matrix = new THREE.Matrix4();
     const world = new THREE.Vector3();
     const scale = new THREE.Vector3();
-    let blocked = 0;
-    let walkable = 0;
-    for (let i = 0; i < heather.count; i += 1) {
-      heather.getMatrixAt(i, matrix);
-      world.setFromMatrixPosition(matrix);
-      scale.setFromMatrixScale(matrix);
-      const x = Math.round(world.x / 4) + center.x;
-      const y = Math.round(world.z / 4) + center.y;
-      expect(['#', '.']).toContain(b2.grid[y]?.[x]);
-      expect(Math.max(Math.abs(world.x - (x - center.x) * 4),
-        Math.abs(world.z - (y - center.y) * 4))).toBeLessThan(1.5);
-      if (b2.grid[y][x] === '#') {
-        blocked += 1;
-        expect([[0, -1], [1, 0], [0, 1], [-1, 0]]
-          .some(([dx, dy]) => b2.grid[y + dy]?.[x + dx] === '.')).toBe(true);
-      } else {
-        walkable += 1;
-        expect(world.y).toBeCloseTo(0.012, 5);
-        expect(scale.y).toBeLessThan(0.48); // <0.27m flattened groundcover
+    for (const [mesh, type] of [[heather, 'border'], [low, 'groundcover']]) {
+      for (let i = 0; i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, matrix);
+        world.setFromMatrixPosition(matrix);
+        scale.setFromMatrixScale(matrix);
+        const x = Math.round(world.x / 4) + center.x;
+        const y = Math.round(world.z / 4) + center.y;
+        expect(Math.max(Math.abs(world.x - (x - center.x) * 4),
+          Math.abs(world.z - (y - center.y) * 4))).toBeLessThan(1.5);
+        if (type === 'border') {
+          expect(b2.grid[y]?.[x]).toBe('#');
+          expect([[0, -1], [1, 0], [0, 1], [-1, 0]]
+            .some(([dx, dy]) => b2.grid[y + dy]?.[x + dx] === '.')).toBe(true);
+        } else {
+          expect(b2.grid[y]?.[x]).toBe('.');
+          expect(world.y).toBeCloseTo(0.012, 5);
+          expect(scale.y).toBeLessThan(1.24);
+          expect(scale.x).toBeLessThan(1.11);
+        }
       }
     }
-    expect(blocked).toBeGreaterThan(5);
-    expect(walkable).toBeGreaterThan(30);
     expect(buildTerraScenery({ ...args, mapId: 'terra-e2' })
-      .getObjectByName('chronicles-terra-heather')).toBeUndefined();
+      .getObjectByName('chronicles-terra-heatherGroundcover')).toBeUndefined();
     expect(buildTerraScenery({ ...args, biome: 'plains' })
-      .getObjectByName('chronicles-terra-heather')).toBeUndefined();
-    const again = buildTerraScenery(args).getObjectByName('chronicles-terra-heather');
-    expect(again.count).toBe(heather.count);
+      .getObjectByName('chronicles-terra-heatherGroundcover')).toBeUndefined();
+    const again = buildTerraScenery(args);
+    expect(again.getObjectByName('chronicles-terra-heather').count).toBe(heather.count);
+    expect(again.getObjectByName('chronicles-terra-heatherGroundcover').count).toBe(low.count);
     heather.getMatrixAt(0, matrix);
     const compare = new THREE.Matrix4();
-    again.getMatrixAt(0, compare);
+    again.getObjectByName('chronicles-terra-heather').getMatrixAt(0, compare);
     expect(compare.elements).toEqual(matrix.elements);
   });
 
