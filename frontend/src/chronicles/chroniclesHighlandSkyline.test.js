@@ -112,7 +112,12 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
     const c4Args = sceneArgs('terra-c4');
     for (const args of [b2Args, c4Args]) {
       const current = buildTerraScenery(args);
-      const original = buildTerraScenery({ ...args, mapId: null });
+      // C4's existing woodland composition is map-specific; compare it
+      // with a repeat build, not a different forest mapId. B2's hills
+      // have no such woodline and may be compared with unnamed hills.
+      const original = buildTerraScenery({
+        ...args, mapId: args.biome === 'hills' ? null : args.mapId,
+      });
       for (const part of ['boulder', 'crag']) {
         const a = current.getObjectByName('chronicles-terra-' + part);
         const b = original.getObjectByName('chronicles-terra-' + part);
