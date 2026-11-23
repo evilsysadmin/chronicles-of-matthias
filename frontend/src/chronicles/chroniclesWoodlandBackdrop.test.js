@@ -69,6 +69,7 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
     const original = buildTerraScenery(args);
     const mobile = buildTerraScenery({ ...args, mapId: map.id, coarsePointer: true });
     const oldMobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const mobileAgain = buildTerraScenery({ ...args, mapId: map.id, coarsePointer: true });
     const previousRocks = outsideInstances(original, 'boulder', map);
     const sparseRocks = outsideInstances(current, 'boulder', map);
     expect(previousRocks.length).toBeGreaterThan(80);
@@ -89,9 +90,9 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
       expect(group.children.filter(mesh => mesh.name === 'chronicles-terra-boulder'))
         .toHaveLength(1);
     }
-    // A small, explicit tranche of saplings now fills canopy gaps in the
-    // FIRST TWO non-colliding woodland rings, reusing existing trunk/crown
-    // meshes. They must not appear in authored interior or ring 3.
+    // Small saplings fill gaps ONLY on mobile in the first two non-colliding
+    // woodland rings. Desktop retains its v57 tree population unchanged,
+    // protecting earlier Banner Road and native-woodline contracts.
     const ring = ({ x, y }) => Math.max(-x, x - map.grid[0].length + 1,
       -y, y - map.grid.length + 1);
     const count = (group, part, depth) => outsideInstances(group, part, map)
@@ -100,22 +101,38 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
       - outsideInstances(original, 'broadleafTrunk', map).length;
     const mobileSaplings = outsideInstances(mobile, 'broadleafTrunk', map).length
       - outsideInstances(oldMobile, 'broadleafTrunk', map).length;
-    expect(saplings).toBeGreaterThan(8);
-    expect(saplings).toBeLessThan(90);
+    expect(saplings).toBe(0);
     expect(mobileSaplings).toBeGreaterThan(3);
-    expect(mobileSaplings).toBeLessThanOrEqual(saplings);
+    expect(mobileSaplings).toBeLessThan(55);
     expect(count(current, 'broadleafTrunk', 3))
       .toBe(count(original, 'broadleafTrunk', 3));
     expect(count(mobile, 'broadleafTrunk', 3))
       .toBe(count(oldMobile, 'broadleafTrunk', 3));
     expect(outsideInstances(current, 'crown', map).length
-      - outsideInstances(original, 'crown', map).length).toBe(saplings);
-    // Sapling bases can add foliage but the shared bush batch remains
-    // bounded. V57's sparse, non-colliding boulders still stay sparse.
-    const bushes = outsideInstances(current, 'bush', map).length
-      - outsideInstances(original, 'bush', map).length;
-    expect(bushes).toBeGreaterThan(0);
-    expect(bushes).toBeLessThan(saplings + 1);
+      - outsideInstances(original, 'crown', map).length).toBe(0);
+    expect(outsideInstances(mobile, 'crown', map).length
+      - outsideInstances(oldMobile, 'crown', map).length).toBe(mobileSaplings);
+    // Sapling bases reuse the existing bush batch, without new materials
+    // or restoring the removed stones. No added bush on desktop.
+    expect(outsideInstances(current, 'bush', map).length)
+      .toBe(outsideInstances(original, 'bush', map).length);
+    const mobileBushes = outsideInstances(mobile, 'bush', map).length
+      - outsideInstances(oldMobile, 'bush', map).length;
+    expect(mobileBushes).toBeGreaterThan(0);
+    expect(mobileBushes).toBeLessThanOrEqual(mobileSaplings);
+    for (const name of ['broadleafTrunk', 'crown', 'bush']) {
+      const mesh = mobile.getObjectByName('chronicles-terra-' + name);
+      const twin = mobileAgain.getObjectByName('chronicles-terra-' + name);
+      expect(mesh.count).toBe(twin.count);
+      const a = new THREE.Matrix4(), b = new THREE.Matrix4();
+      // Also check the late-added exterior instances, not only the first
+      // regular trees of each batch.
+      for (let i = Math.max(0, mesh.count - 30); i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, a);
+        twin.getMatrixAt(i, b);
+        expect(a.elements).toEqual(b.elements);
+      }
+    }
     // Stable placement matrices per render, no new draw batches.
     for (const mesh of current.children) {
       const twin = duplicate.getObjectByName(mesh.name);
