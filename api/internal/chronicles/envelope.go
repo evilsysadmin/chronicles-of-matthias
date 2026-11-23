@@ -75,28 +75,6 @@ func fmtInstance(id string, version any, seed int64, revision string) string {
 	return fmt.Sprintf("chronicles-area-v%d:%s:%d:%d:%s", ManifestSchemaVersion, id, v, seed, revision)
 }
 
-// Preview is the MapCode preview route: generate_chronicles_layout(code).as_dict().
-// Errors are *chroniclesmap.Error or *chroniclesmap.GenerationError (the 400s).
-func Preview(code string) (bson.D, error) {
-	layout, err := chroniclesmap.Generate(code)
-	if err != nil {
-		return nil, err
-	}
-	grid := bson.A{}
-	for _, row := range layout.Grid {
-		grid = append(grid, row)
-	}
-	return bson.D{
-		{Key: "mapCode", Value: layout.MapCode},
-		{Key: "generatorVersion", Value: int64(layout.GeneratorVersion)},
-		{Key: "layoutRevision", Value: layout.LayoutRevision},
-		{Key: "grid", Value: grid},
-		{Key: "partyStart", Value: bson.D{{Key: "x", Value: int64(layout.PartyStart.X)}, {Key: "y", Value: int64(layout.PartyStart.Y)}, {Key: "direction", Value: int64(1)}}},
-		{Key: "exit", Value: bson.D{{Key: "x", Value: int64(layout.Exit.X)}, {Key: "y", Value: int64(layout.Exit.Y)}}},
-		{Key: "walkableCount", Value: int64(layout.WalkableCount)},
-	}, nil
-}
-
 // TransitionTargets is _transition_targets: every map a content action or an
 // enemy's defeat can transition to.
 func TransitionTargets(manifest bson.D) map[string]bool {
@@ -125,5 +103,3 @@ func TransitionTargets(manifest bson.D) map[string]bool {
 	return targets
 }
 
-// RouteDepth is _run_depth.
-func RouteDepth(route *RouteSnapshot, mapID string) int64 { return route.depth(mapID) }
