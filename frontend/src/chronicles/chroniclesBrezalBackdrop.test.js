@@ -63,8 +63,9 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
       const B2 = scene('terra-b2', coarsePointer);
       const repeat = scene('terra-b2', coarsePointer);
       const generic = scene('generic-hills', coarsePointer);
-      expect(B2.children.map(x => x.name)).toEqual(generic.children.map(x => x.name)
-        .filter(x => x !== 'chronicles-terra-heather'));
+      expect(B2.children.map(x => x.name)
+        .filter(x => x !== 'chronicles-terra-heather'))
+        .toEqual(generic.children.map(x => x.name));
       expect(B2.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
       for (const part of ['boulder', 'crag']) {
         const name = 'chronicles-terra-' + part;
@@ -94,9 +95,12 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
             const depth = Math.max(-x, x - width + 1, -y, y - height + 1);
             const expected = relief(x, y, depth);
             const was = scaleOf(oldM), now = scaleOf(currentM);
-            expect(now.x / was.x).toBeCloseTo(expected, 5);
+            // Boulders shrink in xyz, including their centre height;
+            // crags retain their footprint and only shorten in y.
+            const horizontal = part === 'boulder' ? expected : 1;
+            expect(now.x / was.x).toBeCloseTo(horizontal, 5);
             expect(now.y / was.y).toBeCloseTo(expected, 5);
-            expect(now.z / was.z).toBeCloseTo(expected, 5);
+            expect(now.z / was.z).toBeCloseTo(horizontal, 5);
             expect(currentM.elements[12]).toBeCloseTo(oldM.elements[12], 5);
             expect(currentM.elements[14]).toBeCloseTo(oldM.elements[14], 5);
             changedExterior += 1;
