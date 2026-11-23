@@ -40,3 +40,25 @@ func TestFingerprintMatchesPythonCanonicalJSON(t *testing.T) {
 		t.Fatalf("different insertion order changed fingerprint: %q, %v", two, err)
 	}
 }
+
+func TestLaxFloatPreservesSystemNumericCoercion(t *testing.T) {
+	for _, tc := range []struct {
+		raw string
+		want float64
+	}{
+		{raw: `2.5`, want: 2.5},
+		{raw: `"1.25"`, want: 1.25},
+		{raw: `true`, want: 1},
+		{raw: `false`, want: 0},
+	} {
+		value, err := LaxFloat([]byte(tc.raw))
+		if err != nil || value != tc.want {
+			t.Fatalf("LaxFloat(%q) = %v, %v; want %v", tc.raw, value, err, tc.want)
+		}
+	}
+	for _, raw := range []string{`null`, `{}`, `"not-a-number"`} {
+		if _, err := LaxFloat([]byte(raw)); !errors.Is(err, ErrInvalidBody) {
+			t.Fatalf("LaxFloat(%q) error = %v; want ErrInvalidBody", raw, err)
+		}
+	}
+}
