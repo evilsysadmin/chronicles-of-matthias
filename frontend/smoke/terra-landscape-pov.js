@@ -14,6 +14,9 @@ const params = new URLSearchParams(location.search);
 const maps = Object.freeze({ 'terra-e2': escoria, 'terra-c4': ahorcado });
 const mapId = params.get('map') || 'terra-e2';
 const coarsePointer = params.get('coarse') !== '0';
+// Supplemental QA: a different, traversable observation point and an exact
+// cardinal 90-degree turn. Canonical screenshots and live scene stay unchanged.
+const view = params.get('view') || 'canonical';
 const canvas = document.getElementById('stage');
 const CELL = 4;
 const EYE_HEIGHT = 1.62;
@@ -25,14 +28,17 @@ const targets = Object.freeze({
 try {
   const map = maps[mapId];
   if (!map) throw new Error('Unsupported terrain capture: ' + mapId);
+  if (!['canonical', 'flank'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
   const center = { x: 10, y: 7 };
   // The generic plains spawn faces the generated cobblestone crossroads,
   // hiding almost every low herb in a narrow portrait viewport. A real,
   // traversable meadow cell five cardinal steps away photographs habitat
   // rather than paving; unlike a test mock, every scenery piece is unchanged.
-  const cameraCell = mapId === 'terra-c4'
-    ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
-    : { x: map.partyStart.x, y: map.partyStart.y };
+  const cameraCell = view === 'flank'
+    ? (mapId === 'terra-c4' ? { x: 5, y: 5 } : { x: 12, y: 7 })
+    : mapId === 'terra-c4'
+      ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
+      : { x: map.partyStart.x, y: map.partyStart.y };
   if (map.grid[cameraCell.y]?.[cameraCell.x] !== '.') {
     throw new Error('Real party start must remain traversable on ' + mapId);
   }
@@ -103,8 +109,10 @@ try {
   };
   // From the meadow observation point, face north into the grass and
   // woodland: turning towards the cobbled crossroad would defeat this QA.
-  const yaw = mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
-    facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
+  const yaw = view === 'flank'
+    ? (mapId === 'terra-c4' ? Math.PI / 2 : -Math.PI / 2)
+    : mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
+      facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
   camera.rotation.set(0, yaw, 0);
 
   const dome = scene.getObjectByName('swordhaven-sky-dome');
@@ -166,6 +174,7 @@ try {
   }
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
+    view,
     mapId, biome: map.biome,
     cameraCell: cameraCell.x + ',' + cameraCell.y,
     cameraYaw: String(yaw),
