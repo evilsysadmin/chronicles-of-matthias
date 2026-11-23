@@ -72,3 +72,25 @@ func TestSharedInternalErrorKeepsRequestID(t *testing.T) {
 		t.Fatalf("request ID missing from internal error: %s", w.Body.String())
 	}
 }
+
+// Decode is shared by the live Chronicles run handlers: do not replace ordered
+// BSON with a map, since the contract preserves document field ordering.
+func TestSharedDecodeOrderedBodyPreservesFieldOrder(t *testing.T) {
+	raw := []byte(`{"worldFlags":{"seen":true},"inventory":{},"quests":[]}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/chronicles/runs", strings.NewReader(string(raw)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	value, ok := decodeOrderedBody(w, req, raw)
+	if !ok {
+		t.Fatalf("decodeOrderedBody rejected valid JSON: %s", w.Body.String())
+	}
+	doc, isDoc := value.(bson.D)
+	if !isDoc {
+		t.Fatalf("decoded type = %T; want ordered bson.D", value)
+	}
+	for index, expected := range []string{"worldFlags", "inventory", "quests"} {
+		if index >= len(doc) || doc[index].Key != expected {
+			t.Fatalf("field order = %#v; wanted %q at position %d", doc, expected, index)
+		}
+	}
+}
