@@ -40,8 +40,13 @@ describe('Terra v65 B2 heather on real walkable foothills', () => {
       expect(verge.map(item => item.elements)).toEqual(old.map(item => item.elements));
       expect(plants.length).toBeGreaterThan(coarsePointer ? 10 : 35);
       expect(plants.length).toBeLessThan(allWalkables.length * (coarsePointer ? 1 : 2));
-      expect(withLow.children.length).toBe(baseline.children.length);
-      expect(withLow.children.map(m => m.name)).toEqual(baseline.children.map(m => m.name));
+      // The keepClear-all baseline intentionally excludes the original
+      // walkable tufts and pebbles too; comparing every part count would
+      // mistake those original batches for new heather draw calls.
+      const sceneryParts = group => group.children.map(m => m.name)
+        .filter(name => name !== 'chronicles-terra-tuft'
+          && name !== 'chronicles-terra-pebble');
+      expect(sceneryParts(withLow)).toEqual(sceneryParts(baseline));
       expect(withLow.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
       expect(withLow.children.filter(m => m.name === 'chronicles-terra-heather')).toHaveLength(1);
       for (const plant of plants) {
