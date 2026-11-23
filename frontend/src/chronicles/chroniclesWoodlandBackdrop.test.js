@@ -158,6 +158,13 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
       expect(hasRoot(oldMobile, part, -2, 5)).toBe(false);
       expect(hasRoot(current, part, -2, 5)).toBe(false);
     }
+    const bridge = outsideInstances(mobile, 'broadleafTrunk', map)
+      .find(instance => instance.x === -2 && instance.y === 5);
+    // The first visual iteration was too short and left a high blue wedge.
+    // This is a mid-canopy bridge at mobile eye-level, not a tiny sapling or
+    // another uniformly towering edge tree.
+    expect(bridge.matrix.elements[5]).toBeGreaterThan(4);
+    expect(bridge.matrix.elements[5]).toBeLessThan(5.6);
     expect(count(current, 'broadleafTrunk', 3))
       .toBe(count(original, 'broadleafTrunk', 3));
     expect(count(mobile, 'broadleafTrunk', 3))
