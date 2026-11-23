@@ -40,6 +40,40 @@ export function chroniclesHighlandRidgeProfile(x, y, family = 'backdrop') {
   return Math.max(0.65, Math.min(1.45, 1 + swell * amplitude));
 }
 
+/**
+ * A gently undulating *shared* shoulder profile along an E2-style
+ * non-colliding mountain horizon. All three outer rings on the same map side
+ * share the very same along-ridge coordinate, so a saddle stays a saddle
+ * rather than being filled by identical stones in the next row.
+ *
+ * This returns identity for map interiors, side/corner ambiguity, incomplete
+ * maps and malformed input. It only changes the visual matrices of existing
+ * backdrop boulder/crag instances; the blocked/walkable grid is untouched.
+ */
+export function chroniclesHighlandBackdropSaddle({
+  grid = [], x, y, ringDepth,
+} = {}) {
+  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y)
+      || !Number.isInteger(ringDepth) || ringDepth < 1
+      || ringDepth > TERRA_SCENERY_MARGIN) return 1;
+  const width = grid[0]?.length || 0, height = grid.length;
+  if (!width || !height) return 1;
+  let axis;
+  if ((x === -ringDepth || x === width - 1 + ringDepth)
+      && y >= 0 && y < height) axis = y;
+  else if ((y === -ringDepth || y === height - 1 + ringDepth)
+      && x >= 0 && x < width) axis = x;
+  else return 1;
+  // Overlapping long and short wavelengths: ridges, rounded shoulders,
+  // saddles. Avoid per-cell white noise and a sawtooth skyline.
+  return THREE.MathUtils.clamp(
+    0.83 + 0.26 * Math.sin(axis * 0.46 + 0.30)
+      + 0.17 * Math.cos(axis * 0.21 - 0.70)
+      + 0.08 * Math.sin(axis * 0.89 + 1.50),
+    0.52, 1.30,
+  );
+}
+
 function texture(kind, repeatX = 1, repeatY = 1) {
   // Pixel textures are cached and shared: clone to repeat independently.
   const base = chroniclesPixelTexture(kind);
@@ -1225,8 +1259,9 @@ const DRESS = {
         naturalWoodline ? size * 0.86 : (big ? 1.1 : 0.9), bannerRoad);
     }
   },
-  hills(p, wx, wz, x, y, big, _banner, _ring, _gateway, _grove,
-    tileRecipe, _naturalWoodline, naturalHighlands = false) {
+  hills(p, wx, wz, x, y, big, _banner, ringDepth, _gateway, _grove,
+    tileRecipe, _naturalWoodline, naturalHighlands = false,
+    _coarsePointer = false, grid = []) {
     // Reuse EXACTLY the same topology-aware per-blocked-cell recipes.
     // Natural Terra E2-style interiors and NON-COLLIDING outer rings now
     // form coherent crests and saddles, rather than a ruler-flat stone row.
@@ -1235,11 +1270,18 @@ const DRESS = {
     if (!tileRecipe) return;
     const ridge = naturalHighlands
       ? chroniclesHighlandRidgeProfile(x, y, tileRecipe.family) : 1;
+    // V61: the old independent cell-height profile made different outer
+    // rings fill one another's saddles, creating a long uniform rock wall
+    // from the new lateral E2 camera. One smooth contour follows the same
+    // coastline-like axis through all three *non-colliding* scenery rings.
+    // All real blocked border/verge roots retain their earlier transforms.
+    const saddle = naturalHighlands && tileRecipe.family === 'backdrop'
+      ? chroniclesHighlandBackdropSaddle({ grid, x, y, ringDepth }) : 1;
     const ridgeFoot = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.68 : 0.50);
     const ridgeRise = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.58 : 0.36);
     boulders(p, wx, wz, x, y, {
       count: tileRecipe.boulderCount,
-      size: tileRecipe.boulderSize * ridgeFoot,
+      size: tileRecipe.boulderSize * ridgeFoot * saddle,
       height: 1.05 * ridgeRise,
     });
     if (noise(x, y, 4) < tileRecipe.cragChance) {
@@ -1254,7 +1296,7 @@ const DRESS = {
         tilt: stagger * (noise(x, y, 902) - 0.5) * 0.13,
         roll: stagger * (noise(x, y, 903) - 0.5) * 0.12,
         scale: [(0.90 + noise(x, y, 9) * 0.20) * (1 + (ridge - 1) * 0.14),
-          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge,
+          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle,
           (0.87 + noise(x, y, 10) * 0.25) * (1 + (ridge - 1) * 0.11)],
       });
     }
