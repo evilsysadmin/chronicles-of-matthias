@@ -107,7 +107,9 @@ export function chroniclesBrezalOuterRelief({
   const shoulder = 0.72 + 0.22 * Math.sin(axis * 0.51 + 0.25)
     + 0.08 * Math.cos(axis * 0.23 - 1.20);
   const depth = [1, 0.97, 0.86, 0.76][ringDepth];
-  return THREE.MathUtils.clamp(shoulder * depth, 0.46, 0.98);
+  // Allow the deepest southern collado to keep descending across rings;
+  // a higher floor flattened rings 2/3 to the same height at map corners.
+  return THREE.MathUtils.clamp(shoulder * depth, 0.33, 0.98);
 }
 
 function texture(kind, repeatX = 1, repeatY = 1) {
