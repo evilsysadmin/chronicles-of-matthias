@@ -168,8 +168,8 @@ jobs:
           # in portrait+desktop and prove visible ruin pixels, not just meshes.
           # Keep all eight canonical+flank PNG baselines in this same artifact.
           node smoke/run-timed.mjs smoke/terra-authored-ruins-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
-          # B2 v67: the existing low lilac heath must be visible from the
-          # ACTUAL B2 spawn facing east, not only the west-facing ruin.
+          # B2 v67: the existing low lilac heath must be visible from a
+          # reachable off-road foothill eye facing south, not only the west-facing ruin.
           # Two extra reproducible 390/1280 real WebGL images share this artifact.
           node smoke/run-timed.mjs smoke/terra-heath-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
           # Capture the authored Swordhaven facade before optional remote shop art
@@ -212,8 +212,8 @@ jobs:
           node smoke/run-timed.mjs smoke/party-hud-stability.mjs http://localhost:4174/smoke/party-hud-stability.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.
           node smoke/run-timed.mjs smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
-      # A focused small artifact retains all 14 historical Terra POVs plus two B2 frames
-      # inspectable without downloading the entire UI smoke screenshot archive.
+      # The compact PR artifact retains all 14 historical Terra POVs plus two new B2
+      # frames for comparison without downloading every UI smoke screenshot.
       - uses: actions/upload-artifact@v7
         if: ${{ always() && github.event_name == 'pull_request' }}
         with:
