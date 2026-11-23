@@ -310,15 +310,6 @@ func genErr(format string, args ...any) error {
 	return &GenerationError{msg: fmt.Sprintf(format, args...)}
 }
 
-// Generate is generate_chronicles_layout over a MapCode string.
-func Generate(rawMapCode string) (Layout, error) {
-	recipe, err := Parse(rawMapCode)
-	if err != nil {
-		return Layout{}, err
-	}
-	return GenerateRecipe(recipe)
-}
-
 // GenerateRecipe is generate_chronicles_layout over a recipe.
 func GenerateRecipe(recipe Recipe) (Layout, error) {
 	recipe, err := Validate(recipe)
