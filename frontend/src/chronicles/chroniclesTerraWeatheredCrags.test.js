@@ -41,7 +41,11 @@ describe('Terra v62 weather-eroded natural highland crags', () => {
         Math.abs(oldPos.getX(upper) - (-0.20)) + 0.06,
       );
       const summit = 4 * sides; // each peak's new closed top cap
-      expect(newPos.getY(summit)).toBeCloseTo(coarsePointer ? 1.15 : 1.17, 5);
+      const oldTipHeight = coarsePointer ? 1.15 : 1.17;
+      expect(oldPos.getY(upper)).toBeCloseTo(oldTipHeight, 5);
+      expect(newPos.getY(summit)).toBeCloseTo(oldTipHeight * 0.89 * 0.96, 5);
+      expect(newPos.getY(summit)).toBeLessThan(oldTipHeight * 0.87);
+      expect(newPos.getY(summit)).toBeGreaterThan(newPos.getY(upper));
       for (const geo of [original, weathered]) {
         geo.computeBoundingBox();
         expect(geo.boundingBox.min.y).toBeGreaterThanOrEqual(0);
