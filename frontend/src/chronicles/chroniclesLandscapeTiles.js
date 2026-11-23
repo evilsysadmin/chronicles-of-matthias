@@ -159,14 +159,17 @@ export function chroniclesWoodlandVergeTileAt({ grid = [], biome, x, y } = {}) {
 // nearly continuous grey boulder fence behind every tree, compose broader
 // patches of leaf litter, shrubs and occasional embedded stone. Selection is
 // deterministic and world-coordinate based, independent of F5 and quality.
-function woodlandBackdropTile(id, rockChance, rockScale, shrubScale) {
-  return Object.freeze({ id, rockChance, rockScale, shrubScale });
+function woodlandBackdropTile(id, rockChance, rockScale, shrubScale,
+  saplingChance, saplingScale) {
+  return Object.freeze({
+    id, rockChance, rockScale, shrubScale, saplingChance, saplingScale,
+  });
 }
 
 export const CHRONICLES_WOODLAND_BACKDROP_TILES = Object.freeze([
-  woodlandBackdropTile('shadowed-wood', 0.12, 0.60, 1.15),
-  woodlandBackdropTile('dense-thicket', 0.17, 0.68, 1.32),
-  woodlandBackdropTile('stony-clearing', 0.25, 0.75, 0.92),
+  woodlandBackdropTile('shadowed-wood', 0.12, 0.60, 1.15, 0.46, 0.48),
+  woodlandBackdropTile('dense-thicket', 0.17, 0.68, 1.32, 0.58, 0.54),
+  woodlandBackdropTile('stony-clearing', 0.25, 0.75, 0.92, 0.28, 0.42),
 ]);
 
 export function chroniclesWoodlandBackdropTileAt({ biome, x, y, ringDepth } = {}) {
