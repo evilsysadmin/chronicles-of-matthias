@@ -1160,9 +1160,11 @@ const DRESS = {
       grid, x, y, ringDepth, coarsePointer, tile: woodlandBackdrop,
     });
     if (canopyBridge) {
-      // The same mature trunk/crown batches, a little shorter than adjacent
-      // trees so the woodline remains irregular rather than a level wall.
-      broadleaf(p, wx, wz, x, y, 0, size * 0.91);
+      // The second-ring root stands two cells farther from the camera than
+      // the authored border. A modest scale lift lets its leafy crown bridge
+      // the skyline at eye-level without creating a level forest wall.
+      // Still only the SAME shared trunk/crown instance batches.
+      broadleaf(p, wx, wz, x, y, 0, size * 1.19);
     }
     // The v57 stone reduction revealed empty sightlines under the distant
     // canopy on mobile. Add a few existing broadleaf trunk/crown instances as
