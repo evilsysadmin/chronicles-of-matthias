@@ -1799,9 +1799,12 @@ describe('Terra scenery', () => {
     expect(rocks).toBeInstanceOf(THREE.InstancedMesh);
     expect(rocks.count).toBeGreaterThan(20);
     expect(rocks.instanceColor).toBeTruthy();
-    // Native E2 now has its own deterministic stone instance hues, while
-    // the B2 palette and per-rock matrices must remain entirely unchanged.
-    expect(unchanged.instanceColor).toBeTruthy();
+    // The unnamed native hills are the unchanged transform baseline and
+    // deliberately have no B2/E2-special instance colours. B2's authored
+    // lichen tint must remain stable across deterministic re-renders.
+    expect(unchanged.instanceColor).toBeNull();
+    expect(nativeE2.getObjectByName('chronicles-terra-boulder').instanceColor)
+      .toBeTruthy();
     expect(rocks.count).toBe(unchanged.count);
     expect(rocks.geometry.getAttribute('position').count)
       .toBe(unchanged.geometry.getAttribute('position').count);
