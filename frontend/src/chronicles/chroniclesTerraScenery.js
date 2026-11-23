@@ -1884,7 +1884,7 @@ const SET_PIECES = {
           scale: [width, h, width * (0.89 + noise(x, y, 109 + k) * 0.10)],
         });
       } else {
-        // Non-Terra and non-plains/hills authored ruins stay unchanged.
+        // Non-Terra authored ruins stay unchanged.
         const h = 1 + noise(x, y, 90 + k) * 2.5;
         p.add('boulder', [wx + (k - 1) * 1.2, h / 2, wz + (noise(x, y, 93 + k) - 0.5)], { yaw: k * 0.4, scale: [0.55, h, 0.55] });
       }
@@ -1913,12 +1913,13 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   // non-Terra hills and all other maps retain the previous transforms.
   const naturalHighlands = biome === 'hills' && typeof mapId === 'string'
     && mapId.startsWith('terra-') && mapId !== 'terra-b2';
-  // Terra ruins are landmarks in BOTH its open plains and its special
-  // heather/highland regions. The v62 E2 exception left equally tall stone
-  // needles in C4, A1 and B2. Reuse exactly that bounded 3-stone geometry
-  // only on the already-blocked authored ruin roots, never for other maps.
+  // Terra ruins occur in plains, heather hills and the snowy A1 glacier.
+  // The v62 E2 exception left identical needle proportions in C4, A1 and
+  // B2. Reuse the SAME bounded 3-stone dressing only at authored blocked
+  // roots, without changing surrounding snow, rock or woodland recipes.
   const weatheredTerraRuin = typeof mapId === 'string'
-    && mapId.startsWith('terra-') && (biome === 'hills' || biome === 'plains');
+    && mapId.startsWith('terra-')
+    && (biome === 'hills' || biome === 'plains' || biome === 'snow');
 
   const authored = new Map((scenery || [])
     .filter((entry) => entry && Number.isInteger(entry.x) && Number.isInteger(entry.y) && SET_PIECES[entry.type])
