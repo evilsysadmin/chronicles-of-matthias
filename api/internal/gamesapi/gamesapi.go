@@ -1,16 +1,8 @@
-// Package gamesapi serves the read and delete routes of games against the CPU
-// natively, mirroring game_api.py:
-//
-//	GET    /api/games            list_games
-//	GET    /api/games/{game_id}  get_game
-//	DELETE /api/games/{game_id}  delete_game
-//
-// Everything around the handler body is Python's too: get_current_user (JWT,
-// account existence and session version, activity touch), the CORS
-// middleware, the security headers, the 120/minute default rate limit and the
-// 503 that PersistentStorageUnavailable becomes. Move and undo live in
-// writes.go behind their own kill-switch; create and hint stay in Python until
-// their own ports land.
+// Package gamesapi supplies shared request authentication, rate limiting,
+// CORS, and JSON/error helpers for the independent Chronicles Go API.
+// Chess Studio's native /api/games list/get/delete endpoints are not routed
+// by Chronicles; the shared handlers here remain responsible for auth and
+// request-level safeguards.
 package gamesapi
 
 import (
@@ -26,49 +18,11 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/corspolicy"
-	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamecore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamestore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/ssoauth"
 )
-
-// Route patterns as FastAPI reports them (telemetry http.route).
-const (
-	ListPattern = "/api/games"
-	GamePattern = "/api/games/{game_id}"
-)
-
-// Route reports whether a request is one of this package's routes and the
-// FastAPI pattern it maps to. Anything else (POST /api/games, /hint, /move,
-// /undo) belongs to Python.
-func Route(r *http.Request) (pattern, gameID string, ok bool) {
-	path := r.URL.Path
-	if path == ListPattern {
-		if r.Method == http.MethodGet || r.Method == http.MethodOptions && preflightMethod(r) == http.MethodGet {
-			return ListPattern, "", true
-		}
-		return "", "", false
-	}
-	rest, found := strings.CutPrefix(path, "/api/games/")
-	if !found || rest == "" || strings.Contains(rest, "/") {
-		return "", "", false
-	}
-	switch r.Method {
-	case http.MethodGet, http.MethodDelete:
-	case http.MethodOptions:
-		if m := preflightMethod(r); m != http.MethodGet && m != http.MethodDelete {
-			return "", "", false
-		}
-	default:
-		return "", "", false
-	}
-	id, err := url.PathUnescape(rest)
-	if err != nil {
-		return "", "", false
-	}
-	return GamePattern, id, true
-}
 
 func preflightMethod(r *http.Request) string {
 	return strings.ToUpper(strings.TrimSpace(r.Header.Get("Access-Control-Request-Method")))
@@ -159,55 +113,6 @@ func New(cfg Config) (*Handler, error) {
 		sso:      cfg.SSO,
 		identity: cfg.Identity,
 	}, nil
-}
-
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	pattern, gameID, ok := Route(r)
-	if !ok {
-		http.NotFound(w, r)
-		return
-	}
-	securityHeaders(w)
-	origin := strings.TrimSpace(r.Header.Get("Origin"))
-	_, allowed := h.origins[origin]
-	if r.Method == http.MethodOptions {
-		h.preflight(w, r, origin, allowed)
-		return
-	}
-	if origin != "" && allowed {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID")
-		w.Header().Add("Vary", "Origin")
-	}
-	w.Header().Set("X-Chess-Games-Native", "go")
-
-	subject, version, tokenErr := h.verify(r)
-	key := "user:" + subject
-	if tokenErr != nil {
-		key = "ip:" + h.clientIP(r)
-	}
-	if !h.limiter.allow(key, h.now()) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]any{"error": "Rate limit exceeded: 120 per 1 minute"})
-		return
-	}
-
-	username, status, detail := h.currentUser(r, subject, version, tokenErr)
-	if status != 0 {
-		writeJSON(w, status, map[string]any{"detail": detail})
-		return
-	}
-	if h.presence != nil {
-		h.presence.Touch(r, username)
-	}
-
-	switch {
-	case pattern == ListPattern:
-		h.list(w, r, username)
-	case r.Method == http.MethodDelete:
-		h.delete(w, r, gameID, username)
-	default:
-		h.get(w, r, gameID, username)
-	}
 }
 
 func (h *Handler) verify(r *http.Request) (string, int64, error) {
@@ -302,64 +207,6 @@ func (h *Handler) currentUser(r *http.Request, subject string, version int64, to
 		return "", http.StatusUnauthorized, "La cuenta ya no existe."
 	}
 	return subject, 0, ""
-}
-
-func (h *Handler) list(w http.ResponseWriter, r *http.Request, username string) {
-	games, err := h.store.ListSummariesByOwner(r.Context(), username, gamestore.DefaultSummaryLimit)
-	if err != nil {
-		storageUnavailable(w)
-		return
-	}
-	if games == nil {
-		games = []gamestore.Summary{}
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"games": games})
-}
-
-func (h *Handler) get(w http.ResponseWriter, r *http.Request, gameID, username string) {
-	doc, found, err := h.store.GetDocumentForOwner(r.Context(), gameID, username)
-	if err != nil {
-		storageUnavailable(w)
-		return
-	}
-	if !found {
-		writeJSON(w, http.StatusNotFound, map[string]any{"detail": "Partida no encontrada."})
-		return
-	}
-	raw := plain(doc).(map[string]any)
-	if raw["owner"] == nil {
-		writeJSON(w, http.StatusConflict, map[string]any{"detail": "Partida antigua sin propietario. Inicia una partida nueva."})
-		return
-	}
-	// load_stored_game_board: a damaged or impossible stored game is a
-	// recoverable conflict, never a 500.
-	entry, err := gamecore.ParseEntry(raw)
-	var board *gamecore.Board
-	if err == nil {
-		board, err = gamecore.LoadBoard(entry)
-	}
-	if err != nil {
-		writeJSON(w, http.StatusConflict, map[string]any{"detail": "La partida guardada está dañada y no puede continuar. Inicia una nueva partida."})
-		return
-	}
-	if !board.IsValid() {
-		writeJSON(w, http.StatusConflict, map[string]any{"detail": "La partida guardada contiene una posición imposible. Inicia una nueva partida."})
-		return
-	}
-	writeJSON(w, http.StatusOK, board.Snapshot(gameID, entry))
-}
-
-func (h *Handler) delete(w http.ResponseWriter, r *http.Request, gameID, username string) {
-	deleted, err := h.store.DeleteForOwner(r.Context(), gameID, username)
-	if err != nil {
-		storageUnavailable(w)
-		return
-	}
-	if !deleted {
-		writeJSON(w, http.StatusNotFound, map[string]any{"detail": "Partida no encontrada."})
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // The CORSMiddleware configuration in main.py, as Starlette expands it
