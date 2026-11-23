@@ -1740,7 +1740,7 @@ describe('Terra scenery', () => {
     expect(heather.count).toBeGreaterThan(5);
     expect(reduced.count).toBeGreaterThan(0);
     expect(reduced.count).toBeLessThan(heather.count);
-    expect(heather.count).toBeLessThan(270); // Same single batch, bounded foreground.
+    expect(heather.count).toBeLessThan(235); // Same single batch, sparse foreground.
     expect(heather.castShadow).toBe(false);
     expect(heather.material.vertexColors).toBe(true);
     expect(detailed.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
