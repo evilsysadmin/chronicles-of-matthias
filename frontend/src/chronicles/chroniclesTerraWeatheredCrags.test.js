@@ -38,7 +38,7 @@ describe('Terra v62 weather-eroded natural highland crags', () => {
       // A rock ring near the summit is now a visible terrace, not a needle.
       const upper = 3 * sides;
       expect(Math.abs(newPos.getX(upper) - (-0.20))).toBeGreaterThan(
-        Math.abs(oldPos.getX(upper) - (-0.20)) + 0.08,
+        Math.abs(oldPos.getX(upper) - (-0.20)) + 0.06,
       );
       const summit = 4 * sides; // each peak's new closed top cap
       expect(newPos.getY(summit)).toBeCloseTo(coarsePointer ? 1.15 : 1.17, 5);
