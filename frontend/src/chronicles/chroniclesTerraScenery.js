@@ -1084,7 +1084,8 @@ export function chroniclesBannerRoadGatewayGrove(grid, center, x, y) {
 
 const DRESS = {
   plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0,
-    woodlandGateway = false, gatewayGrove = false, tile = null, naturalWoodline = false) {
+    woodlandGateway = false, gatewayGrove = false, tile = null, naturalWoodline = false,
+    _naturalHighlands = false, coarsePointer = false) {
     const roll = noise(x, y, 1);
     // A deepening forest horizon outside the authored map: the first row
     // still has gaps, but more distant rows interlock their crowns. Only the
@@ -1116,13 +1117,12 @@ const DRESS = {
     // forest trunks, authored blocked roots and walkable routes are unchanged.
     const woodlandBackdrop = naturalWoodline && tile?.family === 'backdrop' ? tile : null;
     // The v57 stone reduction revealed empty sightlines under the distant
-    // canopy, especially on touch devices. Use a few *existing* broadleaf
-    // trunk/crown instances as knee-to-head-height coppice in naturally open
-    // gaps. Select stable clusters from the reusable 4x4 landscape recipe,
-    // not from the camera or platform. Only the first two NON-COLLIDING
-    // exterior rings qualify: routes, authored forest roots, and the distant
-    // third ring retain their original transforms and population.
-    if (woodlandBackdrop && ringDepth <= 2 && roll >= canopyThreshold
+    // canopy on mobile. Add a few existing broadleaf trunk/crown instances as
+    // low coppice ONLY at coarse quality. Desktop retains its v57 canopy
+    // counts and poses; don't accidentally change Banner Road comparisons.
+    // Only the first two NON-COLLIDING exterior rings qualify: routes,
+    // authored forest roots and the far third ring remain unchanged.
+    if (coarsePointer && woodlandBackdrop && ringDepth <= 2 && roll >= canopyThreshold
         && noise(x, y, 961) < woodlandBackdrop.saplingChance) {
       const coppiceScale = woodlandBackdrop.saplingScale
         * (0.84 + noise(x, y, 963) * 0.24);
@@ -1842,7 +1842,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
             : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
           woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline,
-          naturalHighlands);
+          naturalHighlands, coarsePointer);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
