@@ -1727,7 +1727,7 @@ describe('Terra scenery', () => {
     expect(compact.children.every((m) => m.isInstancedMesh)).toBe(true);
   });
 
-  it('adds low flowering heather exclusively on B2 solid border cells, never on paths', () => {
+  it('adds B2 heather on blocked verges and small plants on unreserved walkable foothills', () => {
     const b2 = chroniclesMapById('terra-b2');
     const center = { x: 10, y: 7 };
     const args = { grid: b2.grid, center, biome: b2.biome, mapId: b2.id, scenery: b2.scenery };
@@ -1740,23 +1740,36 @@ describe('Terra scenery', () => {
     expect(heather.count).toBeGreaterThan(5);
     expect(reduced.count).toBeGreaterThan(0);
     expect(reduced.count).toBeLessThan(heather.count);
-    expect(heather.count).toBeLessThan(70); // Bounded one draw call.
+    expect(heather.count).toBeLessThan(270); // Same single batch, bounded foreground.
     expect(heather.castShadow).toBe(false);
     expect(heather.material.vertexColors).toBe(true);
     expect(detailed.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
     const matrix = new THREE.Matrix4();
     const world = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    let blocked = 0;
+    let walkable = 0;
     for (let i = 0; i < heather.count; i += 1) {
       heather.getMatrixAt(i, matrix);
       world.setFromMatrixPosition(matrix);
+      scale.setFromMatrixScale(matrix);
       const x = Math.round(world.x / 4) + center.x;
       const y = Math.round(world.z / 4) + center.y;
-      expect(b2.grid[y][x], `heather at ${x},${y}`).toBe('#');
+      expect(['#', '.']).toContain(b2.grid[y]?.[x]);
       expect(Math.max(Math.abs(world.x - (x - center.x) * 4),
         Math.abs(world.z - (y - center.y) * 4))).toBeLessThan(1.5);
-      expect([[0, -1], [1, 0], [0, 1], [-1, 0]]
-        .some(([dx, dy]) => b2.grid[y + dy]?.[x + dx] === '.')).toBe(true);
+      if (b2.grid[y][x] === '#') {
+        blocked += 1;
+        expect([[0, -1], [1, 0], [0, 1], [-1, 0]]
+          .some(([dx, dy]) => b2.grid[y + dy]?.[x + dx] === '.')).toBe(true);
+      } else {
+        walkable += 1;
+        expect(world.y).toBeCloseTo(0.012, 5);
+        expect(scale.y).toBeLessThan(0.83); // <0.47m stalks, knee-low
+      }
     }
+    expect(blocked).toBeGreaterThan(5);
+    expect(walkable).toBeGreaterThan(30);
     expect(buildTerraScenery({ ...args, mapId: 'terra-e2' })
       .getObjectByName('chronicles-terra-heather')).toBeUndefined();
     expect(buildTerraScenery({ ...args, biome: 'plains' })
