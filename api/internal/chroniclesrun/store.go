@@ -73,11 +73,6 @@ func get(d bson.D, key string) any {
 	return v
 }
 
-func has(d bson.D, key string) bool {
-	_, ok := pydoc.Get(d, key)
-	return ok
-}
-
 func strings(items []string) bson.A {
 	out := bson.A{}
 	for _, s := range items {
