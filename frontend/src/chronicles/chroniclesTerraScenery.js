@@ -23,6 +23,23 @@ function noise(x, y, salt = 0) {
   return n - Math.floor(n);
 }
 
+/**
+ * A correlated, world-coordinate height profile for natural Terra highlands.
+ * Smooth hills + shorter staggered spurs create real crests and saddles
+ * rather than a flat row of equally sized boulders or random vertical spikes.
+ * Blocked road verges always retain their original lower silhouette.
+ * No physics, time, persistent state or generated map changes.
+ */
+export function chroniclesHighlandRidgeProfile(x, y, family = 'backdrop') {
+  if (family !== 'backdrop' && family !== 'interior') return 1;
+  if (!Number.isInteger(x) || !Number.isInteger(y)) return 1;
+  const swell = 0.29 * Math.sin(x * 0.37 + y * 0.16)
+    + 0.17 * Math.sin(x * 0.71 - y * 0.24 + 1.40)
+    + 0.07 * (noise(Math.floor(x / 2), Math.floor(y / 2), 1401) - 0.5);
+  const amplitude = family === 'backdrop' ? 1 : 0.55;
+  return Math.max(0.65, Math.min(1.45, 1 + swell * amplitude));
+}
+
 function texture(kind, repeatX = 1, repeatY = 1) {
   // Pixel textures are cached and shared: clone to repeat independently.
   const base = chroniclesPixelTexture(kind);
@@ -1111,23 +1128,39 @@ const DRESS = {
         naturalWoodline ? size * 0.86 : (big ? 1.1 : 0.9), bannerRoad);
     }
   },
-  hills(p, wx, wz, x, y, big, _banner, _ring, _gateway, _grove, tileRecipe) {
-    // Each real blocked cell selects one reusable, topology-aware recipe.
-    // Rim tiles stay low; inland tiles and the non-colliding outer ring form
-    // irregular rocky ridges. All parts still share the old instance batches.
+  hills(p, wx, wz, x, y, big, _banner, _ring, _gateway, _grove,
+    tileRecipe, _naturalWoodline, naturalHighlands = false) {
+    // Reuse EXACTLY the same topology-aware per-blocked-cell recipes.
+    // Natural Terra E2-style interiors and NON-COLLIDING outer rings now
+    // form coherent crests and saddles, rather than a ruler-flat stone row.
+    // Verdes beside actual walkable ground, B2 heath and other biomes are
+    // deliberately unchanged. No new meshes, instances or grid blockers.
     if (!tileRecipe) return;
+    const ridge = naturalHighlands
+      ? chroniclesHighlandRidgeProfile(x, y, tileRecipe.family) : 1;
+    const ridgeFoot = tileRecipe.family === 'backdrop'
+      ? 0.92 + (ridge - 1) * 0.68 : 0.97 + (ridge - 1) * 0.50;
+    const ridgeRise = tileRecipe.family === 'backdrop'
+      ? 0.94 + (ridge - 1) * 0.58 : 0.98 + (ridge - 1) * 0.36;
     boulders(p, wx, wz, x, y, {
-      count: tileRecipe.boulderCount, size: tileRecipe.boulderSize, height: 1.05,
+      count: tileRecipe.boulderCount,
+      size: tileRecipe.boulderSize * ridgeFoot,
+      height: 1.05 * ridgeRise,
     });
     if (noise(x, y, 4) < tileRecipe.cragChance) {
+      // Depth shifts stay well within the originally blocked 4m cell.
+      // Slight lean reads as erosion, not a row of identical pyramids.
+      const stagger = naturalHighlands && tileRecipe.family === 'backdrop' ? 1 : 0;
       p.add('crag', [
-        wx + (noise(x, y, 5) - 0.5) * 0.48, 0,
-        wz + (noise(y, x, 5) - 0.5) * 0.48,
+        wx + (noise(x, y, 5) - 0.5) * (0.48 + stagger * 0.68), 0,
+        wz + (noise(y, x, 5) - 0.5) * (0.48 + stagger * 0.94),
       ], {
         yaw: noise(x, y, 6) * 6.28,
-        scale: [0.90 + noise(x, y, 9) * 0.20,
-          (big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52,
-          0.87 + noise(x, y, 10) * 0.25],
+        tilt: stagger * (noise(x, y, 902) - 0.5) * 0.13,
+        roll: stagger * (noise(x, y, 903) - 0.5) * 0.12,
+        scale: [(0.90 + noise(x, y, 9) * 0.20) * (0.98 + (ridge - 1) * 0.14),
+          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge,
+          (0.87 + noise(x, y, 10) * 0.25) * (0.98 + (ridge - 1) * 0.11)],
       });
     }
     if (noise(x, y, 7) < tileRecipe.bushChance) {
@@ -1706,6 +1739,10 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   const denseMeadow = mapId === 'banner-road-first-book' && biome === 'plains';
   const naturalWoodline = biome === 'plains' && typeof mapId === 'string'
     && mapId.startsWith('terra-');
+  // Only native highlands receive skyline shaping. Special B2 heath,
+  // non-Terra hills and all other maps retain the previous transforms.
+  const naturalHighlands = biome === 'hills' && typeof mapId === 'string'
+    && mapId.startsWith('terra-') && mapId !== 'terra-b2';
 
   const authored = new Map((scenery || [])
     .filter((entry) => entry && Number.isInteger(entry.x) && Number.isInteger(entry.y) && SET_PIECES[entry.type])
@@ -1742,7 +1779,8 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           ? chroniclesLandscapeTileAt({ grid, biome, x, y, outside: !inside })
           : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
-          woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline);
+          woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline,
+          naturalHighlands);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
@@ -1793,8 +1831,6 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
-  const naturalHighlands = biome === 'hills' && typeof mapId === 'string'
-    && mapId.startsWith('terra-') && mapId !== 'terra-b2';
   const catalog = partCatalog(coarsePointer, biome, denseMeadow, naturalHighlands);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
