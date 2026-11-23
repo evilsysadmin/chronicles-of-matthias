@@ -1788,24 +1788,32 @@ describe('Terra scenery', () => {
       biome: b2.biome, scenery: b2.scenery };
     const themed = buildTerraScenery({ ...args, mapId: b2.id });
     const repeat = buildTerraScenery({ ...args, mapId: b2.id });
-    const plain = buildTerraScenery({ ...args, mapId: 'terra-e2' });
+    // Untinted baseline shares B2's original transforms; native E2 now
+    // intentionally varies ridge heights, so it is no longer a valid
+    // transform baseline for B2.
+    const plain = buildTerraScenery(args);
+    const nativeE2 = buildTerraScenery({ ...args, mapId: 'terra-e2' });
     const rocks = themed.getObjectByName('chronicles-terra-boulder');
     const matching = repeat.getObjectByName('chronicles-terra-boulder');
     const unchanged = plain.getObjectByName('chronicles-terra-boulder');
     expect(rocks).toBeInstanceOf(THREE.InstancedMesh);
     expect(rocks.count).toBeGreaterThan(20);
     expect(rocks.instanceColor).toBeTruthy();
-    // Native E2 now has its own deterministic stone instance hues, while
-    // the B2 palette and per-rock matrices must remain entirely unchanged.
-    expect(unchanged.instanceColor).toBeTruthy();
+    // The unnamed native hills are the unchanged transform baseline and
+    // deliberately have no B2/E2-special instance colours. B2's authored
+    // lichen tint must remain stable across deterministic re-renders.
+    expect(unchanged.instanceColor).toBeNull();
+    expect(nativeE2.getObjectByName('chronicles-terra-boulder').instanceColor)
+      .toBeTruthy();
     expect(rocks.count).toBe(unchanged.count);
     expect(rocks.geometry.getAttribute('position').count)
       .toBe(unchanged.geometry.getAttribute('position').count);
     // Terra E2 now deliberately uses a quiet weathered-upland albedo;
     // authored B2 heath keeps its original rock texture and lichen colour.
     expect(rocks.material.map).toBe(chroniclesPixelTexture('rock'));
-    expect(unchanged.material.map).toBe(chroniclesPixelTexture('uplandrock'));
-    expect(rocks.material.map).not.toBe(unchanged.material.map);
+    expect(unchanged.material.map).toBe(chroniclesPixelTexture('rock'));
+    expect(nativeE2.getObjectByName('chronicles-terra-boulder').material.map)
+      .toBe(chroniclesPixelTexture('uplandrock'));
     const matrix = new THREE.Matrix4();
     const otherMatrix = new THREE.Matrix4();
     const tint = new THREE.Color();
