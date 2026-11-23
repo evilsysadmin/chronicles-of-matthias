@@ -1765,7 +1765,7 @@ describe('Terra scenery', () => {
       } else {
         walkable += 1;
         expect(world.y).toBeCloseTo(0.012, 5);
-        expect(scale.y).toBeLessThan(0.83); // <0.47m stalks, knee-low
+        expect(scale.y).toBeLessThan(0.48); // <0.27m flattened groundcover
       }
     }
     expect(blocked).toBeGreaterThan(5);
