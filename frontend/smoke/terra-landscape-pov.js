@@ -30,7 +30,7 @@ const targets = Object.freeze({
   'terra-c4': Object.freeze({ tuft: 1, flower: 3, forestHerb: 2, microrelief: 2 }),
   // v63: direct real-player inspection of the authored rubble, not a
   // flattering render fabricated around the object.
-  'terra-a1': Object.freeze({ boulder: 3, crag: 2 }),
+  'terra-a1': Object.freeze({ boulder: 3, boulderSnow: 2 }),
   'terra-b2': Object.freeze({ boulder: 3, crag: 2 }),
 });
 
