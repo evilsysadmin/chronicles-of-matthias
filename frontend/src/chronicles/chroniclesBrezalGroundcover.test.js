@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
-import { buildTerraScenery } from './chroniclesTerraScenery.js';
+import { buildTerraScenery, chroniclesBrezalGroundcoverGeometry,
+  chroniclesBrezalHeatherGeometry } from './chroniclesTerraScenery.js';
 
 const map = chroniclesMapById('terra-b2');
 const center = { x: 10, y: 7 };
@@ -11,8 +12,9 @@ const render = (opts = {}) => buildTerraScenery({
   grid: map.grid, biome: map.biome, center,
   mapId: map.id, scenery: map.scenery, ...opts,
 });
-const entries = group => {
-  const mesh = group.getObjectByName('chronicles-terra-heather');
+const entries = (group, part = 'heather') => {
+  const mesh = group.getObjectByName('chronicles-terra-' + part);
+  if (!mesh) return [];
   const matrix = new THREE.Matrix4();
   const out = [];
   for (let i = 0; i < mesh.count; i += 1) {
@@ -28,44 +30,57 @@ const entries = group => {
 };
 const only = (data, tile) => data.filter(item => item.tile === tile);
 
-describe('Terra v65 B2 heather on real walkable foothills', () => {
+describe('Terra v66 distinct B2 groundcover vs authored heather', () => {
   it('keeps ALL original blocked verge plants exactly while adding low lilac patches', () => {
     for (const coarsePointer of [true, false]) {
       const baseline = render({ coarsePointer, keepClear: allWalkables });
       const withLow = render({ coarsePointer });
-      const old = only(entries(baseline), '#');
-      const all = entries(withLow);
-      const verge = only(all, '#');
-      const plants = only(all, '.');
+      const old = entries(baseline, 'heather');
+      const verge = entries(withLow, 'heather');
+      const plants = entries(withLow, 'heatherGroundcover');
+      expect(verge.every(item => item.tile === '#')).toBe(true);
+      expect(plants.every(item => item.tile === '.')).toBe(true);
       expect(verge.map(item => item.elements)).toEqual(old.map(item => item.elements));
+      expect(entries(baseline, 'heatherGroundcover')).toHaveLength(0);
       expect(plants.length).toBeGreaterThan(coarsePointer ? 10 : 35);
       expect(plants.length).toBeLessThan(allWalkables.length * (coarsePointer ? 1 : 2));
-      // The keepClear-all baseline intentionally excludes the original
-      // walkable tufts and pebbles too; comparing every part count would
-      // mistake those original batches for new heather draw calls.
-      const sceneryParts = group => group.children.map(m => m.name)
-        .filter(name => name !== 'chronicles-terra-tuft'
-          && name !== 'chronicles-terra-pebble');
-      expect(sceneryParts(withLow)).toEqual(sceneryParts(baseline));
+      // One explicitly measured new INSTANCED batch (+1 draw call) is
+      // required to preserve the original blocked-heather geometry exactly.
+      // KeepClear removes original walkable tuft/pebble too, so exclude
+      // those two existing parts from the filtered batch comparison.
+      const oldParts = group => group.children.map(m => m.name)
+        .filter(name => !['chronicles-terra-tuft',
+          'chronicles-terra-pebble',
+          'chronicles-terra-heatherGroundcover'].includes(name));
+      expect(oldParts(withLow)).toEqual(oldParts(baseline));
       expect(withLow.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
       expect(withLow.children.filter(m => m.name === 'chronicles-terra-heather')).toHaveLength(1);
+      expect(withLow.children.filter(m => m.name === 'chronicles-terra-heatherGroundcover')).toHaveLength(1);
+      const mesh = withLow.getObjectByName('chronicles-terra-heatherGroundcover');
+      expect(mesh.castShadow).toBe(false);
+      expect(mesh.material.vertexColors).toBe(true);
+      expect(mesh.material.side).toBe(THREE.DoubleSide);
+      expect(mesh.count).toBe(plants.length);
+      expect(mesh.count).toBeLessThan(220);
       for (const plant of plants) {
         expect(plant.pos.y).toBeCloseTo(0.012, 5);
-        expect(plant.scale.y).toBeLessThan(0.48);
-        expect(plant.scale.y).toBeGreaterThan(0.34);
+        expect(plant.scale.y).toBeLessThan(1.24);
+        expect(plant.scale.y).toBeGreaterThan(0.91);
         expect(Math.abs(plant.pos.x - (plant.x - center.x) * 4)).toBeLessThan(1.1);
         expect(Math.abs(plant.pos.z - (plant.y - center.y) * 4)).toBeLessThan(1.1);
-        expect(plant.scale.x).toBeLessThanOrEqual(0.95);
+        expect(plant.scale.x).toBeLessThanOrEqual(1.11);
       }
       const repeated = render({ coarsePointer });
-      expect(entries(repeated).map(item => item.elements))
-        .toEqual(all.map(item => item.elements));
+      expect(entries(repeated, 'heather').map(item => item.elements))
+        .toEqual(verge.map(item => item.elements));
+      expect(entries(repeated, 'heatherGroundcover').map(item => item.elements))
+        .toEqual(plants.map(item => item.elements));
     }
   });
 
   it('makes the mobile heather a strict spatial subset of desktop and keeps protected paths clear', () => {
-    const desktop = only(entries(render()), '.');
-    const mobile = only(entries(render({ coarsePointer: true })), '.');
+    const desktop = entries(render(), 'heatherGroundcover');
+    const mobile = entries(render({ coarsePointer: true }), 'heatherGroundcover');
     expect(mobile.length).toBeLessThan(desktop.length);
     const positions = new Set(desktop.map(item => item.pos.x.toFixed(5)
       + ':' + item.pos.z.toFixed(5)));
@@ -73,11 +88,39 @@ describe('Terra v65 B2 heather on real walkable foothills', () => {
       expect(positions.has(item.pos.x.toFixed(5) + ':' + item.pos.z.toFixed(5))).toBe(true);
     }
     const protectedCells = allWalkables.filter((_, i) => i % 4 === 0);
-    const guarded = entries(render({ keepClear: protectedCells }));
+    const guarded = render({ keepClear: protectedCells });
     const blocked = new Set(protectedCells.map(({ x, y }) => x + ',' + y));
-    expect(only(guarded, '.').some(({ x, y }) => blocked.has(x + ',' + y))).toBe(false);
-    expect(only(guarded, '#').map(item => item.elements))
-      .toEqual(only(entries(render()), '#').map(item => item.elements));
+    expect(entries(guarded, 'heatherGroundcover')
+      .some(({ x, y }) => blocked.has(x + ',' + y))).toBe(false);
+    expect(entries(guarded, 'heather').map(item => item.elements))
+      .toEqual(entries(render(), 'heather').map(item => item.elements));
+  });
+
+  it('uses a genuinely low, horizontally branched geometry with subtle lilac blossoms', () => {
+    const ground = chroniclesBrezalGroundcoverGeometry();
+    const old = chroniclesBrezalHeatherGeometry();
+    const vertices = ground.getAttribute('position');
+    const color = ground.getAttribute('color');
+    expect(vertices.count).toBe(168); // 36 leaf triangles + 20 blossom triangles
+    expect(vertices.count).toBe(color.count);
+    expect(vertices.count).toBeGreaterThan(old.getAttribute('position').count);
+    const bound = new THREE.Box3().setFromBufferAttribute(vertices);
+    expect(bound.max.y).toBeLessThan(0.14);
+    expect(bound.min.y).toBeGreaterThanOrEqual(0.02);
+    expect(bound.max.x - bound.min.x).toBeGreaterThan(0.54);
+    expect(bound.max.z - bound.min.z).toBeGreaterThan(0.54);
+    expect((bound.max.x - bound.min.x) / bound.max.y).toBeGreaterThan(4);
+    const colors = new Set();
+    for (let i = 0; i < vertices.count; i += 1) {
+      for (const v of [vertices.getX(i), vertices.getY(i), vertices.getZ(i),
+        color.getX(i), color.getY(i), color.getZ(i)]) {
+        expect(Number.isFinite(v)).toBe(true);
+      }
+      colors.add(new THREE.Color(color.getX(i), color.getY(i), color.getZ(i)).getHex());
+    }
+    expect(colors.size).toBeGreaterThanOrEqual(7);
+    ground.dispose();
+    old.dispose();
   });
 
   it('does not affect E2 or C4, their instance batches, or collision grids', () => {

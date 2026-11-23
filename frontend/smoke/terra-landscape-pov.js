@@ -210,39 +210,29 @@ try {
     }
   }
 
-  // B2 v65 foreground QA: compare the same real player-eye framebuffer
-  // against an otherwise identical scene with ONLY low, walkable-cell
-  // heather moved below the terrain. Existing blocked-border heather stays
-  // completely untouched. Restore all matrices before screenshot/metadata.
+  // B2 v66 foreground QA: the *dedicated* low-heath rosette part is now
+  // one instanced mesh. Toggle ONLY that batch off while reading genuine
+  // WebGL pixels, then restore it. Blocked-border heather, all mountains,
+  // authored ruins and real movement/collision remain exactly untouched.
   let lowHeatherInstances = 0;
   let lowHeatherVisiblePixels = 0;
+  let lowHeatherVertices = 0;
   if (mapId === 'terra-b2' && view === 'ruin') {
-    const mesh = scenery.getObjectByName('chronicles-terra-heather');
-    if (!mesh?.isInstancedMesh) throw new Error('Missing real B2 heather batch');
-    const originals = [];
-    const matrix = new THREE.Matrix4();
-    for (let i = 0; i < mesh.count; i += 1) {
-      mesh.getMatrixAt(i, matrix);
-      const x = Math.round(matrix.elements[12] / CELL) + center.x;
-      const y = Math.round(matrix.elements[14] / CELL) + center.y;
-      if (map.grid[y]?.[x] === '.') {
-        originals.push({ index: i, matrix: matrix.clone() });
-      }
+    const mesh = scenery.getObjectByName('chronicles-terra-heatherGroundcover');
+    if (!mesh?.isInstancedMesh) throw new Error('Missing real B2 low heather rosette batch');
+    const old = scenery.getObjectByName('chronicles-terra-heather');
+    if (!old?.isInstancedMesh || !old.visible) {
+      throw new Error('Original blocked heather batch must remain visible');
     }
-    lowHeatherInstances = originals.length;
-    if (lowHeatherInstances < 10) {
-      throw new Error('B2 walkable heather must be present in the real rendered scene');
+    lowHeatherInstances = mesh.count;
+    lowHeatherVertices = mesh.geometry.getAttribute('position')?.count || 0;
+    if (lowHeatherInstances < 10 || lowHeatherVertices > 180) {
+      throw new Error('B2 groundcover must be a populated, bounded rosette batch');
     }
-    for (const item of originals) {
-      const buried = item.matrix.clone();
-      buried.setPosition(0, -1000, 0);
-      mesh.setMatrixAt(item.index, buried);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
+    mesh.visible = false;
     renderer.render(scene, camera);
     const withoutLowHeather = pixelBuffer();
-    originals.forEach(({ index, matrix }) => mesh.setMatrixAt(index, matrix));
-    mesh.instanceMatrix.needsUpdate = true;
+    mesh.visible = true;
     renderer.render(scene, camera);
     for (let i = 0; i < withTiles.length; i += 4) {
       const d = Math.abs(withTiles[i] - withoutLowHeather[i])
@@ -305,6 +295,7 @@ try {
     ruinVisiblePixels: String(ruinVisiblePixels),
     lowHeatherInstances: String(lowHeatherInstances),
     lowHeatherVisiblePixels: String(lowHeatherVisiblePixels),
+    lowHeatherVertices: String(lowHeatherVertices),
     targetPixelDifference: String(changed ? diff / (changed * 3) : 0),
     targetChangedSamples: String(changed),
     pixelVariants: String(colors.size),

@@ -63,8 +63,11 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
       const B2 = scene('terra-b2', coarsePointer);
       const repeat = scene('terra-b2', coarsePointer);
       const generic = scene('generic-hills', coarsePointer);
+      // B2 includes its original blocked heather and, since v66, one
+      // dedicated low-rosette batch only for walkable foothills.
       expect(B2.children.map(x => x.name)
-        .filter(x => x !== 'chronicles-terra-heather'))
+        .filter(x => x !== 'chronicles-terra-heather'
+          && x !== 'chronicles-terra-heatherGroundcover'))
         .toEqual(generic.children.map(x => x.name));
       expect(B2.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
       for (const part of ['boulder', 'crag']) {
