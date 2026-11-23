@@ -69,6 +69,7 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
     expect(scenic.children.every(o => o.isInstancedMesh)).toBe(true);
     const observed = { boulder: { changed: 0, verge: 0, backdrop: 0, low: 0, high: 0 },
       crag: { changed: 0, backdrop: 0, low: 0, high: 0 } };
+    let weatheredAuthoredRuin = 0;
     for (const part of ['boulder', 'crag']) {
       const name = 'chronicles-terra-' + part;
       const mesh = scenic.getObjectByName(name);
@@ -86,7 +87,20 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
         expect([a.x, a.y]).toEqual([b.x, b.y]);
         if (!a.outside) expect(map.grid[a.y][a.x]).toBe('#');
         if (a.family === 'verge') {
-          expect(a.matrix.elements).toEqual(b.matrix.elements);
+          // V62 exception: the map's explicitly-authored E2 ruin at (18,6)
+          // was a 3.5x-tall, 0.55x-wide obelisk. Only these three existing
+          // stones are now low rubble; every OTHER walkable-facing blocked
+          // root retains its exact previous matrix and collision topology.
+          const isAuthoredRuin = part === 'boulder' && a.x === 18 && a.y === 6;
+          if (isAuthoredRuin) {
+            weatheredAuthoredRuin += 1;
+            const oldY = new THREE.Vector3().setFromMatrixScale(b.matrix).y;
+            const newY = new THREE.Vector3().setFromMatrixScale(a.matrix).y;
+            expect(newY).toBeLessThan(1.65);
+            expect(newY).toBeLessThan(oldY * 1.4);
+          } else {
+            expect(a.matrix.elements).toEqual(b.matrix.elements);
+          }
           observed[part].verge += 1;
         }
         if (a.family === 'backdrop') {
@@ -101,6 +115,7 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
         }
       }
     }
+    expect(weatheredAuthoredRuin).toBe(3);
     expect(observed.boulder.verge).toBeGreaterThan(0);
     expect(observed.boulder.backdrop).toBeGreaterThan(30);
     expect(observed.crag.backdrop).toBeGreaterThan(8);
