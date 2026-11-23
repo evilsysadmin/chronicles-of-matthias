@@ -5,7 +5,9 @@ import {
   CHRONICLES_WOODLAND_BACKDROP_TILES,
   chroniclesWoodlandBackdropTileAt,
 } from './chroniclesLandscapeTiles.js';
-import { buildTerraScenery, TERRA_SCENERY_MARGIN } from './chroniclesTerraScenery.js';
+import {
+  buildTerraScenery, TERRA_SCENERY_MARGIN, chroniclesTerraWoodlandCanopyGapAt,
+} from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
 const outsideInstances = (group, part, map) => {
@@ -39,6 +41,8 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
       expect(recipe.saplingChance).toBeLessThan(0.65);
       expect(recipe.saplingScale).toBeGreaterThan(0.35);
       expect(recipe.saplingScale).toBeLessThan(0.60);
+      expect(recipe.canopyGapChance).toBeGreaterThan(0.10);
+      expect(recipe.canopyGapChance).toBeLessThan(0.45);
     }
     const get = (x, y, ringDepth = 2, biome = 'plains') =>
       chroniclesWoodlandBackdropTileAt({ biome, x, y, ringDepth });
@@ -58,6 +62,47 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
     expect(ids[4]).toBe(ids[5]);
     expect(ids[4]).toBe(ids[7]);
     expect(ids).toEqual(Array.from({ length: 100 }, (_, x) => get(x, -2).id));
+  });
+
+  it('repairs only rare, double-empty mobile gaps in real blocked forest margins', () => {
+    const map = chroniclesMapById('terra-c4');
+    const tile = chroniclesWoodlandBackdropTileAt({
+      biome: map.biome, x: -2, y: 5, ringDepth: 2,
+    });
+    const at = (x, y, options = {}) => chroniclesTerraWoodlandCanopyGapAt({
+      grid: map.grid, x, y, ringDepth: 2, coarsePointer: true,
+      tile: chroniclesWoodlandBackdropTileAt({
+        biome: map.biome, x, y, ringDepth: 2,
+      }), ...options,
+    });
+    // This natural, westward open gap at the C4 flank camera existed in
+    // the v59 real WebGL screenshot: authored west border has no adult
+    // canopy, the first exterior root was quality-culled, and the second
+    // root is an empty, non-colliding landscape cell.
+    expect(tile.family).toBe('backdrop');
+    expect(at(-2, 5)).toBe(true);
+    expect(at(-2, 5, { coarsePointer: false })).toBe(false);
+    expect(at(-2, 5, { ringDepth: 0 })).toBe(false);
+    expect(at(-2, 5, { ringDepth: 3 })).toBe(false);
+    expect(at(-2, 5, { tile: null })).toBe(false);
+    expect(at(-2, 5, { x: -3 })).toBe(false);
+    expect(at(-2, 5, { x: 0 })).toBe(false);
+    expect(at(-2, 5, { y: NaN })).toBe(false);
+    const passableEdge = [...map.grid];
+    passableEdge[5] = '.' + passableEdge[5].slice(1);
+    expect(at(-2, 5, { grid: passableEdge })).toBe(false);
+    expect(at(-2, 5, { grid: [] })).toBe(false);
+    // Scarce natural canopy bridges, not every blank spot filled.
+    let candidates = 0;
+    let chosen = 0;
+    for (let y = 0; y < map.grid.length; y += 1) {
+      for (const x of [-2, map.grid[0].length + 1]) {
+        candidates += 1;
+        if (at(x, y)) chosen += 1;
+      }
+    }
+    expect(chosen).toBeGreaterThan(0);
+    expect(chosen).toBeLessThan(candidates * 0.25);
   });
 
   it('breaks up C4 outer stone fence while retaining the existing mesh batches', () => {
@@ -104,6 +149,15 @@ describe('Terra v57 reusable woodland backdrop tile compositions', () => {
     expect(saplings).toBe(0);
     expect(mobileSaplings).toBeGreaterThan(3);
     expect(mobileSaplings).toBeLessThan(55);
+    const hasRoot = (group, part, x, y) => outsideInstances(group, part, map)
+      .some(instance => instance.x === x && instance.y === y);
+    // Prove that one *actual* new trunk and crown occupy the detected west
+    // canopy void; they remain entirely outside the authored collision grid.
+    for (const part of ['broadleafTrunk', 'crown']) {
+      expect(hasRoot(mobile, part, -2, 5)).toBe(true);
+      expect(hasRoot(oldMobile, part, -2, 5)).toBe(false);
+      expect(hasRoot(current, part, -2, 5)).toBe(false);
+    }
     expect(count(current, 'broadleafTrunk', 3))
       .toBe(count(original, 'broadleafTrunk', 3));
     expect(count(mobile, 'broadleafTrunk', 3))
