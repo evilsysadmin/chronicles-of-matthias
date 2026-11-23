@@ -210,6 +210,48 @@ try {
     }
   }
 
+  // B2 v65 foreground QA: compare the same real player-eye framebuffer
+  // against an otherwise identical scene with ONLY low, walkable-cell
+  // heather moved below the terrain. Existing blocked-border heather stays
+  // completely untouched. Restore all matrices before screenshot/metadata.
+  let lowHeatherInstances = 0;
+  let lowHeatherVisiblePixels = 0;
+  if (mapId === 'terra-b2' && view === 'ruin') {
+    const mesh = scenery.getObjectByName('chronicles-terra-heather');
+    if (!mesh?.isInstancedMesh) throw new Error('Missing real B2 heather batch');
+    const originals = [];
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < mesh.count; i += 1) {
+      mesh.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / CELL) + center.x;
+      const y = Math.round(matrix.elements[14] / CELL) + center.y;
+      if (map.grid[y]?.[x] === '.') {
+        originals.push({ index: i, matrix: matrix.clone() });
+      }
+    }
+    lowHeatherInstances = originals.length;
+    if (lowHeatherInstances < 10) {
+      throw new Error('B2 walkable heather must be present in the real rendered scene');
+    }
+    for (const item of originals) {
+      const buried = item.matrix.clone();
+      buried.setPosition(0, -1000, 0);
+      mesh.setMatrixAt(item.index, buried);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    renderer.render(scene, camera);
+    const withoutLowHeather = pixelBuffer();
+    originals.forEach(({ index, matrix }) => mesh.setMatrixAt(index, matrix));
+    mesh.instanceMatrix.needsUpdate = true;
+    renderer.render(scene, camera);
+    for (let i = 0; i < withTiles.length; i += 4) {
+      const d = Math.abs(withTiles[i] - withoutLowHeather[i])
+        + Math.abs(withTiles[i + 1] - withoutLowHeather[i + 1])
+        + Math.abs(withTiles[i + 2] - withoutLowHeather[i + 2]);
+      if (d > 12) lowHeatherVisiblePixels += 1;
+    }
+  }
+
   // Count *actual changed pixels*, not a one-in-81 sample. Short plants
   // often occupy just 1-3 pixels of a row on a phone; the old 9px stride
   // could miss their entire silhouette and fail on a healthy grass patch.
@@ -261,6 +303,8 @@ try {
       : '',
     ruinInstances: String(ruinInstances),
     ruinVisiblePixels: String(ruinVisiblePixels),
+    lowHeatherInstances: String(lowHeatherInstances),
+    lowHeatherVisiblePixels: String(lowHeatherVisiblePixels),
     targetPixelDifference: String(changed ? diff / (changed * 3) : 0),
     targetChangedSamples: String(changed),
     pixelVariants: String(colors.size),
