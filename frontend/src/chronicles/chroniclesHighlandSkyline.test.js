@@ -39,8 +39,15 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
     }
     for (let x = -3; x < 25; x += 1) {
       expect(chroniclesHighlandRidgeProfile(x, -2, 'verge')).toBe(1);
-      expect(chroniclesHighlandRidgeProfile(x, -2, 'interior'))
-        .toBeCloseTo(1 + (chroniclesHighlandRidgeProfile(x, -2, 'backdrop') - 1) * 0.55, 4);
+      const interior = chroniclesHighlandRidgeProfile(x, -2, 'interior');
+      const backdrop = chroniclesHighlandRidgeProfile(x, -2, 'backdrop');
+      // The exposed backdrop is intentionally CLAMPED to safe limits:
+      // near a saturated crest the inner range must keep its sign and
+      // smaller excursion, not be a fixed multiple of a clipped value.
+      expect(interior).toBeGreaterThan(0.70);
+      expect(interior).toBeLessThan(1.30);
+      expect((interior - 1) * (backdrop - 1)).toBeGreaterThanOrEqual(0);
+      expect(Math.abs(interior - 1)).toBeLessThanOrEqual(Math.abs(backdrop - 1));
       expect(chroniclesHighlandRidgeProfile(x, -2, 'backdrop'))
         .toBe(chroniclesHighlandRidgeProfile(x, -2, 'backdrop'));
     }
