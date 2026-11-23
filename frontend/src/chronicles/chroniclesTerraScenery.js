@@ -1135,15 +1135,6 @@ const DRESS = {
             0.78 + noise(y, x, 895) * 0.15],
         });
       }
-      if (noise(x, y, 897) < woodlandVerge.herbChance) {
-        p.add('forestHerb', [
-          wx + (noise(x, y, 899) - 0.5) * 1.34, 0.012,
-          wz + (noise(y, x, 901) - 0.5) * 1.34,
-        ], {
-          yaw: noise(x, y, 903) * Math.PI * 2,
-          scale: [1.03, 0.77, 1.03],
-        });
-      }
     }
     // Existing inner forest and non-colliding outer ring remain untouched;
     // verge boulders are now a deterministic subset, not a grey stone wall.
@@ -1591,7 +1582,7 @@ const CLUTTER = {
 // woodland-herb geometry batches. Coverage follows coherent 3x3-cell habitat
 // recipes while deterministic sub-cell offsets avoid a painted checkerboard.
 // All plant tips stay below knee height; plants never become collision tiles.
-function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
+function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer, woodlandVerge = null) {
   // The old density sampler could reject THREE consecutive meadow cells
   // in front of a real first-person camera (C4 x=7,y=2..4), leaving a vast,
   // bare plane despite hundreds of grass clumps elsewhere in the map.
@@ -1689,6 +1680,20 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
     ], {
       yaw: noise(x, y, 655) * Math.PI * 2,
       scale: coarsePointer ? [0.90, 0.65, 0.90] : [0.67, 0.48, 0.67],
+    });
+  }
+  // Forest-understory ferns grow on the safe, traversable meadow side
+  // of the boundary. The longstanding meadow geometry contract requires
+  // every forestHerb root to be on '.' (and below knee height), not '#'.
+  // Reuse the very same instanced forestHerb geometry, never a new mesh.
+  if (woodlandVerge && recipe.family === 'edge'
+      && noise(x, y, 907) < woodlandVerge.herbChance * (coarsePointer ? 0.65 : 1)) {
+    p.add('forestHerb', [
+      wx + (noise(x, y, 909) - 0.5) * 1.28, 0.012,
+      wz + (noise(y, x, 911) - 0.5) * 1.28,
+    ], {
+      yaw: noise(x, y, 913) * Math.PI * 2,
+      scale: coarsePointer ? [0.90, 0.65, 0.90] : [0.76, 0.48, 0.76],
     });
   }
 }
@@ -1845,8 +1850,16 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           // The bespoke Banner Road meadow above is never decorated twice.
           // Other Terra grasslands gain habitat-based low plant clusters,
           // with all reserved road/content cells left fully clear.
+          // Choose the adjoining authored forest root's 3x3 composition,
+          // but place its extra low bracken on THIS walkable grass tile.
+          const woodlandVerge = naturalWoodline
+            ? [[1, 0], [-1, 0], [0, 1], [0, -1]]
+              .map(([dx, dy]) => chroniclesWoodlandVergeTileAt({
+                grid, biome, x: x + dx, y: y + dy,
+              })).find(Boolean) || null
+            : null;
           addReusableMeadowPatch(p, wx, wz, x, y,
-            chroniclesMeadowTileAt({ grid, biome, x, y }), coarsePointer);
+            chroniclesMeadowTileAt({ grid, biome, x, y }), coarsePointer, woodlandVerge);
         } else if (biome === 'hills' && tile === '.') {
           // Continuous low scree and grasses bridge the natural rock edges
           // and upland path cells, without changing traversal/collision.
