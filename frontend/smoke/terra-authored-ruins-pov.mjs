@@ -10,7 +10,7 @@ const sites = Object.freeze({
   'terra-c4': Object.freeze({ eye: '10,9', target: '13,9',
     yaw: -Math.PI / 2, biome: 'plains' }),
   'terra-a1': Object.freeze({ eye: '10,5', target: '14,5',
-    yaw: -Math.PI / 2, biome: 'plains' }),
+    yaw: -Math.PI / 2, biome: 'snow' }),
   'terra-b2': Object.freeze({ eye: '7,8', target: '3,8',
     yaw: Math.PI / 2, biome: 'hills' }),
 });
