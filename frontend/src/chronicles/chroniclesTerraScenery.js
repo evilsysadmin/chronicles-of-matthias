@@ -1500,7 +1500,15 @@ const DRESS = {
     // crowns instead of a missing tree and a tiny sapling. Roots remain
     // on the original '#' tiles: only their high leaf canopy overhangs
     // the walkable road, with no new collider or change to map topology.
-    const size = woodlandGateway ? 1.6 + noise(x, y, 845) * 0.12
+    // The existing mature tree on the eastern end of C3's cart track
+    // becomes a recognizable landmark. Do not introduce a new tree or
+    // change the authored gateway. Require the real blocked end and its
+    // adjacent walkable approach; an altered map falls back to normal.
+    const easternOak = bannerRoad && !big && x === 20 && y === 7
+      && grid[y]?.[x] === '#' && grid[y]?.[x - 1] === '.'
+      && grid[y]?.length === 21 && grid.length === 15;
+    const size = easternOak ? 1.32
+      : woodlandGateway ? 1.6 + noise(x, y, 845) * 0.12
       : gatewayGrove ? 1.10 + noise(x, y, 855) * 0.16
         : juvenile ? 0.48 + noise(x, y, 753) * 0.16
           : backdrop ? chroniclesBannerRoadBackdropScale(x, y, ringDepth)
