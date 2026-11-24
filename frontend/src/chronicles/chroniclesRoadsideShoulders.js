@@ -36,10 +36,12 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
   const palette = [...grass, ...soil].map(hex => new THREE.Color(hex));
   const aprons = ['#858168', '#7b805c', '#837b5e', '#7c8060']
     .map(hex => new THREE.Color(hex));
-  const add = (a, b, c, shade) => {
+  const tread = ['#8b7753', '#806d49', '#8a7859', '#867451']
+    .map(hex => new THREE.Color(hex));
+  const add = (a, b, c, shade, shadeB = shade, shadeC = shade) => {
     positions.push(...a, ...b, ...c);
-    for (let i = 0; i < 3; i += 1) {
-      colors.push(shade.r, shade.g, shade.b);
+    for (const tint of [shade, shadeB, shadeC]) {
+      colors.push(tint.r, tint.g, tint.b);
     }
   };
 
@@ -61,8 +63,14 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     const d = [x - width * 0.70 + lean, 0, depth * 0.76];
     const shade = palette[(i * 3) % palette.length];
     // Wind both triangles upward for reliable overhead lighting.
-    add(a, c, b, shade);
-    add(a, d, c, shade);
+    // Blend the existing quad from dusty, compacted soil at the track
+    // to muted grass at the outer edge. Shared vertices keep identical
+    // colours, so the two triangles no longer read as separate patches.
+    const loam = palette[grass.length + (i % soil.length)];
+    const inner = shade.clone().lerp(loam, 0.68);
+    const outer = shade.clone().lerp(loam, 0.12);
+    add(a, c, b, inner, outer, inner);
+    add(a, d, c, inner, outer, outer);
 
     // The old groundcover stopped below the raised road top, leaving an
     // almost perfectly straight dirt outline. Lay short, narrow tongues
@@ -74,7 +82,7 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     const fringe = aprons[(i * 5 + 1) % aprons.length];
     add([x - width * 0.64, 0.085, 0.08],
       [x + width * 0.58, 0.085, 0.055],
-      [tipX, 0.085, -intrusion], fringe);
+      [tipX, 0.085, -intrusion], fringe, fringe, tread[i % tread.length]);
 
     if (i % 2 === 0) {
       // A second much smaller sliver breaks up each earthy margin.
