@@ -750,6 +750,47 @@ describe('Terra scenery', () => {
   });
 
 
+  it.each([true, false])('curves only C3 broadleaf trunks and limbs without changing their roots or topology (coarse=%s)', coarsePointer => {
+    const original = chroniclesBranchingTrunkGeometry({ coarsePointer });
+    const curved = chroniclesBranchingTrunkGeometry({ coarsePointer, woodland: true });
+    const restored = chroniclesBranchingTrunkGeometry({ coarsePointer, woodland: true });
+    const before = original.getAttribute('position'), after = curved.getAttribute('position');
+    const normal = curved.getAttribute('normal');
+    expect(curved.index.array).toEqual(original.index.array);
+    expect(curved.getAttribute('uv').array).toEqual(original.getAttribute('uv').array);
+    expect(after.count).toBe(before.count);
+    expect(after.array).toEqual(restored.getAttribute('position').array);
+    expect(normal.array).toEqual(restored.getAttribute('normal').array);
+    let maxShift = 0, rootCount = 0;
+    for (let i = 0; i < before.count; i += 1) {
+      const y = before.getY(i);
+      const dx = after.getX(i) - before.getX(i), dz = after.getZ(i) - before.getZ(i);
+      expect(after.getY(i)).toBe(y);
+      if (y <= -0.30) {
+        rootCount++;
+        expect(dx).toBe(0);
+        expect(dz).toBe(0);
+        expect(normal.getX(i)).toBe(original.getAttribute('normal').getX(i));
+        expect(normal.getY(i)).toBe(original.getAttribute('normal').getY(i));
+        expect(normal.getZ(i)).toBe(original.getAttribute('normal').getZ(i));
+      } else {
+        expect(Math.hypot(normal.getX(i), normal.getY(i), normal.getZ(i))).toBeCloseTo(1, 5);
+      }
+      maxShift = Math.max(maxShift, Math.hypot(dx, dz));
+    }
+    expect(rootCount).toBeGreaterThan(10);
+    expect(maxShift).toBeGreaterThan(0.10);
+    expect(maxShift).toBeLessThan(0.22);
+    const map = chroniclesMapById('banner-road-first-book');
+    const opts = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome, coarsePointer };
+    const tree = id => buildTerraScenery({ ...opts, mapId: id })
+      .getObjectByName('chronicles-terra-broadleafTrunk');
+    const c3 = tree(map.id), c4 = tree('terra-c4');
+    expect(c3.geometry.getAttribute('position').array).toEqual(after.array);
+    expect(c4.geometry.getAttribute('position').array).toEqual(before.array);
+    [original, curved, restored].forEach(geometry => geometry.dispose());
+  });
+
   it('anchors broadleaf trunks with short bark roots without creating a new mesh batch', () => {
     const desktop = chroniclesBranchingTrunkGeometry();
     const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
