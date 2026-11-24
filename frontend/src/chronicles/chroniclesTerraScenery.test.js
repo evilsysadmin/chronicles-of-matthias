@@ -566,7 +566,7 @@ describe('Terra scenery', () => {
       const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
       return n - Math.floor(n);
     };
-    const old = [], current = [], occupied = new Set();
+    const old = [], current = [], occupied = new Map();
     const matrix = new THREE.Matrix4(), again = new THREE.Matrix4();
     const width = map.grid[0].length, height = map.grid.length;
     for (let i = 0; i < trunk.count; i += 1) {
@@ -575,32 +575,39 @@ describe('Terra scenery', () => {
       expect(matrix.elements).toEqual(again.elements);
       const wx = matrix.elements[12], wz = matrix.elements[14];
       const x = Math.round(wx / 4) + center.x, y = Math.round(wz / 4) + center.y;
-      const dx = (noise(x, y, 23) - 0.5) * 2;
-      const dz = (noise(y, x, 25) - 0.5) * 2;
+      const key = x + ',' + y;
+      const k = occupied.has(key) ? 9 : 0;
+      occupied.set(key, k);
+      const dx = (noise(x, y, k + 23) - 0.5) * 2;
+      const dz = (noise(y, x, k + 25) - 0.5) * 2;
       const cx = (x - center.x) * 4, cz = (y - center.y) * 4;
-      if (x >= 0 && x < width && y >= 0 && y < height) {
-        expect(map.grid[y][x]).toBe('#');
+      const inside = x >= 0 && x < width && y >= 0 && y < height;
+      // The pre-existing secondary tree (salt 9) keeps its original pose.
+      // Only principal exterior trees take the grove offset.
+      if (inside || k === 9) {
+        if (inside) expect(map.grid[y][x]).toBe('#');
         expect(wx).toBeCloseTo(cx + dx, 4);
         expect(wz).toBeCloseTo(cz + dz, 4);
-        continue;
+        if (inside) continue;
+      } else {
+        const [ox, oz] = chroniclesBannerRoadGroveOffset(x, y, dx, dz);
+        expect(Math.abs(ox)).toBeLessThanOrEqual(1.45);
+        expect(Math.abs(oz)).toBeLessThanOrEqual(1.45);
+        expect(wx).toBeCloseTo(cx + ox, 4);
+        expect(wz).toBeCloseTo(cz + oz, 4);
       }
-      const [ox, oz] = chroniclesBannerRoadGroveOffset(x, y, dx, dz);
-      expect(Math.abs(ox)).toBeLessThanOrEqual(1.45);
-      expect(Math.abs(oz)).toBeLessThanOrEqual(1.45);
-      expect(wx).toBeCloseTo(cx + ox, 4);
-      expect(wz).toBeCloseTo(cz + oz, 4);
-      expect(occupied.has(x + ',' + y)).toBe(false);
-      occupied.add(x + ',' + y);
-      old.push([cx + dx, cz + dz]);
-      current.push([wx, wz]);
+      old.push({ x: cx + dx, z: cz + dz, key, k });
+      current.push({ x: wx, z: wz, key, k });
     }
-    expect(current).toHaveLength(coarsePointer ? 102 : 186);
-    const nearest = points => points.map(([x, z], i) => Math.min(...points.map(
-      ([a, b], j) => i === j ? Infinity : Math.hypot(a - x, b - z))));
+    expect(current).toHaveLength(coarsePointer ? 137 : 247);
+    const nearest = points => points.map(p => Math.min(...points.map(
+      q => p.key === q.key ? Infinity : Math.hypot(q.x - p.x, q.z - p.z))));
+    // Measure spacing across cells, not pre-existing same-cell twin trunks.
     const before = nearest(old), after = nearest(current);
     expect(after.filter(d => d < 3).length).toBeGreaterThan(
       before.filter(d => d < 3).length * 1.4);
-    expect(Math.min(...after)).toBeGreaterThan(2.2);
+    expect(Math.min(...after)).toBeGreaterThan(1.8);
+    expect(current.filter(p => p.k === 0)).toHaveLength(coarsePointer ? 102 : 186);
   });
 
   it('gives the distant Banner Road tree line a coherent, bounded height rhythm', () => {
