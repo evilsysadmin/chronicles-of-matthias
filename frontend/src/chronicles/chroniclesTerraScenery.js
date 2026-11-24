@@ -1005,7 +1005,7 @@ export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } =
   const colours = [];
   const leaves = ['#425d32', '#65824c', '#7c9354', '#9a9c60']
     .map(hex => new THREE.Color(hex));
-  const litter = ['#776b42', '#988153', '#5c663c']
+  const litter = ['#8c6940', '#a18352', '#797a48', '#70513a']
     .map(hex => new THREE.Color(hex));
   const triangle = (a, b, c, color) => {
     positions.push(...a, ...b, ...c);
@@ -1031,16 +1031,32 @@ export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } =
         leaves[(i + 2) % leaves.length]);
     }
   }
-  for (let i = 0; i < (coarsePointer ? 3 : 7); i += 1) {
+  // Spend the same 7/3 triangles on three/one folded leaves and one
+  // small fragment. Each complete leaf has a raised central vein, two
+  // uneven sides and subtly different weathered pigments. No added
+  // geometry budget, textures or separate transparent decals.
+  const fallen = coarsePointer ? 1 : 3;
+  for (let i = 0; i < fallen; i += 1) {
     const angle = i * 2.39996 + 0.4;
-    const d = 0.15 + (i % 4) * 0.10;
-    const x = Math.cos(angle) * d;
-    const z = Math.sin(angle) * d;
-    const dx = Math.cos(angle) * 0.10;
-    const dz = Math.sin(angle) * 0.10;
-    triangle([x - dz, 0.016, z + dx], [x + dz, 0.016, z - dx],
-      [x + dx, 0.021, z + dz], litter[i % litter.length]);
+    const d = 0.20 + i * 0.10;
+    const x = Math.cos(angle) * d, z = Math.sin(angle) * d;
+    const dx = Math.cos(angle), dz = Math.sin(angle);
+    const half = 0.10 + (i % 3) * 0.018;
+    const root = [x - dx * half, 0.016, z - dz * half];
+    const tip = [x + dx * half, 0.035, z + dz * half];
+    const left = [x - dz * 0.055, 0.013, z + dx * 0.055];
+    const right = [x + dz * 0.043 + dx * 0.025, 0.012,
+      z - dx * 0.043 + dz * 0.025];
+    const shade = litter[i % litter.length];
+    triangle(root, left, tip, shade);
+    triangle(root, tip, right, shade.clone().lerp(litter[3], 0.28));
   }
+  // A broken leaf at the outer edge uses the last existing triangle.
+  const a = fallen * 2.39996 + 0.4;
+  const x = Math.cos(a) * 0.42, z = Math.sin(a) * 0.42;
+  triangle([x - 0.04, 0.014, z - 0.025],
+    [x + 0.02, 0.014, z + 0.045],
+    [x + 0.065, 0.022, z - 0.018], litter[2]);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
