@@ -721,6 +721,16 @@ export function chroniclesBannerCartWear(x, z) {
   return 1 - 0.18 * Math.max(ns, ew);
 }
 
+// Two broad sun-dried meadow communities in canonical C3. These are
+// pigments baked into the existing terrain vertices, not gameplay zones.
+// Fade out at woodland roots, so the shaded forest-floor ramp survives.
+export function chroniclesBannerMeadowDryness(x, y, rootDistance) {
+  const southwest = Math.exp(-((x - 5.2) ** 2 / 11 + (y - 10.2) ** 2 / 4.8));
+  const northeast = Math.exp(-((x - 15.4) ** 2 / 10 + (y - 2.1) ** 2 / 3.2));
+  return Math.max(southwest, northeast)
+    * THREE.MathUtils.smoothstep(rootDistance, 1, 2.8);
+}
+
 function applyBannerCartWear(material) {
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace(
@@ -896,9 +906,13 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         }
       }
       const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(distance, 0.6, 2.8));
+      // Warm the open clearings relative to the cooler forest floor.
+      // Preserve the original red-channel shadow field and neutral roots.
+      const dryness = width === 21 && height === 15
+        ? chroniclesBannerMeadowDryness(x, y, distance) : 0;
       colors[i * 3] = 1 - shade;
-      colors[i * 3 + 1] = 1 - shade * 0.80;
-      colors[i * 3 + 2] = 1 - shade * 0.65;
+      colors[i * 3 + 1] = 1 - shade * 0.80 - dryness * 0.07;
+      colors[i * 3 + 2] = 1 - shade * 0.65 - dryness * 0.18;
     }
     terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     earth.vertexColors = true;

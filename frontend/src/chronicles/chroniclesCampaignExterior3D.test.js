@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerMeadowDryness } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -558,7 +558,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(mobile.geometry.getAttribute('color').array).toEqual(color.array);
     expect(mobile.geometry.getAttribute('position').array).toEqual(pos.array);
     expect(full.position.y).toBeCloseTo(-0.19);
-    let darkest = 1, brightest = 0;
+    let darkest = 1, brightest = 0, warmest = 0, neutral = 0;
     for (let i = 0; i < pos.count; i += 1) {
       expect(Math.abs(pos.getY(i))).toBeCloseTo(0.125);
       const x = THREE.MathUtils.clamp(pos.getX(i) / 4 + plan.center.x, 0, plan.width - 1);
@@ -572,15 +572,41 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(red).toBeLessThanOrEqual(1);
       if (nearest < 0.6) expect(red).toBeCloseTo(0.75);
       if (nearest >= 2.8) expect(red).toBeCloseTo(1);
+      const shade = 1 - red;
+      const dry = chroniclesBannerMeadowDryness(x, y, nearest);
+      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07, 6);
+      expect(color.getZ(i)).toBeCloseTo(1 - shade * 0.65 - dry * 0.18, 6);
+      if (nearest <= 1) {
+        expect(dry).toBe(0);
+        neutral++;
+      }
+      warmest = Math.max(warmest, dry);
       darkest = Math.min(darkest, red);
       brightest = Math.max(brightest, red);
     }
     expect(darkest).toBeLessThan(0.78);
     expect(brightest).toBeGreaterThan(0.98);
+    expect(warmest).toBeGreaterThan(0.70);
+    expect(neutral).toBeGreaterThan(0);
     full.geometry.computeBoundingBox();
     other.geometry.computeBoundingBox();
     expect(full.geometry.boundingBox.min.toArray()).toEqual(other.geometry.boundingBox.min.toArray());
     expect(full.geometry.boundingBox.max.toArray()).toEqual(other.geometry.boundingBox.max.toArray());
+  });
+
+  it('keeps dry meadow pigments localized and away from shaded forest roots', () => {
+    const dry = chroniclesBannerMeadowDryness;
+    expect(dry(5.2, 10.2, 2.8)).toBeCloseTo(1);
+    expect(dry(15.4, 2.1, 2.8)).toBeCloseTo(1);
+    expect(dry(15.4, 10.2, 2.8)).toBeLessThan(0.01);
+    expect(dry(5.2, 10.2, 1)).toBe(0);
+    expect(dry(5.2, 10.2, 1.9)).toBeCloseTo(0.5);
+    for (let y = 0; y <= 14; y += 0.25) {
+      for (let x = 0; x <= 20; x += 0.25) {
+        expect(dry(x, y, 2.8)).toBeGreaterThanOrEqual(0);
+        expect(dry(x, y, 2.8)).toBeLessThanOrEqual(1);
+      }
+    }
   });
 
   it('renders a continuous, earthy Banner Road without altering saved navigation cells or mobile GPU budget', () => {
