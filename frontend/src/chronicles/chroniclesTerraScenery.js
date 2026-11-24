@@ -1827,7 +1827,9 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
     const height = ((blocked ? 0.77 : nearTrail ? 0.72 : 0.62)
       + noise(x + i * 2, y, 829) * (blocked ? 0.30 : nearTrail ? 0.20 : 0.23))
       * (nearTrail ? 0.86 : 1);
-    p.add('bush', [wx + offsetX, blocked ? 0.57 : 0.51, wz + offsetZ], {
+    // The low v74 leaf masses no longer reach the old spherical shrub
+    // elevation. Sink their roots into the meadow instead of floating above it.
+    p.add('bush', [wx + offsetX, blocked ? 0.42 : 0.34, wz + offsetZ], {
       yaw: noise(x + i, y, 833) * Math.PI * 2,
       scale: [width, height, depth],
     });
