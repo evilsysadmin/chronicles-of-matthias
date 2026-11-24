@@ -600,9 +600,20 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false, woodlan
  * than a single oversized sphere. Only the plains use this silhouette:
  * marsh, hills and other biome brushes retain their original geometry.
  * Each shrub remains ONE instanced mesh; mobile has only two cheap lobes.
+ *
+ * Banner Road's eye-level woodland gets a separate low, wind-swept contour:
+ * different lobe heights/offsets make a leafy broken hedge rather than a
+ * row of rounded green balloons. The generic meadow shrub stays unchanged
+ * and both versions retain the same 40/240-triangle budget.
  */
-export function chroniclesLayeredShrubGeometry({ coarsePointer = false } = {}) {
-  const lobes = [
+export function chroniclesLayeredShrubGeometry({ coarsePointer = false, woodland = false } = {}) {
+  const lobes = woodland ? [
+    [[0.04, -0.24, -0.02], [0.83, 0.49, 0.72]],
+    [[-0.46, -0.31, 0.16], [0.58, 0.43, 0.56]],
+    ...(!coarsePointer ? [
+      [[0.41, -0.29, -0.28], [0.57, 0.41, 0.54]],
+    ] : []),
+  ] : [
     [[0, -0.12, 0], [0.76, 0.66, 0.75]],
     [[-0.39, -0.21, 0.12], [0.52, 0.49, 0.59]],
     ...(!coarsePointer ? [
@@ -1149,7 +1160,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     bush: () => [brezalBackdrop
       ? chroniclesBrezalShrubGeometry({ coarsePointer })
       : biome === 'plains'
-        ? chroniclesLayeredShrubGeometry({ coarsePointer })
+        ? chroniclesLayeredShrubGeometry({ coarsePointer, woodland })
         : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
       lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
