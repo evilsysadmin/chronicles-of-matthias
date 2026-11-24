@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { chroniclesBrezalVergeRelief } from './chroniclesTerraScenery.js';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadCanopyRhythm, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -467,6 +467,59 @@ describe('Terra scenery', () => {
     [desktop, touch, again].forEach(geo => geo.dispose());
   });
 
+
+  it('varies only C3 crown proportions in a deterministic, bounded skyline rhythm', () => {
+    const values = [];
+    for (let y = -3; y <= 14; y += 1) {
+      for (let x = -3; x <= 23; x += 1) {
+        const shape = chroniclesBannerRoadCanopyRhythm(x, y);
+        expect(Object.isFrozen(shape)).toBe(true);
+        expect(shape).toEqual(chroniclesBannerRoadCanopyRhythm(x, y));
+        expect(shape.span).toBeGreaterThan(0.89);
+        expect(shape.span).toBeLessThan(1.11);
+        expect(shape.height).toBeGreaterThan(0.78);
+        expect(shape.height).toBeLessThan(1.23);
+        expect(shape.depth).toBeGreaterThan(0.87);
+        expect(shape.depth).toBeLessThan(1.13);
+        values.push(shape);
+      }
+    }
+    expect(Math.max(...values.map(v => v.height))
+      - Math.min(...values.map(v => v.height))).toBeGreaterThan(0.32);
+    expect(values.some(v => v.height > 1.12 && v.span < 0.95)).toBe(true);
+    expect(values.some(v => v.height < 0.90 && v.span > 1.04)).toBe(true);
+    // Pure, local lookups: no new root, object count, collision, material
+    // or path state is involved in varying an existing crown.
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    for (const coarsePointer of [false, true]) {
+      const params = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer };
+      const first = buildTerraScenery(params);
+      const repeat = buildTerraScenery(params);
+      const crowns = first.getObjectByName('chronicles-terra-crown');
+      const trunks = first.getObjectByName('chronicles-terra-broadleafTrunk');
+      const twins = repeat.getObjectByName('chronicles-terra-crown');
+      expect(crowns.count).toBe(trunks.count);
+      expect(crowns.count).toBe(twins.count);
+      expect(first.children.filter(mesh => mesh.name === crowns.name)).toHaveLength(1);
+      const m = new THREE.Matrix4(), again = new THREE.Matrix4();
+      const size = new THREE.Vector3(), ratios = [];
+      for (let i = 0; i < crowns.count; i += 1) {
+        crowns.getMatrixAt(i, m);
+        twins.getMatrixAt(i, again);
+        expect(m.elements).toEqual(again.elements);
+        const x = Math.round(m.elements[12] / 4) + center.x;
+        const y = Math.round(m.elements[14] / 4) + center.y;
+        if (map.grid[y]?.[x] !== '#') continue;
+        m.decompose(new THREE.Vector3(), new THREE.Quaternion(), size);
+        if (y !== 4 || (x !== 9 && x !== 11)) ratios.push(size.y / size.x);
+      }
+      expect(ratios.length).toBeGreaterThan(10);
+      expect(Math.max(...ratios) - Math.min(...ratios)).toBeGreaterThan(0.20);
+      expect(map.grid[13][10]).toBe('.');
+      expect(map.grid[12][10]).toBe('.');
+    }
+  });
 
   it('gives the distant Banner Road tree line a coherent, bounded height rhythm', () => {
     // Each horizon ring should have an undulating silhouette rather than
