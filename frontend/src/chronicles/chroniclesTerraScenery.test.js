@@ -880,6 +880,74 @@ describe('Terra scenery', () => {
   });
 
 
+  it.each([false, true])('grades C3 road-to-forest floor light without adding foliage or touching paths (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, center, biome: map.biome,
+      mapId: map.id, coarsePointer };
+    const scene = buildTerraScenery(args);
+    const repeat = buildTerraScenery(args);
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const tones = {
+      forest: new Set(['b5c4a6', 'a9b99a', 'c9c1a4', 'a6ba9a']),
+      fringe: new Set(['e8daba', 'dddab9', 'd0d8b4', 'dec9a5']),
+      meadow: new Set(['e1eaca', 'c5d8ad', 'f1e9c7', 'dae7c7']),
+      shade: new Set(['b4c6aa', 'a9b79b', 'bebc9e', 'a7b9a2']),
+      clearing: new Set(['e2d9b9', 'cdd6b0', 'd7c6a0', 'e0dec3']),
+    };
+    expect(other.getObjectByName('chronicles-terra-forestHerb').instanceColor).toBeNull();
+    expect(other.getObjectByName('chronicles-terra-woodlandFloor')).toBeUndefined();
+    const m = new THREE.Matrix4(), same = new THREE.Matrix4();
+    const color = new THREE.Color(), identical = new THREE.Color();
+    const seen = { forest: 0, fringe: 0, meadow: 0, shade: 0, clearing: 0 };
+    for (const part of ['forestHerb', 'woodlandFloor']) {
+      const mesh = scene.getObjectByName('chronicles-terra-' + part);
+      const twin = repeat.getObjectByName(mesh.name);
+      expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
+      expect(mesh.count).toBe(twin.count);
+      expect(mesh.instanceColor?.count).toBe(mesh.count);
+      expect(mesh.geometry.getAttribute('position').array)
+        .toEqual(twin.geometry.getAttribute('position').array);
+      expect(scene.children.filter(child => child.name === mesh.name)).toHaveLength(1);
+      for (let i = 0; i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, m);
+        twin.getMatrixAt(i, same);
+        expect(m.elements).toEqual(same.elements);
+        const x = Math.round(m.elements[12] / 4) + center.x;
+        const y = Math.round(m.elements[14] / 4) + center.y;
+        mesh.getColorAt(i, color);
+        twin.getColorAt(i, identical);
+        const shade = color.getHexString();
+        expect(shade).toBe(identical.getHexString());
+        let zone;
+        if (part === 'woodlandFloor') {
+          expect(map.grid[y]?.[x]).toBe('#');
+          zone = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+            .some(([dx, dy]) => map.grid[y + dy]?.[x + dx] === '.')
+            ? 'clearing' : 'shade';
+        } else if (map.grid[y]?.[x] === '#') {
+          zone = 'forest';
+        } else {
+          expect(map.grid[y]?.[x]).toBe('.');
+          expect(x).not.toBe(center.x);
+          expect(y).not.toBe(center.y);
+          zone = Math.abs(x - center.x) === 1
+            || Math.abs(y - center.y) === 1 ? 'fringe' : 'meadow';
+        }
+        expect(tones[zone].has(shade)).toBe(true);
+        seen[zone] += 1;
+      }
+    }
+    expect(seen.forest).toBeGreaterThan(0);
+    expect(seen.fringe).toBeGreaterThan(0);
+    expect(seen.meadow).toBeGreaterThan(0);
+    expect(seen.clearing).toBeGreaterThan(0);
+    // The road remains original navigable '.' cells: no newly placed
+    // ground layer or collision, and both existing part batches stay shared.
+    expect(map.grid[13][10]).toBe('.');
+    expect(map.grid[12][10]).toBe('.');
+  });
+
   it('keeps authored Banner Road microrelief richer than sparse reusable Terra meadow relief', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
