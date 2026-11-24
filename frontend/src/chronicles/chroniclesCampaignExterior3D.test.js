@@ -613,7 +613,23 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
     expect(largestSoilPatch).toBeGreaterThan(20);
     expect(largestSoilPatch).toBeLessThan(220);
-    expect(colours.size).toBeGreaterThan(9);
+    // V77: soil islands must have *internal* cool/warm grain, not a single
+    // large, flat brown polygon; the mask/area itself remains identical.
+    // The fine sward must also contain two subtly different moss/olive
+    // shades. All of this lives in the original single cached meadow atlas.
+    for (const shade of [
+      [0x87, 0x81, 0x66], [0x6d, 0x69, 0x52],
+      [0x75, 0x6f, 0x57], [0x80, 0x7e, 0x62],
+      [0x90, 0xa0, 0x78], [0x7a, 0x90, 0x64],
+      [0x51, 0x6b, 0x4b], [0x40, 0x5b, 0x3c],
+    ]) {
+      expect(colours.has(shade.join(','))).toBe(true);
+    }
+    expect(colours.size).toBeGreaterThan(13);
+    // The distinct native Terra ground atlas is still separate and the
+    // exact scene topology/collision remains fixed.
+    expect(meadowAtlas).not.toBe(chroniclesPixelTexture('terrafield'));
+    expect(chroniclesPixelTexture('meadow')).toBe(meadowAtlas);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-road')).toHaveLength(1);
     expect(road.count).toBeGreaterThan(20);
