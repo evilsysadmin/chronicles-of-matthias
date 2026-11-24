@@ -4,7 +4,8 @@ import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import {
   TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesBrezalOuterRelief,
   chroniclesBrezalVergeRelief, chroniclesBrezalStoneGeometry,
-  chroniclesOrganicRockGeometry,
+  chroniclesOrganicRockGeometry, chroniclesBrezalShrubGeometry,
+  chroniclesOrganicCanopyGeometry,
 } from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
@@ -130,6 +131,45 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     copy.dispose();
   });
 
+  it.each([false, true])('builds B2 low asymmetric shrub silhouettes without new polygons (coarse=%s)', coarsePointer => {
+    const bush = chroniclesBrezalShrubGeometry({ coarsePointer });
+    const repeat = chroniclesBrezalShrubGeometry({ coarsePointer });
+    const original = chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true });
+    const pos = bush.getAttribute('position');
+    const source = original.getAttribute('position');
+    expect(pos.count).toBe(source.count);
+    expect(bush.getAttribute('uv').count).toBe(original.getAttribute('uv').count);
+    expect(bush.index?.count ?? 0).toBe(original.index?.count ?? 0);
+    expect(pos.array).toEqual(repeat.getAttribute('position').array);
+    expect(pos.array).not.toEqual(source.array);
+    const bounds = bush.boundingBox;
+    expect(bounds).toBeTruthy();
+    expect(bush.boundingSphere).toBeTruthy();
+    const width = bounds.max.x - bounds.min.x;
+    const height = bounds.max.y - bounds.min.y;
+    expect(width).toBeGreaterThan(height * 1.5);
+    expect(bounds.max.y).toBeLessThan(0.60);
+    expect(bounds.min.y).toBeGreaterThanOrEqual(-0.53 * 0.92 - 0.0001);
+    // Vertex displacement is analytic: duplicate UV seam vertices must
+    // remain together and shape is stable across F5 and device quality.
+    for (let i = 0; i < pos.count; i += 1) {
+      const x = source.getX(i), y = source.getY(i), z = source.getZ(i);
+      const angle = Math.atan2(z, x);
+      const lobes = 1 + 0.17 * Math.sin(3 * angle + 0.35)
+        + 0.085 * Math.cos(5 * angle - 0.60);
+      const skirt = 1.06 - 0.12 * y;
+      const crest = 0.43 + 0.10 * Math.sin(2 * angle + 0.70)
+        + 0.08 * Math.cos(3 * angle - 0.55);
+      expect(pos.getX(i)).toBeCloseTo(x * lobes * skirt * 1.15 + 0.09 * (y + 0.7), 5);
+      expect(pos.getY(i)).toBeCloseTo(Math.max(-0.53, Math.min(y, crest)) * 0.92, 5);
+      expect(pos.getZ(i)).toBeCloseTo(z * lobes * skirt * 1.04, 5);
+      expect(Number.isFinite(pos.getX(i) + pos.getY(i) + pos.getZ(i))).toBe(true);
+    }
+    bush.dispose();
+    repeat.dispose();
+    original.dispose();
+  });
+
   it.each([false, true])('keeps B2 shrub instances but uses muted heath hues at coarse=%s', coarsePointer => {
     const b2Scene = scene('terra-b2', coarsePointer);
     const repeated = scene('terra-b2', coarsePointer);
@@ -146,8 +186,18 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     expect(bush.instanceColor).toBeTruthy();
     expect(baseline.instanceColor).toBeNull();
     expect(otherHighlands.getObjectByName(name).instanceColor).toBeNull();
+    // V73 reshapes only the shared B2 shrub vertices; keep the
+    // exact 20/80-triangle budget and original leaves material.
     expect(bush.geometry.getAttribute('position').array)
-      .toEqual(baseline.geometry.getAttribute('position').array);
+      .not.toEqual(baseline.geometry.getAttribute('position').array);
+    expect(bush.geometry.getAttribute('position').count)
+      .toBe(baseline.geometry.getAttribute('position').count);
+    expect(bush.geometry.getAttribute('uv').count)
+      .toBe(baseline.geometry.getAttribute('uv').count);
+    expect(bush.geometry.index?.count ?? 0)
+      .toBe(baseline.geometry.index?.count ?? 0);
+    expect(bush.geometry.getAttribute('position').array)
+      .toEqual(repeat.geometry.getAttribute('position').array);
     const allowed = new Set(['b9bda1', 'adb79b', 'c5b9a0', 'a4b39a', 'c5c2ab']);
     const variants = new Set();
     const m = new THREE.Matrix4(), ref = new THREE.Matrix4();
