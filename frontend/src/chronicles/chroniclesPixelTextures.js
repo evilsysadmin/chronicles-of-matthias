@@ -124,15 +124,27 @@ function sample(kind, x, y, size) {
     // irregular pockets. This texture is used only by Banner Road.
     const loam = valueNoise(x, y, size, 11, 94) - 0.5;
     const moss = valueNoise(x, y, size, 9, 95) - 0.5;
-    // Small, cool umber patches reveal soil within a more subdued olive
-    // forest floor. Keep their exact prior coverage/shape, but avoid the
-    // flat pale beige blotches visible in eye-level first-person screenshots.
-    // Same tileable 128px atlas, one material and no extra terrain geometry.
+    // C3 v77: 27/29-cell micrograin gives the broad soil and grass patches
+    // readable internal detail instead of a solid painted colour at eye
+    // height. Both fields repeat seamlessly within the SAME cached 128px
+    // meadow atlas. Keep the original soil-mask threshold and coverage.
+    const fine = valueNoise(x, y, size, 27, 97) - 0.5;
+    const crumb = valueNoise(x, y, size, 29, 98) - 0.5;
     if (loam < -0.22 && clover < 0.02) {
-      return { color: loam < -0.29 ? 0x6d6952 : 0x807e62 };
+      // Every soil pixel stays soil, so the authored amount of visible loam
+      // and its broken islands remain identical; only their inner grain
+      // gains muted warm/neutral variation without the pale beige blotches.
+      const tint = crumb > 0.12 ? 0x878166
+        : crumb < -0.10 ? 0x6d6952
+          : loam < -0.29 ? 0x756f57 : 0x807e62;
+      return { color: tint };
     }
-    if (sward > 0.11 && moss > -0.04) return { color: 0x7a9064 };
-    if (sward < -0.15 && moss > 0.07) return { color: 0x405b3c };
+    if (sward > 0.11 && moss > -0.04) {
+      return { color: fine > 0.12 ? 0x90a078 : 0x7a9064 };
+    }
+    if (sward < -0.15 && moss > 0.07) {
+      return { color: fine > 0.12 ? 0x516b4b : 0x405b3c };
+    }
     // Fine tufts soften the terrain at eye level while the 3D grass adds
     // actual silhouettes. No shadow, animation or second ground material.
     const blade = hash(Math.floor(x / 5), Math.floor(y / 7), 96);
@@ -140,8 +152,8 @@ function sample(kind, x, y, size) {
       return y % 7 === 0 ? { color: 0x9fa976 } : 0.31 + moss * 0.15;
     }
     if (hash(x, y, 93) > 0.9982) return { color: 0xa9a17a };
-    return 0.51 + sward * 0.46 + clover * 0.20 + moss * 0.14
-      + grain * 0.08;
+    return 0.51 + sward * 0.34 + clover * 0.22 + moss * 0.15
+      + fine * 0.17 + grain * 0.08;
   }
   if (kind === 'woodlandpath') {
     // Irregular soil, compacted tread, and sparse pebbles use periodic
