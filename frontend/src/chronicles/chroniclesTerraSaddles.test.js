@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import {
   buildTerraScenery, chroniclesHighlandBackdropSaddle,
-  chroniclesHighlandRidgeProfile,
+  chroniclesHighlandRidgeProfile, chroniclesBrezalVergeRelief,
 } from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
@@ -147,6 +147,14 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
         } else if (part === 'boulder' && px === 3 && py === 8) {
           // The v63 low authored ruin remains unchanged.
           expect(new THREE.Vector3().setFromMatrixScale(m).y).toBeLessThan(1.65);
+        } else if (part === 'boulder'
+            && chroniclesBrezalVergeRelief({ grid: map.grid, x: px, y: py }) !== 1) {
+          const factor = chroniclesBrezalVergeRelief({ grid: map.grid, x: px, y: py });
+          const was = new THREE.Vector3().setFromMatrixScale(ref).y;
+          const now = new THREE.Vector3().setFromMatrixScale(m).y;
+          expect(now / was).toBeCloseTo(factor, 5);
+          expect(m.elements[12]).toBe(ref.elements[12]);
+          expect(m.elements[14]).toBe(ref.elements[14]);
         } else {
           expect(m.elements).toEqual(ref.elements);
         }

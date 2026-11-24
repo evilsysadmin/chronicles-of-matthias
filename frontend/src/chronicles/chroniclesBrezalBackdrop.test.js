@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import {
   TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesBrezalOuterRelief,
+  chroniclesBrezalVergeRelief,
 } from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
@@ -11,6 +12,8 @@ const width = b2.grid[0].length;
 const height = b2.grid.length;
 const relief = (x, y, ringDepth, grid = b2.grid) =>
   chroniclesBrezalOuterRelief({ grid, x, y, ringDepth });
+const vergeRelief = (x, y, grid = b2.grid) =>
+  chroniclesBrezalVergeRelief({ grid, x, y });
 const scene = (mapId, coarsePointer = false) => buildTerraScenery({
   grid: b2.grid, center, biome: b2.biome, scenery: b2.scenery,
   mapId, coarsePointer,
@@ -79,6 +82,32 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     expect(relief(-2, -2, 2)).toBeLessThanOrEqual(0.98);
   });
 
+  it('lowers only real B2 perimeter verges, following the exterior saddles', () => {
+    const north = Array.from({ length: width - 2 }, (_, n) => vergeRelief(n + 1, 0));
+    const south = Array.from({ length: width - 2 }, (_, n) =>
+      vergeRelief(n + 1, height - 1));
+    expect(north.some(v => v < 0.70)).toBe(true);
+    expect(north.some(v => v > 0.77)).toBe(true);
+    expect(north).not.toEqual(south);
+    for (const [x, y] of [[0, 3], [width - 1, 7], [7, 0], [9, height - 1]]) {
+      expect(vergeRelief(x, y)).toBeCloseTo(
+        0.56 + 0.29 * (relief(
+          x === 0 ? -1 : x === width - 1 ? width : x,
+          x === 0 || x === width - 1 ? y : y === 0 ? -1 : height,
+          1,
+        ) / 0.98), 10);
+      expect(vergeRelief(x, y)).toBeGreaterThan(0.60);
+      expect(vergeRelief(x, y)).toBeLessThan(0.86);
+    }
+    for (const [x, y] of [
+      [3, 8], [12, 6], [0, 0], [width - 1, 0],
+      [width, 4], [-1, 4], [0, -1], [3.2, 0], [0, NaN],
+    ]) expect(vergeRelief(x, y)).toBe(1);
+    expect(vergeRelief(0, 3, [])).toBe(1);
+    expect(vergeRelief(0, 3, ['####', '#..#'])).toBe(1);
+    expect(b2.grid).toEqual(chroniclesMapById('terra-b2').grid);
+  });
+
   it('tapers only exterior boulder/crag matrices, with the exact existing batch population', () => {
     for (const coarsePointer of [false, true]) {
       const B2 = scene('terra-b2', coarsePointer);
@@ -132,6 +161,17 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
             const now = scaleOf(currentM);
             expect(now.y).toBeLessThan(1.65); // v63 authored low ruin
             authoredRuin += 1;
+          } else if (part === 'boulder' && vergeRelief(x, y) !== 1) {
+            // V69 changes the *existing* boulders on impassable perimeter
+            // cells. The root count and horizontal world positions stay put.
+            const expected = vergeRelief(x, y);
+            const was = scaleOf(oldM), now = scaleOf(currentM);
+            expect(now.x / was.x).toBeCloseTo(expected, 5);
+            expect(now.y / was.y).toBeCloseTo(expected, 5);
+            expect(now.z / was.z).toBeCloseTo(expected, 5);
+            expect(currentM.elements[12]).toBeCloseTo(oldM.elements[12], 5);
+            expect(currentM.elements[14]).toBeCloseTo(oldM.elements[14], 5);
+            expect(b2.grid[y]?.[x]).toBe('#');
           } else {
             expect(currentM.elements).toEqual(oldM.elements);
             expect(b2.grid[y]?.[x]).toBe('#');
