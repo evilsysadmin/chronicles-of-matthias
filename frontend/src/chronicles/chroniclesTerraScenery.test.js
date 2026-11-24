@@ -1217,7 +1217,12 @@ describe('Terra scenery', () => {
       // Existing broadleaf bushes have variable trunk-derived heights; the
       // new forest-edge and soft-meadow bushes sit at fixed soil elevations.
       // Identify only the new visual layer, not pre-existing juvenile shrubs.
-      if (Math.abs(matrix.elements[13] - (tile === '#' ? 0.57 : 0.51)) > 1e-6) continue;
+      if (Math.abs(matrix.elements[13] - (tile === '#' ? 0.42 : 0.34)) > 1e-6) continue;
+      // The actual shared mesh must meet the soil after its instance scale.
+      shrubs.geometry.computeBoundingBox();
+      const bottom = matrix.elements[13] + shrubs.geometry.boundingBox.min.y * matrix.elements[5];
+      expect(bottom).toBeLessThan(0.06);
+      expect(bottom).toBeGreaterThan(-0.40);
       added += 1;
       expect(['#', '.']).toContain(tile);
       kinds.add(tile);
