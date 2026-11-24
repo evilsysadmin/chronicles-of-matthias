@@ -232,13 +232,18 @@ export function chroniclesBrezalStoneGeometry({ coarsePointer = false } = {}) {
     coarsePointer, weatheredHighland: true,
   });
   const position = geometry.getAttribute('position');
-  // Slightly wide, flattened sandstone shelves with clipped upper caps.
-  // This is analytic, per-position displacement, so UV-seam duplicates
-  // remain coincident even on the low-detail mobile geometry.
+  // V71: keep the wide, low-profile B2 stone but avoid the identical,
+  // ruler-flat upper face that reads as a repeated pancake on the horizon.
+  // A tilted, weathered cap has different shoulders on each side; the
+  // already-deterministic instance yaws reveal different crests without
+  // changing any matrix, rock count or mobile/desktop polygon budget.
+  // Position-only displacement keeps duplicated UV seam vertices aligned.
   for (let i = 0; i < position.count; i += 1) {
     const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
-    const leveled = THREE.MathUtils.clamp(y, -0.73, 0.61);
-    position.setXYZ(i, x * 1.08, leveled * 0.88, z * 1.06);
+    const cap = 0.48 + 0.14 * Math.sin(x * 1.85 + z * 0.95)
+      + 0.08 * Math.cos(z * 2.25 - x * 1.40);
+    const weathered = Math.max(-0.73, Math.min(y, cap));
+    position.setXYZ(i, x * 1.08, weathered * 0.89, z * 1.06);
   }
   position.needsUpdate = true;
   geometry.computeVertexNormals();
