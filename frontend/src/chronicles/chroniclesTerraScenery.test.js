@@ -1923,6 +1923,45 @@ describe('Terra scenery', () => {
     expect(touch.children.every(mesh => detailed.getObjectByName(mesh.name))).toBe(true);
   });
 
+  it.each([false, true])('thins only C3 exterior rocks while keeping authored stones (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const opts = { grid: map.grid, center, biome: map.biome, coarsePointer };
+    const build = mapId => buildTerraScenery({ ...opts, mapId })
+      .getObjectByName('chronicles-terra-boulder');
+    const rocks = build(map.id), repeat = build(map.id), baseline = build(null);
+    const read = mesh => {
+      const inside = new Map(), outside = new Map(), matrix = new THREE.Matrix4();
+      for (let i = 0; i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, matrix);
+        const x = Math.round(matrix.elements[12] / 4) + center.x;
+        const y = Math.round(matrix.elements[14] / 4) + center.y;
+        const key = x + ',' + y;
+        const target = map.grid[y]?.[x] === undefined ? outside : inside;
+        expect(target.has(key)).toBe(false);
+        target.set(key, matrix.toArray());
+      }
+      return { inside, outside };
+    };
+    const actual = read(rocks), original = read(baseline);
+    expect(actual).toEqual(read(repeat));
+    expect(actual.inside).toEqual(original.inside);
+    expect(original.outside.size).toBe(coarsePointer ? 138 : 252);
+    expect(actual.outside.size).toBe(coarsePointer ? 50 : 89);
+    for (const [key, pose] of actual.outside) {
+      const old = original.outside.get(key);
+      expect(old).toBeDefined();
+      expect(pose[12]).toBeCloseTo(old[12], 5);
+      expect(pose[14]).toBeCloseTo(old[14], 5);
+      expect(pose[13]).toBeLessThan(old[13]);
+      const scale = new THREE.Vector3().setFromMatrixScale(new THREE.Matrix4().fromArray(pose));
+      const oldScale = new THREE.Vector3().setFromMatrixScale(new THREE.Matrix4().fromArray(old));
+      expect(scale.y).toBeLessThan(oldScale.y * 0.8);
+    }
+    expect(rocks.geometry.getAttribute('position').count)
+      .toBe(baseline.geometry.getAttribute('position').count);
+  });
+
   it('smooths jagged boulders at full quality while keeping an inexpensive mobile mesh', () => {
     const full = chroniclesOrganicRockGeometry();
     const coarse = chroniclesOrganicRockGeometry({ coarsePointer: true });
