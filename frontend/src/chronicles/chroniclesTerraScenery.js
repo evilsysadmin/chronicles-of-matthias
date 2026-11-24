@@ -1522,16 +1522,24 @@ const DRESS = {
     // Deep rock rows are caused by the outer ring's old ~70% probability,
     // not by actual rocks beside walkable paths. Native woodland backdrop
     // tiles now leave connected visual gaps and smaller, scattered stones.
-    // The existing inner forest/verge, Banner Road and other biomes are left
-    // on their previous deterministic logic.
-    const rockVisible = woodlandBackdrop
-      ? noise(x, y, 927) < woodlandBackdrop.rockChance
-      : woodlandVerge
-        ? roll >= 0.7 && noise(x, y, 905) < woodlandVerge.rockRetention
-        : roll >= 0.7 || (big && (!naturalWoodline || noise(x, y, 847) > 0.30));
+    // C3 previously placed a rock in EVERY surviving exterior cell.
+    // Leave the authored interior untouched; thin only its decorative
+    // outer ring with a correlated density field and lower the remaining
+    // stones into the existing ground. No new geometry or draw batches.
+    const bannerRock = backdrop;
+    const rockVisible = bannerRock
+      ? noise(x, y, 1571) < 0.38 + 0.10 * Math.sin(x * 0.41 + y * 0.27)
+        * Math.cos(y * 0.35 - x * 0.14)
+      : woodlandBackdrop
+        ? noise(x, y, 927) < woodlandBackdrop.rockChance
+        : woodlandVerge
+          ? roll >= 0.7 && noise(x, y, 905) < woodlandVerge.rockRetention
+          : roll >= 0.7 || (big && (!naturalWoodline || noise(x, y, 847) > 0.30));
     if (rockVisible) {
       boulders(p, wx, wz, x, y, {
-        count: 1, size: woodlandBackdrop?.rockScale ?? 1,
+        count: 1,
+        size: bannerRock ? 0.72 + 0.20 * noise(x, y, 1573) : (woodlandBackdrop?.rockScale ?? 1),
+        height: bannerRock ? 0.66 + 0.18 * noise(x, y, 1575) : 1,
       });
     }
     if (roll < 0.2) {
