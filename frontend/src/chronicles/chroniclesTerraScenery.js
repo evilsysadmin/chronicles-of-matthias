@@ -122,6 +122,38 @@ export function chroniclesBrezalOuterRelief({
   return shoulder * depth;
 }
 
+/**
+ * B2-only: soften the actual impassable perimeter's shoulder rocks.
+ * The first-person heath cameras look across these authored '#' roots, so
+ * sculpting the OUTSIDE rings alone cannot open the near skyline. Keep the
+ * same two boulders on each verge cell, but lower them into a coherent
+ * chain of rocky shoulders and distinct gaps at the same saddles as v68.
+ *
+ * Only perimeter '#' cells directly adjoining a traversable cell qualify.
+ * The real collision grid, mid-map rocks, the ruin and all other Terra
+ * regions remain untouched. No new geometry, materials or instances.
+ */
+export function chroniclesBrezalVergeRelief({ grid = [], x, y } = {}) {
+  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y)) return 1;
+  const width = grid[0]?.length || 0, height = grid.length;
+  if (width < 2 || height < 2
+      || grid.some(row => typeof row !== 'string' || row.length !== width)
+      || x < 0 || y < 0 || x >= width || y >= height
+      || grid[y][x] !== '#'
+      || (x !== 0 && x !== width - 1 && y !== 0 && y !== height - 1)) return 1;
+  const bordersWalkable = grid[y - 1]?.[x] === '.' || grid[y + 1]?.[x] === '.'
+    || grid[y]?.[x - 1] === '.' || grid[y]?.[x + 1] === '.';
+  if (!bordersWalkable) return 1;
+  // Read the SAME continuous v68 perimeter contour from the first exterior
+  // cell. Opposite map sides have distinct profiles; four corners stay joined.
+  const outerX = x === 0 ? -1 : x === width - 1 ? width : x;
+  const outerY = x === 0 || x === width - 1 ? y : y === 0 ? -1 : height;
+  const shoulder = chroniclesBrezalOuterRelief({
+    grid, x: outerX, y: outerY, ringDepth: 1,
+  }) / 0.98;
+  return 0.56 + 0.29 * shoulder;
+}
+
 function texture(kind, repeatX = 1, repeatY = 1) {
   // Pixel textures are cached and shared: clone to repeat independently.
   const base = chroniclesPixelTexture(kind);
@@ -1406,9 +1438,11 @@ const DRESS = {
     // collision grid. Preserve every real map-border/verge rock unchanged.
     const heathRelief = brezalBackdrop && tileRecipe.family === 'backdrop'
       ? chroniclesBrezalOuterRelief({ grid, x, y, ringDepth }) : 1;
+    const heathVerge = brezalBackdrop && tileRecipe.family === 'verge'
+      ? chroniclesBrezalVergeRelief({ grid, x, y }) : 1;
     boulders(p, wx, wz, x, y, {
       count: tileRecipe.boulderCount,
-      size: tileRecipe.boulderSize * ridgeFoot * saddle * heathRelief,
+      size: tileRecipe.boulderSize * ridgeFoot * saddle * heathRelief * heathVerge,
       height: 1.05 * ridgeRise,
     });
     if (noise(x, y, 4) < tileRecipe.cragChance) {
