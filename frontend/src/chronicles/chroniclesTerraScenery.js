@@ -443,6 +443,40 @@ export function chroniclesOrganicCanopyGeometry({ coarsePointer = false, shrub =
 
 
 /**
+ * B2 heath only: irregular, broad scrub instead of another floating green
+ * sphere. Reuse the SAME icosahedral 20/80-triangle bush mesh, material,
+ * instance matrices and palette; a low asymmetrical crown, splayed sides
+ * and clipped underside make a scrubby hedgerow shape at walking eye-level.
+ *
+ * Each vertex is displaced solely from its own source position, preserving
+ * UV-seam duplicates and stable mobile/desktop geometry after every reload.
+ * Per-instance deterministic yaw already varies the silhouette across B2.
+ */
+export function chroniclesBrezalShrubGeometry({ coarsePointer = false } = {}) {
+  const geometry = chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true });
+  const positions = geometry.getAttribute('position');
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+    const angle = Math.atan2(z, x);
+    const lobes = 1 + 0.17 * Math.sin(3 * angle + 0.35)
+      + 0.085 * Math.cos(5 * angle - 0.60);
+    const skirt = 1.06 - 0.12 * y;
+    const crest = 0.43 + 0.10 * Math.sin(2 * angle + 0.70)
+      + 0.08 * Math.cos(3 * angle - 0.55);
+    positions.setXYZ(i,
+      x * lobes * skirt * 1.15 + 0.09 * (y + 0.7),
+      Math.max(-0.53, Math.min(y, crest)) * 0.92,
+      z * lobes * skirt * 1.04);
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+
+/**
  * Banner Road leaf mass: a low-poly, latitude-based foliage envelope rather
  * than a stack of visibly triangular icosahedrons. The contour uses subtle,
  * deterministic scallops and a fuller sunlit crown with a tucked underside.
@@ -1112,9 +1146,11 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
         flatShading: coarsePointer && !woodland,
         vertexColors: true,
       })],
-    bush: () => [biome === 'plains'
-      ? chroniclesLayeredShrubGeometry({ coarsePointer })
-      : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
+    bush: () => [brezalBackdrop
+      ? chroniclesBrezalShrubGeometry({ coarsePointer })
+      : biome === 'plains'
+        ? chroniclesLayeredShrubGeometry({ coarsePointer })
+        : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
       lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
