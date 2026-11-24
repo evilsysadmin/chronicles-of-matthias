@@ -2395,24 +2395,51 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       mesh.instanceColor.needsUpdate = true;
     }
     if (denseMeadow && part === 'forestHerb') {
-      const shades = ['#e1eaca', '#c5d8ad', '#f1e9c7', '#dae7c7']
-        .map(hex => new THREE.Color(hex));
+      // C3 woodline illumination, using ONLY existing fern instances and
+      // their already-allocated instance colour attribute. A warmer fringe
+      // beside the actual cart path fades into subdued green forest shade;
+      // open meadow retains its original palette. Neither paths nor the
+      // foliage geometry/placements are modified.
+      const palettes = {
+        forest: ['#b5c4a6', '#a9b99a', '#c9c1a4', '#a6ba9a'],
+        fringe: ['#e8daba', '#dddab9', '#d0d8b4', '#dec9a5'],
+        meadow: ['#e1eaca', '#c5d8ad', '#f1e9c7', '#dae7c7'],
+      };
+      const shades = Object.fromEntries(Object.entries(palettes)
+        .map(([zone, colors]) => [zone, colors.map(hex => new THREE.Color(hex))]));
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const zone = grid[y]?.[x] === '#'
+          ? 'forest'
+          : Math.abs(x - center.x) === 1 || Math.abs(y - center.y) === 1
+            ? 'fringe' : 'meadow';
         const seed = noise(Math.round(e[12] * 9), Math.round(e[14] * 9), 799);
-        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
-          Math.floor(seed * shades.length))]);
+        const palette = shades[zone];
+        mesh.setColorAt(index, palette[Math.min(palette.length - 1,
+          Math.floor(seed * palette.length))]);
       });
       mesh.instanceColor.needsUpdate = true;
     }
     if (denseMeadow && part === 'woodlandFloor') {
-      const shades = ['#d1ddc3', '#eff0d8', '#a5b894', '#e5e2c2']
+      // The same leaf-litter/fernlet batch now distinguishes sunlit forest
+      // margins from shaded interior roots by reading the authored grid.
+      // No extra mesh, texture, light, instance or world-transform work.
+      const shade = ['#b4c6aa', '#a9b79b', '#bebc9e', '#a7b9a2']
+        .map(hex => new THREE.Color(hex));
+      const clearing = ['#e2d9b9', '#cdd6b0', '#d7c6a0', '#e0dec3']
         .map(hex => new THREE.Color(hex));
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const touchesClearing = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+          .some(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
+        const palette = touchesClearing ? clearing : shade;
         const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7), 541);
-        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
-          Math.floor(seed * shades.length))]);
+        mesh.setColorAt(index, palette[Math.min(palette.length - 1,
+          Math.floor(seed * palette.length))]);
       });
       mesh.instanceColor.needsUpdate = true;
     }
