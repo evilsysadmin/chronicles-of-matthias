@@ -883,8 +883,10 @@ describe('Terra scenery', () => {
   it.each([false, true])('grades C3 road-to-forest floor light without adding foliage or touching paths (coarse=%s)', coarsePointer => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
     const args = { grid: map.grid, center, biome: map.biome,
-      mapId: map.id, coarsePointer };
+      mapId: map.id, coarsePointer, keepClear };
     const scene = buildTerraScenery(args);
     const repeat = buildTerraScenery(args);
     const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
