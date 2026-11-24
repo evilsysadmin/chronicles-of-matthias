@@ -1,5 +1,5 @@
-// Four comparable screenshots from the real MM3 world camera and the
-// actual Terra maps, including WebGL evidence that landscape tiles render.
+// Six comparable screenshots from the real MM3 world camera, including
+// C3 Banner Road's authored forest approach and real landscape WebGL evidence.
 import assert from 'node:assert/strict';
 import { stat } from 'node:fs/promises';
 import { chromium } from 'playwright';
@@ -9,7 +9,7 @@ const browser = await chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 });
 try {
-  for (const mapId of ['terra-e2', 'terra-c4']) {
+  for (const mapId of ['terra-e2', 'terra-c4', 'banner-road-first-book']) {
     const captures = [];
     for (const [width, height, coarse] of [[390, 844, true], [1280, 800, false]]) {
       const context = await browser.newContext({
@@ -37,9 +37,14 @@ try {
         assert.deepEqual(errors, [], 'No real renderer JS errors in ' + mapId);
         assert.equal(state.sceneReady, 'true');
         assert.equal(state.mapId, mapId);
-        assert.equal(state.cameraCell, mapId === 'terra-c4' ? '7,5' : '10,7');
+        assert.equal(state.cameraCell, mapId === 'terra-c4' ? '7,5'
+          : mapId === 'banner-road-first-book' ? '10,13' : '10,7');
         assert.equal(state.coarsePointer, String(coarse));
         assert.equal(state.biome, mapId === 'terra-e2' ? 'hills' : 'plains');
+        if (mapId === 'banner-road-first-book') {
+          assert.equal(Number(state.cameraYaw), 0,
+            'C3 camera must look north from the actual south approach');
+        }
         assert.equal(state.overflow, false);
         assert.equal(state.width, width);
         assert.equal(state.height, height);
@@ -78,7 +83,14 @@ try {
           assert.ok(Number(state.targetChangedSamples) > 850,
             '390px meadow foreground must exceed the prior 540-pixel real WebGL baseline');
         }
-        if (mapId === 'terra-e2') {
+        if (mapId === 'banner-road-first-book') {
+          assert.ok(Number(state.bushCount) > 10,
+            'Real C3 woodland approach must include original batched shrubs');
+          assert.ok(Number(state.crownCount) > 10,
+            'C3 approach must preserve existing forest canopy batches');
+          assert.ok(Number(state.herbCount) > 0,
+            'C3 approach needs real low ground vegetation');
+        } else if (mapId === 'terra-e2') {
           assert.ok(Number(state.cragCount) > 0, 'Real blocked ridges must render');
           assert.ok(Number(state.pebbleCount) > 10, 'Walkable foothills need scree');
           assert.ok(Number(state.tuftCount) > 10, 'Walkable foothills need short grasses');
