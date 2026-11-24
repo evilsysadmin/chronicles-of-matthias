@@ -1737,6 +1737,29 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
 }
 
 
+// Allocate the original flower budget separately for path-adjacent and
+// open meadow cells. Correlated habitat scores form connected colonies
+// rather than isolated random stamps, while retaining the old population.
+export function chroniclesBannerRoadFlowerCells(grid, clear = new Set()) {
+  const groups = [[], []];
+  const budget = [0, 0];
+  grid.forEach((row, y) => [...row].forEach((tile, x) => {
+    const key = x + ',' + y;
+    if (tile !== '.' || clear.has(key)) return;
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+      .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
+    const group = near ? 1 : 0;
+    if (noise(x, y, 423) > (near ? 0.48 : 0.72)) budget[group]++;
+    const score = 0.48 * Math.sin(x * 0.71 + y * 0.37)
+      + 0.35 * Math.cos(y * 0.81 - x * 0.27)
+      + 0.17 * (noise(x, y, 1581) - 0.5);
+    groups[group].push({ key, score, x, y });
+  }));
+  return new Set(groups.flatMap((cells, i) => cells
+    .sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x)
+    .slice(0, budget[i]).map(cell => cell.key)));
+}
+
 /**
  * Fill the 4m meadow cells with several staggered leaf clusters. Planting
  * everything at the tile centre looked like isolated green spikes; an
@@ -1746,7 +1769,7 @@ function addBrezalLowHeather(p, wx, wz, x, y, recipe, coarsePointer) {
  * including those beside the road. The authored grid, paving and interaction
  * clearances are unchanged. Mobile draws fewer patches with fewer blades.
  */
-function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath = false } = {}) {
+function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath = false, flower = false } = {}) {
   // Soft, several-cell patches leave short turf in open areas and fuller,
   // mixed sedges near the woodland. Never a uniform 7-tuft-per-tile stamp.
   // The total number of grass instances is not increased; each slot becomes
@@ -1779,7 +1802,7 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
         width],
     });
   }
-  if (!coarsePointer && noise(x, y, 423) > (nearPath ? 0.48 : 0.72)) {
+  if (!coarsePointer && flower) {
     // Wildflowers favor woodland margins and footpath-adjacent meadow,
     // but never grow in a tile reserved for paving or a quest interaction.
     const ox = (noise(x, y, 427) - 0.5) * 2.5;
@@ -2283,6 +2306,8 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   const toWorld = (x, y) => [(x - center.x) * CELL, (y - center.y) * CELL];
   const clear = new Set(keepClear.map(({ x, y }) => x + ',' + y));
   const denseMeadow = mapId === 'banner-road-first-book' && biome === 'plains';
+  const flowerCells = denseMeadow && !coarsePointer
+    ? chroniclesBannerRoadFlowerCells(grid, clear) : null;
   const naturalWoodline = biome === 'plains' && typeof mapId === 'string'
     && mapId.startsWith('terra-');
   // Only native highlands receive skyline shaping. Special B2 heath,
@@ -2355,7 +2380,9 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         if (denseMeadow && tile === '.') {
           const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
-          addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer, nearPath });
+          addBannerRoadMeadow(p, wx, wz, x, y, {
+            coarsePointer, nearPath, flower: flowerCells?.has(x + ',' + y) ?? false,
+          });
           // The canonical Banner Road paving follows the central axes even
           // when a direct scenery caller omits keepClear. Never put soft
           // shrubs on these authored road cells.
