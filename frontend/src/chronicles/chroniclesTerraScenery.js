@@ -95,21 +95,31 @@ export function chroniclesBrezalOuterRelief({
   if (x >= 0 && y >= 0 && x < width && y < height) return 1;
   const onXEdge = x < 0 || x >= width;
   const onYEdge = y < 0 || y >= height;
-  if (!onXEdge && !onYEdge) return 1;
+  if (!onXEdge && !onYEdge || width < 2 || height < 2) return 1;
   const actualRing = Math.max(-x, x - width + 1, -y, y - height + 1);
   if (ringDepth !== actualRing) return 1;
-  // The same longitudinal coordinate runs through each exterior ring, so
-  // back-row rocks cannot fill every visible low point in the nearer row.
-  // Corners follow their closest east/west edge at its endpoint.
-  const axis = onXEdge
-    ? THREE.MathUtils.clamp(y, 0, height - 1)
-    : THREE.MathUtils.clamp(x, 0, width - 1);
-  const shoulder = 0.72 + 0.22 * Math.sin(axis * 0.51 + 0.25)
-    + 0.08 * Math.cos(axis * 0.23 - 1.20);
-  const depth = [1, 0.97, 0.86, 0.76][ringDepth];
-  // Allow the deepest southern collado to keep descending across rings;
-  // a higher floor flattened rings 2/3 to the same height at map corners.
-  return THREE.MathUtils.clamp(shoulder * depth, 0.33, 0.98);
+  // Walk clockwise around the SAME map perimeter at all three depths.
+  // Opposite sides no longer repeat the same waveform, and the shared
+  // corner coordinates join without a hard height seam.
+  const perimeter = 2 * (width + height - 2);
+  const along = x < 0
+    ? perimeter - THREE.MathUtils.clamp(y, 0, height - 1)
+    : x >= width
+      ? width - 1 + THREE.MathUtils.clamp(y, 0, height - 1)
+      : y >= height
+        ? width + height - 2 + (width - 1 - THREE.MathUtils.clamp(x, 0, width - 1))
+        : THREE.MathUtils.clamp(x, 0, width - 1);
+  const angle = Math.PI * 2 * along / perimeter;
+  // Broad rocky crests are separated by genuinely low, smoothly curved
+  // passes. Far rows taper more decisively so they cannot fill the near
+  // row's openings into an unbroken eye-level cliff.
+  const shoulder = THREE.MathUtils.clamp(
+    0.58 + 0.34 * Math.sin(3 * angle + 0.45)
+      + 0.10 * Math.cos(5 * angle - 0.60),
+    0.22, 0.975,
+  );
+  const depth = [1, 0.98, 0.74, 0.55][ringDepth];
+  return shoulder * depth;
 }
 
 function texture(kind, repeatX = 1, repeatY = 1) {
