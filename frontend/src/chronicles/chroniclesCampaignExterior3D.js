@@ -709,6 +709,45 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
   }
 }
 
+// C3's two wheel-worn lanes follow the actual world axes, including
+// the four approaches to the junction. No additional texture or mesh.
+// The profile is symmetric and fades into the centre of the junction.
+export function chroniclesBannerCartWear(x, z) {
+  const ax = Math.abs(x), az = Math.abs(z);
+  const smooth = (v, a, b) => THREE.MathUtils.smoothstep(v, a, b);
+  const rut = q => 1 - smooth(Math.abs(q - 0.66), 0.066, 0.3696);
+  const ns = rut(ax) * (1 - smooth(ax, 1.10, 1.32)) * smooth(az, 0.85, 2);
+  const ew = rut(az) * (1 - smooth(az, 1.10, 1.32)) * smooth(ax, 0.85, 2);
+  return 1 - 0.18 * Math.max(ns, ew);
+}
+
+function applyBannerCartWear(material) {
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>', '#include <common>\nvarying vec2 vChroniclesRoadPosition;',
+    ).replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 chroniclesRoadPosition = vec4(position, 1.0);
+      #ifdef USE_INSTANCING
+        chroniclesRoadPosition = instanceMatrix * chroniclesRoadPosition;
+      #endif
+      vChroniclesRoadPosition = chroniclesRoadPosition.xz;`);
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>', `#include <common>
+      varying vec2 vChroniclesRoadPosition;
+      float chroniclesCartWear(vec2 p) {
+        vec2 a = abs(p);
+        vec2 rut = 1.0 - smoothstep(vec2(0.066), vec2(0.3696), abs(a - vec2(0.66)));
+        vec2 axis = 1.0 - smoothstep(vec2(1.10), vec2(1.32), a);
+        vec2 fade = smoothstep(vec2(0.85), vec2(2.0), a.yx);
+        vec2 wear = rut * axis * fade;
+        return 1.0 - 0.18 * max(wear.x, wear.y);
+      }`,
+    ).replace('#include <color_fragment>', `#include <color_fragment>
+      diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition);`);
+  };
+  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-v87';
+}
+
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
   const grid = scenePlan.grid || [];
   const width = Math.max(1, Number(scenePlan.width) || grid[0]?.length || 19);
@@ -774,6 +813,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       normalScale: new THREE.Vector2(0.72, 0.72),
     } : {}),
   });
+  if (bannerTrail) applyBannerCartWear(paver);
   const timber = material(0x4d3424);
 
   const plaque = material(0xc4aa70, { metalness: 0.47, roughness: 0.45 });
