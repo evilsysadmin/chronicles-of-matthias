@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -763,6 +763,62 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(x === center.x || y === center.y).toBe(true);
     }
     expect(shades.size).toBeGreaterThan(2);
+  });
+
+  it('gives cart tracks continuous symmetric wear with a clean junction and bounded contrast', () => {
+    const wear = chroniclesBannerCartWear;
+    expect(wear(0, 0)).toBe(1);
+    expect(wear(0.66, 10)).toBeCloseTo(0.82, 8);
+    expect(wear(10, -0.66)).toBeCloseTo(0.82, 8);
+    expect(wear(1.32, 10)).toBe(1);
+    expect(wear(0, 10)).toBe(1);
+    expect(wear(0.66, 1.4)).toBeGreaterThan(0.82);
+    expect(wear(0.66, 1.4)).toBeLessThan(1);
+    for (let i = 0; i <= 132; i++) {
+      const p = i / 100 - 0.66;
+      expect(wear(p, 2)).toBeCloseTo(wear(p, 6), 10);
+      expect(wear(2, p)).toBeCloseTo(wear(6, p), 10);
+      for (let j = 0; j <= 40; j++) {
+        const q = j / 10;
+        const shade = wear(p, q);
+        expect(shade).toBeGreaterThanOrEqual(0.82 - 1e-10);
+        expect(shade).toBeLessThanOrEqual(1);
+        expect(shade).toBeCloseTo(wear(-p, q), 10);
+        expect(shade).toBeCloseTo(wear(q, p), 10);
+      }
+    }
+  });
+
+  it.each([false, true])('applies cart wear only to C3 road material (coarse=%s)', coarsePointer => {
+    const build = map => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, { coarsePointer, scenePlan: {
+        mapId: map.id, regionKind: 'wilderness', biome: 'plains',
+        grid: map.grid, center: { x: 10, y: 7 }, content: [], scenery: [],
+      } });
+      return scene.getObjectByName('chronicles-campaign-road');
+    };
+    const road = build(bannerRoadFirstBook), other = build(terraC4);
+    expect(road).toBeInstanceOf(THREE.InstancedMesh);
+    expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-v87');
+    expect(other.material.customProgramCacheKey()).not.toBe('chronicles-c3-cart-wear-v87');
+    const shader = {
+      vertexShader: THREE.ShaderLib.standard.vertexShader,
+      fragmentShader: THREE.ShaderLib.standard.fragmentShader,
+    };
+    road.material.onBeforeCompile(shader);
+    expect(shader.vertexShader).toContain('instanceMatrix * chroniclesRoadPosition');
+    expect(shader.vertexShader).toContain('vChroniclesRoadPosition = chroniclesRoadPosition.xz');
+    expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition)');
+    expect(shader.fragmentShader).toContain('max(wear.x, wear.y)');
+    expect(shader.vertexShader).toContain('#include <begin_vertex>');
+    expect(shader.fragmentShader).toContain('#include <color_fragment>');
+    const stock = { vertexShader: THREE.ShaderLib.standard.vertexShader,
+      fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+    other.material.onBeforeCompile(stock);
+    expect(stock.fragmentShader).toBe(THREE.ShaderLib.standard.fragmentShader);
+    expect(road.geometry.index.count).toBe(other.geometry.index.count);
   });
 
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {
