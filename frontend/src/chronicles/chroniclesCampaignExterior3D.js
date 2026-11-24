@@ -830,7 +830,40 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const wilds = !settlement && chroniclesTerraSceneryBiomes().includes(scenePlan.biome) && !forest;
   // A forest continues past the playable grid so its gaps never show the void.
   const margin = forest ? FOREST_MARGIN_CELLS * 2 : wilds ? TERRA_SCENERY_MARGIN * 2 : 0;
-  const terrain = new THREE.Mesh(new THREE.BoxGeometry((width + margin) * CELL, 0.25, (height + margin) * CELL), earth);
+  // C3 only: a coarse, static forest-floor shade field. Sample the actual
+  // blocked woodland roots, not the repeating meadow atlas, so the clearing
+  // retains sunlight while the forest edge gains continuous soft depth.
+  // The terrain remains perfectly flat and retains its original footprint,
+  // UVs, atlas, material count and single draw call on both quality levels.
+  const terrainGeometry = new THREE.BoxGeometry(
+    (width + margin) * CELL, 0.25, (height + margin) * CELL,
+    bannerTrail ? Math.ceil((width + margin) / 2) : 1, 1,
+    bannerTrail ? Math.ceil((height + margin) / 2) : 1,
+  );
+  if (bannerTrail) {
+    const positions = terrainGeometry.getAttribute('position');
+    const colors = new Float32Array(positions.count * 3);
+    for (let i = 0; i < positions.count; i += 1) {
+      const x = THREE.MathUtils.clamp(positions.getX(i) / CELL + sceneCenter.x, 0, width - 1);
+      const y = THREE.MathUtils.clamp(positions.getZ(i) / CELL + sceneCenter.y, 0, height - 1);
+      let distance = 2.8;
+      for (let dy = -3; dy <= 3; dy += 1) {
+        for (let dx = -3; dx <= 3; dx += 1) {
+          const gx = Math.round(x) + dx, gy = Math.round(y) + dy;
+          if (grid[gy]?.[gx] === '#') {
+            distance = Math.min(distance, Math.hypot(gx - x, gy - y));
+          }
+        }
+      }
+      const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(distance, 0.6, 2.8));
+      colors[i * 3] = 1 - shade;
+      colors[i * 3 + 1] = 1 - shade * 0.80;
+      colors[i * 3 + 2] = 1 - shade * 0.65;
+    }
+    terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    earth.vertexColors = true;
+  }
+  const terrain = new THREE.Mesh(terrainGeometry, earth);
   terrain.name = 'chronicles-campaign-terrain';
   terrain.position.y = -0.19;
   terrain.receiveShadow = true;

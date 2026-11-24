@@ -529,6 +529,60 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(original.material.map.image.height).toBe(panorama.material.map.image.height);
   });
 
+  it('shades the real C3 woodland margin continuously on one flat terrain mesh', () => {
+    const map = bannerRoadFirstBook;
+    const grid = map.grid;
+    const plan = { mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      width: grid[0].length, height: grid.length, grid,
+      center: { x: 10, y: 7 }, content: [], scenery: [] };
+    const build = (mapId, coarsePointer) => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, {
+        scenePlan: { ...plan, mapId }, coarsePointer,
+      });
+      expect(scene.children.filter(mesh => mesh.name === 'chronicles-campaign-terrain'))
+        .toHaveLength(1);
+      return scene.getObjectByName('chronicles-campaign-terrain');
+    };
+    const full = build(map.id, false);
+    const mobile = build(map.id, true);
+    const other = build('terra-c4', false);
+    const color = full.geometry.getAttribute('color');
+    const pos = full.geometry.getAttribute('position');
+    expect(full.material.vertexColors).toBe(true);
+    expect(other.material.vertexColors).toBe(false);
+    expect(other.geometry.getAttribute('color')).toBeUndefined();
+    expect(full.material.map).toBe(chroniclesPixelTexture('meadow'));
+    expect(full.geometry.index.count / 3).toBeLessThan(800);
+    expect(color.count).toBe(pos.count);
+    expect(mobile.geometry.getAttribute('color').array).toEqual(color.array);
+    expect(mobile.geometry.getAttribute('position').array).toEqual(pos.array);
+    expect(full.position.y).toBeCloseTo(-0.19);
+    let darkest = 1, brightest = 0;
+    for (let i = 0; i < pos.count; i += 1) {
+      expect(Math.abs(pos.getY(i))).toBeCloseTo(0.125);
+      const x = THREE.MathUtils.clamp(pos.getX(i) / 4 + plan.center.x, 0, plan.width - 1);
+      const y = THREE.MathUtils.clamp(pos.getZ(i) / 4 + plan.center.y, 0, plan.height - 1);
+      let nearest = Infinity;
+      grid.forEach((row, gy) => [...row].forEach((tile, gx) => {
+        if (tile === '#') nearest = Math.min(nearest, Math.hypot(gx - x, gy - y));
+      }));
+      const red = color.getX(i);
+      expect(red).toBeGreaterThanOrEqual(0.75);
+      expect(red).toBeLessThanOrEqual(1);
+      if (nearest < 0.6) expect(red).toBeCloseTo(0.75);
+      if (nearest >= 2.8) expect(red).toBeCloseTo(1);
+      darkest = Math.min(darkest, red);
+      brightest = Math.max(brightest, red);
+    }
+    expect(darkest).toBeLessThan(0.78);
+    expect(brightest).toBeGreaterThan(0.98);
+    full.geometry.computeBoundingBox();
+    other.geometry.computeBoundingBox();
+    expect(full.geometry.boundingBox.min.toArray()).toEqual(other.geometry.boundingBox.min.toArray());
+    expect(full.geometry.boundingBox.max.toArray()).toEqual(other.geometry.boundingBox.max.toArray());
+  });
+
   it('renders a continuous, earthy Banner Road without altering saved navigation cells or mobile GPU budget', () => {
     const map = bannerRoadFirstBook;
     const center = { x: 10, y: 7 };
