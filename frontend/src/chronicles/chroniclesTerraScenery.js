@@ -775,16 +775,16 @@ export function chroniclesMeadowSedgeGeometry({ coarsePointer = false } = {}) {
  * mesh. The same shape can stay below the knee in walkable grass and grow
  * fuller on already-blocked forest tiles without acquiring a collider.
  */
-export function chroniclesForestHerbGeometry({ coarsePointer = false } = {}) {
+export function chroniclesForestHerbGeometry({ coarsePointer = false, woodland = false } = {}) {
   const positions = [];
   const colors = [];
   const lower = ['#48683b', '#587746', '#718554', '#536d3e']
     .map(hex => new THREE.Color(hex));
   const upper = ['#829967', '#94a977', '#a2aa74', '#7f945e']
     .map(hex => new THREE.Color(hex));
-  const triangle = (a, b, c, color) => {
+  const triangle = (a, b, c, color, colorB = color, colorC = color) => {
     positions.push(...a, ...b, ...c);
-    for (let j = 0; j < 3; j += 1) colors.push(color.r, color.g, color.b);
+    for (const tint of [color, colorB, colorC]) colors.push(tint.r, tint.g, tint.b);
   };
   for (let i = 0; i < (coarsePointer ? 4 : 7); i += 1) {
     const angle = i * Math.PI * (3 - Math.sqrt(5));
@@ -794,14 +794,25 @@ export function chroniclesForestHerbGeometry({ coarsePointer = false } = {}) {
     const tangentX = -outwardZ, tangentZ = outwardX;
     const reach = 0.38 + (i % 3) * 0.085;
     const h = 0.64 + (i % 4) * 0.062;
-    const span = 0.13 + (i % 2) * 0.045;
+    const span = (0.13 + (i % 2) * 0.045) * (woodland ? 0.84 : 1);
     const mx = x + outwardX * reach * 0.47;
     const mz = z + outwardZ * reach * 0.47;
-    const left = [mx - tangentX * span, h * 0.49, mz - tangentZ * span];
-    const right = [mx + tangentX * span, h * 0.49, mz + tangentZ * span];
-    const tip = [x + outwardX * reach, h, z + outwardZ * reach];
-    triangle([x, 0.012, z], left, right, lower[i % lower.length]);
-    triangle(left, tip, right, upper[i % upper.length]);
+    const shoulder = h * (woodland ? 0.61 : 0.49);
+    const left = [mx - tangentX * span, shoulder, mz - tangentZ * span];
+    const right = [mx + tangentX * span, shoulder, mz + tangentZ * span];
+    // C3 uses a lower arch instead of identical upright spear tips.
+    // The original horizontal reach, vertex count and mesh batch survive.
+    const tip = [x + outwardX * reach, h * (woodland ? 0.74 + (i % 3) * 0.035 : 1), z + outwardZ * reach];
+    const root = lower[i % lower.length], leaf = upper[i % upper.length];
+    if (woodland) {
+      const mid = root.clone().lerp(leaf, 0.62);
+      const rim = mid.clone().lerp(leaf, 0.22);
+      triangle([x, 0.012, z], left, right, root, mid, rim);
+      triangle(left, tip, right, mid, leaf, rim);
+    } else {
+      triangle([x, 0.012, z], left, right, root);
+      triangle(left, tip, right, leaf);
+    }
     if (!coarsePointer) {
       // Small asymmetric side leaflets give a genuine fern-like profile,
       // not another wider cone or identical blade of ordinary meadow grass.
@@ -1176,7 +1187,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     // Walkable clutter.
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     meadowSedge: () => [chroniclesMeadowSedgeGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
-    forestHerb: () => [chroniclesForestHerbGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    forestHerb: () => [chroniclesForestHerbGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
