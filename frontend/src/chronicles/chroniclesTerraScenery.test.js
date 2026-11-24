@@ -701,6 +701,33 @@ describe('Terra scenery', () => {
     expect(full.boundingBox.min.y).toBeGreaterThan(-1.0);
     expect(full.boundingBox.max.y).toBeLessThan(0.65);
     for (const v of full.getAttribute('position').array) expect(Number.isFinite(v)).toBe(true);
+    // C3 / Camino de los Estandartes: only its forest uses a lower,
+    // asymmetrical hedgerow; the generic meadow remains pixel-for-pixel
+    // unchanged in its underlying mesh, with identical 240/40 triangle cost.
+    for (const coarsePointer of [false, true]) {
+      const ordinary = chroniclesLayeredShrubGeometry({ coarsePointer });
+      const windswept = chroniclesLayeredShrubGeometry({ coarsePointer, woodland: true });
+      const copy = chroniclesLayeredShrubGeometry({ coarsePointer, woodland: true });
+      const triangles = triangleCount(ordinary);
+      expect(triangles).toBe(coarsePointer ? 40 : 240);
+      expect(triangleCount(windswept)).toBe(triangles);
+      expect(windswept.getAttribute('uv').count)
+        .toBe(ordinary.getAttribute('uv').count);
+      expect(windswept.getAttribute('position').array)
+        .not.toEqual(ordinary.getAttribute('position').array);
+      expect(windswept.getAttribute('position').array)
+        .toEqual(copy.getAttribute('position').array);
+      ordinary.computeBoundingBox();
+      windswept.computeBoundingBox();
+      const height = geometry => geometry.boundingBox.max.y - geometry.boundingBox.min.y;
+      expect(height(windswept)).toBeLessThan(height(ordinary) * 0.85);
+      expect(windswept.boundingBox.min.y).toBeGreaterThan(-0.90);
+      for (const v of windswept.getAttribute('position').array)
+        expect(Number.isFinite(v)).toBe(true);
+      ordinary.dispose();
+      windswept.dispose();
+      copy.dispose();
+    }
     const center = { x: 10, y: 7 };
     const map = chroniclesMapById('banner-road-first-book');
     const plains = buildTerraScenery({ grid: map.grid, center, biome: 'plains', mapId: map.id });
@@ -714,6 +741,26 @@ describe('Terra scenery', () => {
     expect(triangleCount(hillBush.geometry)).toBe(80);
     expect(shrub.count).toBeGreaterThan(15);
     expect(shrub.instanceColor.count).toBe(shrub.count);
+    const otherPlains = buildTerraScenery({
+      grid: map.grid, center, biome: 'plains', mapId: 'terra-c4',
+    });
+    const untouched = otherPlains.getObjectByName('chronicles-terra-bush');
+    expect(untouched.geometry.getAttribute('position').array)
+      .toEqual(full.getAttribute('position').array);
+    expect(shrub.geometry.getAttribute('position').array)
+      .not.toEqual(untouched.geometry.getAttribute('position').array);
+    const again = buildTerraScenery({
+      grid: map.grid, center, biome: 'plains', mapId: map.id,
+    }).getObjectByName('chronicles-terra-bush');
+    expect(again.count).toBe(shrub.count);
+    expect(again.geometry.getAttribute('position').array)
+      .toEqual(shrub.geometry.getAttribute('position').array);
+    const matrix = new THREE.Matrix4(), same = new THREE.Matrix4();
+    for (let i = 0; i < shrub.count; i += 1) {
+      shrub.getMatrixAt(i, matrix);
+      again.getMatrixAt(i, same);
+      expect(matrix.elements).toEqual(same.elements);
+    }
     expect(plains.children.every(child => child.isInstancedMesh)).toBe(true);
     [full, mobile, restored].forEach(g => g.dispose());
   });
