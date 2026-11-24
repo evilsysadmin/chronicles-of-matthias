@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { chroniclesBrezalVergeRelief, chroniclesBannerRoadGroveOffset } from './chroniclesTerraScenery.js';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadCanopyRhythm, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { chroniclesBannerRoadFlowerCells, TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadCanopyRhythm, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -1696,6 +1696,46 @@ describe('Terra scenery', () => {
     expect(variations.size).toBeGreaterThan(2);
     expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
     expect(touch.children.every(child => child.isInstancedMesh)).toBe(true);
+  });
+
+  it('groups C3 flowers into connected colonies without increasing the population', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    keepClear.push({ x: 5, y: 6 });
+    const clear = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    const selected = chroniclesBannerRoadFlowerCells(map.grid, clear);
+    expect(selected).toEqual(chroniclesBannerRoadFlowerCells(map.grid, clear));
+    expect(selected.size).toBe(56);
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    let near = 0, isolated = 0;
+    for (const key of selected) {
+      const [x, y] = key.split(',').map(Number);
+      expect(map.grid[y][x]).toBe('.');
+      expect(clear.has(key)).toBe(false);
+      const neighbors = dirs.map(([dx, dy]) => (x + dx) + ',' + (y + dy));
+      if (neighbors.some(k => clear.has(k))) near++;
+      if (!neighbors.some(k => selected.has(k))) isolated++;
+    }
+    expect(near).toBe(24);
+    expect(isolated).toBeLessThanOrEqual(2);
+    const opts = { grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear };
+    const flowers = buildTerraScenery(opts).getObjectByName('chronicles-terra-flower');
+    expect(flowers.count).toBe(selected.size);
+    const matrix = new THREE.Matrix4();
+    const actual = new Set();
+    for (let i = 0; i < flowers.count; i++) {
+      flowers.getMatrixAt(i, matrix);
+      actual.add((Math.round(matrix.elements[12] / 4) + center.x) + ','
+        + (Math.round(matrix.elements[14] / 4) + center.y));
+    }
+    expect(actual).toEqual(selected);
+    expect(buildTerraScenery({ ...opts, coarsePointer: true })
+      .getObjectByName('chronicles-terra-flower')).toBeUndefined();
+    // Degenerate or entirely reserved meadows remain empty.
+    expect(chroniclesBannerRoadFlowerCells(['##', '##']).size).toBe(0);
+    expect(chroniclesBannerRoadFlowerCells(['.'], new Set(['0,0'])).size).toBe(0);
   });
 
   it('creates small opaque wildflower sprigs with petals and stems, never floating spheres', () => {
