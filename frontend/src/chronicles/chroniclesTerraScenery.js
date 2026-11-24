@@ -486,8 +486,10 @@ export function chroniclesBrezalShrubGeometry({ coarsePointer = false } = {}) {
  * Other biomes and maps continue to use chroniclesOrganicCanopyGeometry.
  */
 export function chroniclesWoodlandLeafMassGeometry({ coarsePointer = false } = {}) {
-  const geometry = new THREE.SphereGeometry(1, coarsePointer ? 5 : 10,
-    coarsePointer ? 3 : 5);
+  // One more latitude and meridian round the old angular mobile cap.
+  // Desktop geometry and all non-woodland foliage remain unchanged.
+  const geometry = new THREE.SphereGeometry(1, coarsePointer ? 6 : 10,
+    coarsePointer ? 4 : 5);
   const positions = geometry.getAttribute('position');
   for (let i = 0; i < positions.count; i += 1) {
     const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
@@ -498,13 +500,15 @@ export function chroniclesWoodlandLeafMassGeometry({ coarsePointer = false } = {
       + 0.065 * Math.cos(5 * a - 0.24)
       + 0.033 * Math.sin(7 * a + y * 1.4);
     const skirt = y < 0 ? 1 + 0.10 * y : 1;
-    // On touch, the five-meridian cap would otherwise taper to a sharp
-    // pyramid tip. Lift its upper shoulder ring without adding triangles.
-    const touchShoulderLift = coarsePointer && y > 0.4 && y < 0.7 ? 0.26 : 0;
+    // The middle ring eliminates the old uninterrupted vertical wall.
+    // Compress its radial envelope and lift the upper shoulder slightly
+    // so the new ring does not create a giant overhanging mushroom cap.
+    const touchShoulderLift = coarsePointer && y > 0.65 && y < 0.8 ? 0.035 : 0;
+    const equator = coarsePointer && Math.abs(y) < 0.1 ? 0.82 : 1;
     const vertical = y * (y < 0 ? 0.77 : 0.93) + touchShoulderLift
       + 0.024 * Math.sin(4 * a + 0.67) * (1 - Math.abs(y));
-    positions.setXYZ(i, x * scallop * skirt, vertical,
-      z * (scallop + 0.024 * Math.sin(2 * a + y * 2.0)) * skirt);
+    positions.setXYZ(i, x * scallop * skirt * equator, vertical,
+      z * (scallop + 0.024 * Math.sin(2 * a + y * 2.0)) * skirt * equator);
   }
   positions.needsUpdate = true;
   // Sphere normals already interpolate continuously over the lobes and
