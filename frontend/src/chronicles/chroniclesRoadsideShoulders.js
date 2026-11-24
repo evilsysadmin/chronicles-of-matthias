@@ -145,14 +145,21 @@ export function createBannerRoadShoulders({
   const tints = ['#ffffff', '#e7e8d7', '#dbe3d0', '#eee4d0']
     .map(hex => new THREE.Color(hex));
   edges.forEach(({ x, y, dx, dy, yaw }, i) => {
-    // The dirt track ends 1.32m from its centreline. The verge starts
-    // 2cm beyond it; flat moss tongues alone cross the visual edge.
-    // The 4m navigation grid stays intact.
-    const edge = CELL * 0.335;
+    // Straight road instances are 2.64m across and 4m long. Side
+    // shoulders start 2cm outside the narrow edge, but terminal shoulders
+    // belong at the full longitudinal end, not 68cm inside the tread.
+    // A rare exposed crossing edge also uses the full 4m footprint.
+    const northSouth = x === center.x && y !== center.y;
+    const eastWest = y === center.y && x !== center.x;
+    const terminal = (northSouth && dy !== 0) || (eastWest && dx !== 0);
+    const side = (northSouth && dx !== 0) || (eastWest && dy !== 0);
+    const edge = CELL * (side ? 0.33 : 0.5) + 0.02;
     dummy.position.set((x - center.x) * CELL + dx * edge, -0.052,
       (y - center.y) * CELL + dy * edge);
     dummy.rotation.set(0, yaw, 0);
-    dummy.scale.set(0.92 + hash(x, y, 619) * 0.12, 1,
+    // Rotate the same shoulder batch, then fit its length to the actual
+    // transverse width at an end. Side shoulders retain their old pose.
+    dummy.scale.set((terminal ? 0.66 : 1) * (0.92 + hash(x, y, 619) * 0.12), 1,
       0.80 + hash(x + dx, y + dy, 623) * 0.34);
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);

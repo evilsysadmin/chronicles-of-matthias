@@ -44,9 +44,13 @@ describe('Banner Road organic grass/earth shoulders', () => {
       full.getColorAt(i, tint);
       again.getColorAt(i, sameTint);
       expect(tint.getHex()).toBe(sameTint.getHex());
-      const matching = exposed.filter(({ x, y, dx, dy }) =>
-        Math.abs(m.elements[12] - ((x - center.x) * 4 + dx * 1.34)) < 0.001
-          && Math.abs(m.elements[14] - ((y - center.y) * 4 + dy * 1.34)) < 0.001);
+      const matching = exposed.filter(({ x, y, dx, dy }) => {
+        const side = (x === center.x && y !== center.y && dx !== 0)
+          || (y === center.y && x !== center.x && dy !== 0);
+        const edge = side ? 1.34 : 2.02;
+        return Math.abs(m.elements[12] - ((x - center.x) * 4 + dx * edge)) < 0.001
+          && Math.abs(m.elements[14] - ((y - center.y) * 4 + dy * edge)) < 0.001;
+      });
       expect(matching).toHaveLength(1);
       const e = matching[0];
       mapped.add(e.x + ',' + e.y + ':' + e.dx + ',' + e.dy);
@@ -81,6 +85,31 @@ describe('Banner Road organic grass/earth shoulders', () => {
       expect(matrix.elements[13] + 0.085).toBeGreaterThan(0.0245);
       expect(matrix.elements[13] + 0.085).toBeLessThan(0.045);
     }
+  });
+
+  it.each([true, false])('aligns four terminal shoulders with the real end of the narrow road (coarse=%s)', coarsePointer => {
+    const mesh = createBannerRoadShoulders({ grid: map.grid, roadCells, center, coarsePointer });
+    const positions = mesh.geometry.getAttribute('position');
+    const m = new THREE.Matrix4(), world = new THREE.Vector3();
+    let terminalCount = 0;
+    for (const [i, edge] of exposed.entries()) {
+      const { x, y, dx, dy } = edge;
+      const terminal = (x === center.x && y !== center.y && dy !== 0)
+        || (y === center.y && x !== center.x && dx !== 0);
+      if (!terminal) continue;
+      terminalCount++;
+      mesh.getMatrixAt(i, m);
+      const cx = (x - center.x) * 4, cz = (y - center.y) * 4;
+      expect((m.elements[12] - cx) * dx + (m.elements[14] - cz) * dy).toBeCloseTo(2.02, 5);
+      for (let v = 0; v < positions.count; v++) {
+        world.fromBufferAttribute(positions, v).applyMatrix4(m);
+        const lateral = Math.abs((world.x - cx) * dy - (world.z - cz) * dx);
+        const longitudinal = (world.x - cx) * dx + (world.z - cz) * dy;
+        expect(lateral).toBeLessThan(1.32);
+        expect(longitudinal).toBeGreaterThan(1.88);
+      }
+    }
+    expect(terminalCount).toBe(4);
   });
 
   it('has low bounded terrain patches, faint moss intrusion and a lighter touch model', () => {
