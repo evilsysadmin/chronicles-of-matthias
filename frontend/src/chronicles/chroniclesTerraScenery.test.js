@@ -468,6 +468,36 @@ describe('Terra scenery', () => {
   });
 
 
+  it.each([true, false])('lifts only C3 broadleaf albedo without extra batches or emissive light (coarse=%s)', (coarsePointer) => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const options = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome, coarsePointer };
+    const woodland = buildTerraScenery({ ...options, mapId: map.id });
+    const generic = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    for (const [part, repeat] of [['crown', 3], ['bush', 2]]) {
+      const c3 = woodland.getObjectByName('chronicles-terra-' + part);
+      const original = generic.getObjectByName('chronicles-terra-' + part);
+      expect(c3).toBeInstanceOf(THREE.InstancedMesh);
+      expect(original).toBeInstanceOf(THREE.InstancedMesh);
+      const texture = c3.material.map, baseline = original.material.map;
+      expect(texture.userData.chroniclesPixelArt.kind).toBe('woodlandleaves');
+      expect(baseline.userData.chroniclesPixelArt.kind).toBe('leaves');
+      expect(texture.image.width).toBe(32);
+      expect(texture.image.height).toBe(32);
+      expect(texture.repeat.toArray()).toEqual([repeat, repeat]);
+      expect(texture.magFilter).toBe(baseline.magFilter);
+      expect(texture.minFilter).toBe(baseline.minFilter);
+      expect(c3.material.emissive.getHex()).toBe(0);
+      expect(woodland.children.filter(mesh => mesh.name === c3.name)).toHaveLength(1);
+      const pixels = texture.image.data, before = baseline.image.data;
+      for (let i = 0; i < pixels.length; i += 4) {
+        expect(pixels[i]).toBeGreaterThan(before[i]);
+        expect(pixels[i + 1]).toBeGreaterThan(before[i + 1]);
+        expect(pixels[i + 2]).toBeGreaterThan(before[i + 2]);
+        expect(pixels[i + 3]).toBe(255);
+      }
+    }
+  });
+
   it('varies only C3 crown proportions in a deterministic, bounded skyline rhythm', () => {
     const values = [];
     for (let y = -3; y <= 14; y += 1) {
