@@ -1598,6 +1598,37 @@ describe('Terra scenery', () => {
     expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
+  it.each([false, true])('makes C3 meadow blades slender without increasing geometry (coarse=%s)', coarsePointer => {
+    const generic = chroniclesMeadowGrassGeometry({ coarsePointer });
+    const slender = chroniclesMeadowGrassGeometry({ coarsePointer, woodland: true });
+    const repeat = chroniclesMeadowGrassGeometry({ coarsePointer, woodland: true });
+    const a = generic.getAttribute('position'), b = slender.getAttribute('position');
+    const ca = generic.getAttribute('color'), cb = slender.getAttribute('color');
+    expect(b.count).toBe((coarsePointer ? 5 : 11) * 9);
+    expect(b.count).toBe(a.count);
+    expect(b.array).toEqual(repeat.getAttribute('position').array);
+    expect(cb.array).toEqual(repeat.getAttribute('color').array);
+    const v = (attr, i) => new THREE.Vector3().fromBufferAttribute(attr, i);
+    for (let i = 0; i < b.count; i += 9) {
+      const originalWidth = v(a, i).distanceTo(v(a, i + 1));
+      expect(v(b, i).distanceTo(v(b, i + 1))).toBeCloseTo(originalWidth * 0.64, 6);
+      expect(v(b, i).add(v(b, i + 1)).multiplyScalar(0.5)
+        .distanceTo(v(a, i).add(v(a, i + 1)).multiplyScalar(0.5))).toBeLessThan(1e-6);
+      expect(b.getY(i + 8)).toBe(a.getY(i + 8));
+      expect(v(b, i + 6).distanceTo(v(b, i + 7)))
+        .toBeLessThan(v(a, i + 6).distanceTo(v(a, i + 7)) * 0.50);
+      expect(v(cb, i + 8).distanceTo(v(cb, i)))
+        .toBeLessThan(v(ca, i + 8).distanceTo(v(ca, i)));
+    }
+    expect(slender.boundingSphere.radius).toBeLessThan(0.65);
+    const map = chroniclesMapById('banner-road-first-book');
+    const opts = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome, coarsePointer };
+    const tuft = mapId => buildTerraScenery({ ...opts, mapId }).getObjectByName('chronicles-terra-tuft');
+    expect(tuft(map.id).geometry.getAttribute('position').array).toEqual(b.array);
+    expect(tuft('terra-c4').geometry.getAttribute('position').array).toEqual(a.array);
+    [generic, slender, repeat].forEach(g => g.dispose());
+  });
+
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {
     const desktop = chroniclesMeadowGrassGeometry();
     const mobile = chroniclesMeadowGrassGeometry({ coarsePointer: true });

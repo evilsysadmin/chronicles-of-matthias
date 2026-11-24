@@ -641,7 +641,7 @@ export function chroniclesLayeredShrubGeometry({ coarsePointer = false, woodland
  * Coarse uses 5 leaves (15 triangles), full detail 11 (33 triangles).
  * No billboards, alpha sorting, added draw calls or animation.
  */
-export function chroniclesMeadowGrassGeometry({ coarsePointer = false } = {}) {
+export function chroniclesMeadowGrassGeometry({ coarsePointer = false, woodland = false } = {}) {
   const positions = [];
   const colors = [];
   const roots = ['#68854a', '#789358', '#819861', '#6e8a50']
@@ -664,22 +664,25 @@ export function chroniclesMeadowGrassGeometry({ coarsePointer = false } = {}) {
     const radius = 0.045 + (i % 4) * 0.043;
     const x = directionX * radius, z = directionZ * radius;
     const height = (0.23 + (i % 5) * 0.034) * (coarsePointer ? 0.96 : 1);
-    const baseWidth = 0.048 + (i % 3) * 0.010;
-    const shoulderWidth = baseWidth * 0.60;
-    const shoulderReach = 0.040 + (i % 3) * 0.024;
-    const tipReach = shoulderReach + 0.080 + (i % 4) * 0.016;
+    // C3's mature meadow has narrow, tapered blades rather than broad
+    // pennants. Retain the same three triangles per blade.
+    const baseWidth = (0.048 + (i % 3) * 0.010) * (woodland ? 0.64 : 1);
+    const shoulderWidth = baseWidth * (woodland ? 0.46 : 0.60);
+    const shoulderReach = (0.040 + (i % 3) * 0.024) * (woodland ? 1.18 : 1);
+    const tipReach = woodland ? shoulderReach + (0.080 + (i % 4) * 0.016) * 1.18
+      : shoulderReach + 0.080 + (i % 4) * 0.016;
     // A slight sideways curl gives the blade a continuous asymmetric arc.
-    const curl = (i % 2 ? -1 : 1) * (0.028 + (i % 3) * 0.009);
+    const curl = (i % 2 ? -1 : 1) * (0.028 + (i % 3) * 0.009) * (woodland ? 1.25 : 1);
     const rootLeft = [x - tangentX * baseWidth, 0.012, z - tangentZ * baseWidth];
     const rootRight = [x + tangentX * baseWidth, 0.012, z + tangentZ * baseWidth];
     const midX = x + directionX * shoulderReach + tangentX * curl * 0.30;
     const midZ = z + directionZ * shoulderReach + tangentZ * curl * 0.30;
     const shoulderLeft = [
-      midX - tangentX * shoulderWidth, height * 0.64,
+      midX - tangentX * shoulderWidth, height * (woodland ? 0.69 : 0.64),
       midZ - tangentZ * shoulderWidth,
     ];
     const shoulderRight = [
-      midX + tangentX * shoulderWidth, height * 0.64,
+      midX + tangentX * shoulderWidth, height * (woodland ? 0.69 : 0.64),
       midZ + tangentZ * shoulderWidth,
     ];
     const tip = [
@@ -688,8 +691,12 @@ export function chroniclesMeadowGrassGeometry({ coarsePointer = false } = {}) {
       z + directionZ * tipReach + tangentZ * curl,
     ];
     const rootShade = roots[i % roots.length];
-    const midShade = shoulders[i % shoulders.length];
-    const tipShade = tips[i % tips.length];
+    const midShade = woodland
+      ? shoulders[i % shoulders.length].clone().lerp(rootShade, 0.25)
+      : shoulders[i % shoulders.length];
+    const tipShade = woodland
+      ? tips[i % tips.length].clone().lerp(midShade, 0.38)
+      : tips[i % tips.length];
     triangle(rootLeft, rootRight, shoulderRight,
       rootShade, rootShade, midShade);
     triangle(rootLeft, shoulderRight, shoulderLeft,
@@ -1215,7 +1222,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     dune: () => [new THREE.SphereGeometry(1, 10, 6), lit(0xffffff, { map: texture('sand', 2, 2) })],
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
-    tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     meadowSedge: () => [chroniclesMeadowSedgeGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     forestHerb: () => [chroniclesForestHerbGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
