@@ -19,6 +19,24 @@ test('public staging release gates the real Swordhaven rear shooter after cleani
   assert.ok(REAR_SHOOTER_ROUTE.length >= 16, 'No abbreviated/teleported public walk');
 });
 
+test('parallel crypt/rear smoke is explicitly opt-in and fail-closed', () => {
+  assert.ok(existing.includes("process.env.CHRONICLES_PARALLEL_PUBLIC_COMBAT === '1'"));
+  assert.ok(existing.includes('Promise.allSettled(['),
+    'Both smoke journeys must settle before returning a failure');
+  assert.ok(existing.includes('runCrypt(),'));
+  assert.ok(existing.includes("import('./public-staging-rear-shooter.mjs'),"));
+  assert.ok(existing.includes('throw new AggregateError(errors,'),
+    'One failed journey must still fail the release after both cleanups');
+  assert.ok(existing.includes('} else {\n  await runCrypt();'));
+  assert.ok(existing.includes("await import('./public-staging-rear-shooter.mjs');"),
+    'Default non-Infra invocations must retain the original serial contract');
+  assert.ok(existing.indexOf('await browser?.close()') <
+    existing.indexOf("await fetch(api + '/auth/delete-account'"),
+    'Crypt must always close browser before revoking the ephemeral account');
+  assert.ok(rear.includes("await fetch(api + '/auth/delete-account'"),
+    'Rear smoke must independently revoke its own ephemeral account');
+});
+
 test('rear shooter uses the official API, real player inputs and a durable checkpoint with F5', () => {
   for (const marker of [
     'CHRONICLES_SOURCE_SHA', 'CHRONICLES_STAGING_INVITE_CODE',

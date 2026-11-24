@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { chromium } from 'playwright';
 
+// Parallelism is opt-in from the trusted Infra staging runner only.
+// Default callers retain the original serial contract and cleanup order.
+async function runCrypt() {
 const origin = 'https://staging.chronicles.shadowops.dpdns.org';
 const api = 'https://chronicles-api-staging.shadowops.dpdns.org/api';
 const expectedSha = process.env.CHRONICLES_SOURCE_SHA;
@@ -242,8 +245,22 @@ try {
   assert.ok(deleted.ok, 'Failed to delete ephemeral Chronicles combat account: ' + deleted.status);
 }
 
-// The retired crypt stays a legacy combat regression, NOT the first-person
-// campaign entry. Only after its own ephemeral account is deleted do we run
-// the independent, release-gating real Swordhaven rear-crossbow encounter.
-// This second smoke uses its own account and the same fail-closed staging gate.
-await import('./public-staging-rear-shooter.mjs');
+}
+// The retired crypt and Book One rear-crossbow remain independent real API
+// browser journeys. Each owns its own disposable user, Chromium and finally
+// cleanup. In opt-in mode we wait for BOTH settlements before reporting a
+// failure, so a failing peer can never interrupt the other account's cleanup.
+if (process.env.CHRONICLES_PARALLEL_PUBLIC_COMBAT === '1') {
+  const results = await Promise.allSettled([
+    runCrypt(),
+    import('./public-staging-rear-shooter.mjs'),
+  ]);
+  const errors = results.filter(result => result.status === 'rejected')
+    .map(result => result.reason);
+  if (errors.length) throw new AggregateError(errors,
+    'Public staging crypt/rear smoke failed; both cleanup paths have settled');
+} else {
+  await runCrypt();
+  // Preserve the existing sequential semantics for all other callers.
+  await import('./public-staging-rear-shooter.mjs');
+}
