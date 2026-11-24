@@ -25,24 +25,45 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
   it('makes continuous low saddles on all three outside rows, without touching real cells', () => {
     expect(TERRA_SCENERY_MARGIN).toBe(3);
     const eastProfile = Array.from({ length: height }, (_, y) => relief(width, y, 1));
-    expect(Math.min(...eastProfile)).toBeGreaterThanOrEqual(0.46);
-    expect(Math.min(...eastProfile)).toBeLessThan(0.57);
-    expect(Math.max(...eastProfile)).toBeGreaterThan(0.96);
+    const westProfile = Array.from({ length: height }, (_, y) => relief(-1, y, 1));
+    const northProfile = Array.from({ length: width }, (_, x) => relief(x, -1, 1));
+    const southProfile = Array.from({ length: width }, (_, x) => relief(x, height, 1));
+    // V68: one continuous perimeter avoids identical mirror-image hillsides.
+    // There are now genuine low passes through the layered rock horizon.
+    expect(eastProfile).not.toEqual(westProfile);
+    expect(northProfile).not.toEqual(southProfile);
+    expect(Math.min(...eastProfile)).toBeGreaterThanOrEqual(0.20);
+    expect(Math.min(...eastProfile)).toBeLessThan(0.42);
+    expect(Math.max(...eastProfile)).toBeGreaterThan(0.85);
     expect(Math.max(...eastProfile)).toBeLessThanOrEqual(0.98);
-    expect(Math.max(...eastProfile) - Math.min(...eastProfile)).toBeGreaterThan(0.39);
+    expect(Math.max(...eastProfile) - Math.min(...eastProfile)).toBeGreaterThan(0.48);
+    expect(Math.min(...westProfile, ...northProfile, ...southProfile)).toBeLessThan(0.35);
     for (let y = 0; y < height; y += 1) {
-      expect(relief(-1, y, 1)).toBe(eastProfile[y]);
+      expect(relief(-1, y, 1)).toBe(westProfile[y]);
       expect(relief(-2, y, 2)).toBeLessThan(relief(-1, y, 1));
       expect(relief(-3, y, 3)).toBeLessThan(relief(-2, y, 2));
       expect(relief(width, y, 1)).toBe(eastProfile[y]);
       expect(relief(width + 1, y, 2)).toBeLessThan(relief(width, y, 1));
       expect(relief(width + 2, y, 3)).toBeLessThan(relief(width + 1, y, 2));
-      if (y) expect(Math.abs(eastProfile[y] - eastProfile[y - 1])).toBeLessThan(0.13);
+      expect(relief(-3, y, 3) / relief(-1, y, 1)).toBeCloseTo(0.55 / 0.98, 10);
+      if (y) expect(Math.abs(eastProfile[y] - eastProfile[y - 1])).toBeLessThan(0.22);
     }
     for (let x = 0; x < width; x += 1) {
-      expect(relief(x, -1, 1)).toBe(relief(x, height, 1));
+      expect(relief(x, -1, 1)).toBe(northProfile[x]);
+      expect(relief(x, height, 1)).toBe(southProfile[x]);
       expect(relief(x, -2, 2)).toBeLessThan(relief(x, -1, 1));
       expect(relief(x, height + 2, 3)).toBeLessThan(relief(x, height + 1, 2));
+    }
+    // Each corner has the same crest height when approached from either
+    // adjacent side at each depth: no visual seam at the diagonal joins.
+    for (let depth = 1; depth <= TERRA_SCENERY_MARGIN; depth += 1) {
+      expect(relief(-depth, -depth, depth)).toBeCloseTo(relief(0, -depth, depth), 10);
+      expect(relief(width - 1 + depth, -depth, depth))
+        .toBeCloseTo(relief(width - 1, -depth, depth), 10);
+      expect(relief(width - 1 + depth, height - 1 + depth, depth))
+        .toBeCloseTo(relief(width - 1, height - 1 + depth, depth), 10);
+      expect(relief(-depth, height - 1 + depth, depth))
+        .toBeCloseTo(relief(0, height - 1 + depth, depth), 10);
     }
     for (const [x, y, depth] of [
       [0, 0, 0], [0, 0, 1], [3, 8, 1], [20, 7, 2],
