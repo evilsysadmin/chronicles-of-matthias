@@ -56,6 +56,9 @@ const RAMPS = Object.freeze({
   cobble: [0x4b453d, 0x7d7468, 0xa59b8c, 0xc8bfae, 0xe6dece].map(hex),
   bark: [0x3a2a1c, 0x5e4630, 0x7f6244, 0x9c7d5a].map(hex),
   leaves: [0x1f3a19, 0x2f5223, 0x416b2d, 0x58843a, 0x75a04a].map(hex),
+  // C3 broadleaf albedo: lift near-black gaps and temper saturated greens.
+  // Same clump field and five-level pixel-art ramp, not emissive lighting.
+  woodlandleaves: [0x344b28, 0x456038, 0x587542, 0x708b50, 0x8ca363].map(hex),
   // Terra grounds: same meadow noise as grass, without blades or flowers.
   snow: [0x8f9cb0, 0xb6c2d2, 0xd2dbe6, 0xe6edf4, 0xf6f9fc].map(hex),
   sand: [0x9c8458, 0xbea477, 0xd6c091, 0xe8d6aa, 0xf4e8c6].map(hex),
@@ -74,7 +77,7 @@ const RAMPS = Object.freeze({
 });
 
 const SIZES = Object.freeze({
-  grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
+  grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32, woodlandleaves: 32,
   snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32, uplandrock: 64,
 });
 
