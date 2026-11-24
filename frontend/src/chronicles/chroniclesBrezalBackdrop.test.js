@@ -130,6 +130,45 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     copy.dispose();
   });
 
+  it.each([false, true])('keeps B2 shrub instances but uses muted heath hues at coarse=%s', coarsePointer => {
+    const b2Scene = scene('terra-b2', coarsePointer);
+    const repeated = scene('terra-b2', coarsePointer);
+    const original = scene('generic-hills', coarsePointer);
+    const otherHighlands = scene('terra-e2', coarsePointer);
+    const name = 'chronicles-terra-bush';
+    const bush = b2Scene.getObjectByName(name);
+    const repeat = repeated.getObjectByName(name);
+    const baseline = original.getObjectByName(name);
+    expect(bush).toBeInstanceOf(THREE.InstancedMesh);
+    expect(bush.count).toBeGreaterThan(4);
+    expect(bush.count).toBe(baseline.count);
+    expect(bush.count).toBe(repeat.count);
+    expect(bush.instanceColor).toBeTruthy();
+    expect(baseline.instanceColor).toBeNull();
+    expect(otherHighlands.getObjectByName(name).instanceColor).toBeNull();
+    expect(bush.geometry.getAttribute('position').array)
+      .toEqual(baseline.geometry.getAttribute('position').array);
+    const allowed = new Set(['b9bda1', 'adb79b', 'c5b9a0', 'a4b39a', 'c5c2ab']);
+    const variants = new Set();
+    const m = new THREE.Matrix4(), ref = new THREE.Matrix4();
+    const color = new THREE.Color(), again = new THREE.Color();
+    for (let i = 0; i < bush.count; i += 1) {
+      bush.getMatrixAt(i, m);
+      baseline.getMatrixAt(i, ref);
+      expect(m.elements).toEqual(ref.elements);
+      repeat.getMatrixAt(i, ref);
+      expect(m.elements).toEqual(ref.elements);
+      bush.getColorAt(i, color);
+      repeat.getColorAt(i, again);
+      expect(color.getHexString()).toBe(again.getHexString());
+      expect(allowed.has(color.getHexString())).toBe(true);
+      variants.add(color.getHexString());
+    }
+    expect(variants.size).toBeGreaterThan(1);
+    expect(bush.material.map?.userData?.chroniclesPixelArt?.kind)
+      .toBe(baseline.material.map?.userData?.chroniclesPixelArt?.kind);
+  });
+
   it('lowers only real B2 perimeter verges, following the exterior saddles', () => {
     const north = Array.from({ length: width - 2 }, (_, n) => vergeRelief(n + 1, 0));
     const south = Array.from({ length: width - 2 }, (_, n) =>

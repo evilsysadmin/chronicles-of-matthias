@@ -2290,6 +2290,22 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       });
       mesh.instanceColor.needsUpdate = true;
     }
+    // B2's original saturated green shrubs read as identical bright balls
+    // against its dry olive heath. Weather the existing instances into a
+    // restrained sage/ochre range, derived only from immutable world
+    // transforms: same positions, silhouette, batching, materials and
+    // deterministic palette after F5. No new draw calls or vegetation.
+    if (brezalBackdrop && part === 'bush') {
+      const shades = ['#b9bda1', '#adb79b', '#c5b9a0', '#a4b39a', '#c5c2ab']
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7), 1663);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     if (denseMeadow && part === 'broadleafTrunk') {
       // Reuse original bark texture and draw call; colour differentiates bark.
       const paleBark = new THREE.Color('#f2f2ea');
