@@ -92,7 +92,7 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     // while replacing the tall rounded boulder with a clearly flatter cap.
     expect(geom.count).toBe(baseline.getAttribute('position').count);
     expect(stone.getAttribute('uv').count).toBe(baseline.getAttribute('uv').count);
-    expect(stone.index.count).toBe(baseline.index.count);
+    expect(stone.index?.count ?? 0).toBe(baseline.index?.count ?? 0);
     expect(geom.array).toEqual(copy.getAttribute('position').array);
     expect(stone.boundingBox).toBeTruthy();
     expect(stone.boundingSphere).toBeTruthy();
