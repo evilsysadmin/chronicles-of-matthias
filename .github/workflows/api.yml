@@ -45,6 +45,8 @@ jobs:
       # Inventory only: helps separate server dependencies, Go tools, and
       # packages requiring manual review. Never automatically delete packages.
       - name: Audit internal Go package reachability (advisory)
+        # Inventory is maintained on main and available on demand; not a PR quality gate.
+        if: github.event_name != 'pull_request'
         run: bash scripts/audit-go-reachability.sh
       - name: Build and vet (amd64 + arm64)
         working-directory: api
