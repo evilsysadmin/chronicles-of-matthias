@@ -1155,12 +1155,14 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
   const colors = [];
   const bark = ['#63513d', '#755e44', '#897455', '#4e4438']
     .map(hex => new THREE.Color(hex));
-  const grain = new THREE.Color('#a58d68');
+  const heartwood = new THREE.Color('#806448');
+  const grain = ['#b49b73', '#a88c65', '#b9a27b']
+    .map(hex => new THREE.Color(hex));
   const moss = ['#708654', '#506b40', '#84925d']
     .map(hex => new THREE.Color(hex));
-  const triangle = (a, b, c, tint) => {
+  const triangle = (a, b, c, tint, second = tint, third = tint) => {
     positions.push(...a, ...b, ...c);
-    for (let i = 0; i < 3; i += 1) colors.push(tint.r, tint.g, tint.b);
+    for (const color of [tint, second, third]) colors.push(color.r, color.g, color.b);
   };
   const sides = coarsePointer ? 5 : 8;
   const rings = [-0.67, 0.64].map((x, end) =>
@@ -1174,8 +1176,12 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
     triangle(rings[0][i], rings[1][i], rings[0][next], bark[i % bark.length]);
     triangle(rings[0][next], rings[1][i], rings[1][next],
       bark[(i + 1) % bark.length]);
-    triangle([-0.67, 0.205, 0], rings[0][next], rings[0][i], grain);
-    triangle([0.64, 0.205, 0], rings[1][i], rings[1][next], grain);
+    // A darker weathered heart and lighter sapwood at the rim, with
+    // irregular radial grain. Shared rim vertices retain consistent tint.
+    triangle([-0.67, 0.205, 0], rings[0][next], rings[0][i],
+      heartwood, grain[next % grain.length], grain[i % grain.length]);
+    triangle([0.64, 0.205, 0], rings[1][i], rings[1][next],
+      heartwood, grain[i % grain.length], grain[next % grain.length]);
   }
   // A couple of short broken branch remnants interrupt the cylinder outline
   // without protruding beyond the source forest tile.
@@ -1185,12 +1191,25 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
     triangle([0.27, 0.32, 0.035], [0.43, 0.46, 0.11],
       [0.51, 0.29, 0.08], bark[2]);
   }
-  // Scattered moss streaks sit flush on the upper bark, not in the air.
+  // Interpolate the ACTUAL upper bark facets, whose end rings are
+  // homothetic. A 2mm upward bias avoids z-fighting without floating
+  // moss, even on the five-sided mobile trunk. All three vertices of
+  // each patch lie on the same planar facet.
+  const surface = (side, u, v) => {
+    const next = (side + 1) % sides;
+    const mix = THREE.MathUtils.lerp;
+    const p = rings[0][side].map((value, axis) => mix(value, rings[1][side][axis], u));
+    const q = rings[0][next].map((value, axis) => mix(value, rings[1][next][axis], u));
+    return p.map((value, axis) => mix(value, q[axis], v) + (axis === 1 ? 0.002 : 0));
+  };
   for (let i = 0; i < (coarsePointer ? 2 : 4); i += 1) {
-    const x = -0.48 + i * (coarsePointer ? 0.67 : 0.30);
-    triangle([x, 0.409 - i * 0.01, -0.04],
-      [x + 0.22, 0.402 - i * 0.01, -0.045],
-      [x + 0.11, 0.405 - i * 0.01, 0.085], moss[i % moss.length]);
+    const side = i % 2 ? sides - 1 : 0;
+    const u = 0.14 + i * (coarsePointer ? 0.48 : 0.22);
+    const v = side === 0 ? 0.12 : 0.88;
+    const shade = moss[i % moss.length];
+    triangle(surface(side, u, v), surface(side, u + 0.16, v),
+      surface(side, u + 0.07, side === 0 ? 0.66 : 0.34),
+      shade, shade.clone().multiplyScalar(0.85), moss[(i + 1) % moss.length]);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));

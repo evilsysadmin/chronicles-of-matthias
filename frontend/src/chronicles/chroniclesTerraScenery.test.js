@@ -1277,6 +1277,36 @@ describe('Terra scenery', () => {
     expect(tints.size).toBeGreaterThan(1);
   });
 
+  it.each([false, true])('seats moss on actual bark facets and shades exposed end grain (coarse=%s)', coarsePointer => {
+    const g = chroniclesFallenWoodGeometry({ coarsePointer });
+    const p = g.getAttribute('position'), c = g.getAttribute('color');
+    const sides = coarsePointer ? 5 : 8;
+    const patches = coarsePointer ? 2 : 4;
+    const v = (attr, i) => new THREE.Vector3().fromBufferAttribute(attr, i);
+    expect(p.count).toBe((sides * 4 + (coarsePointer ? 1 : 2) + patches) * 3);
+    const facets = [];
+    for (let i = 0; i < sides; i++) {
+      const n = i * 12;
+      for (const j of [n, n + 3]) facets.push(new THREE.Triangle(v(p, j), v(p, j + 1), v(p, j + 2)));
+      for (const j of [n + 6, n + 9]) {
+        const center = v(c, j), rim = v(c, j + 1);
+        expect(center.length()).toBeLessThan(rim.length());
+      }
+    }
+    const first = p.count - patches * 3;
+    for (let i = first; i < p.count; i++) {
+      const point = v(p, i);
+      const distance = Math.min(...facets.map(f =>
+        f.closestPointToPoint(point, new THREE.Vector3()).distanceTo(point)));
+      expect(distance).toBeGreaterThan(0.0001);
+      expect(distance).toBeLessThan(0.0021);
+    }
+    for (let i = first; i < p.count; i += 3) {
+      expect(v(c, i)).not.toEqual(v(c, i + 1));
+    }
+    g.dispose();
+  });
+
   it('models low bark, end-grain and moss in one bounded desktop/mobile geometry', () => {
     const desktop = chroniclesFallenWoodGeometry();
     const mobile = chroniclesFallenWoodGeometry({ coarsePointer: true });
