@@ -1361,6 +1361,29 @@ describe('Terra scenery', () => {
     [full, mobile, repeat].forEach(g => g.dispose());
   });
 
+  it.each([true, false])('uses lower arched C3 leaves with continuous vertex gradients (coarse=%s)', (coarsePointer) => {
+    const ordinary = chroniclesForestHerbGeometry({ coarsePointer });
+    const shaped = chroniclesForestHerbGeometry({ coarsePointer, woodland: true });
+    const restored = chroniclesForestHerbGeometry({ coarsePointer, woodland: true });
+    const pos = shaped.getAttribute('position'), color = shaped.getAttribute('color');
+    expect(pos.count).toBe(coarsePointer ? 24 : 84);
+    expect(color.count).toBe(pos.count);
+    expect(pos.array).toEqual(restored.getAttribute('position').array);
+    expect(color.array).toEqual(restored.getAttribute('color').array);
+    expect(shaped.boundingBox.max.y).toBeLessThan(ordinary.boundingBox.max.y * 0.85);
+    expect(shaped.boundingBox.min.y).toBeCloseTo(ordinary.boundingBox.min.y);
+    const at = i => [color.getX(i), color.getY(i), color.getZ(i)];
+    const stride = coarsePointer ? 6 : 12;
+    for (let i = 0; i < pos.count; i += stride) {
+      expect(at(i + 1)).toEqual(at(i + 3));
+      expect(at(i + 2)).toEqual(at(i + 5));
+      expect(at(i)).not.toEqual(at(i + 1));
+      expect(at(i + 3)).not.toEqual(at(i + 4));
+      expect(pos.getY(i + 4)).toBeGreaterThan(pos.getY(i + 1));
+    }
+    [ordinary, shaped, restored].forEach(geometry => geometry.dispose());
+  });
+
   it('layers juvenile trees and low herbs near Banner Road forest without blocking walkable paths', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
