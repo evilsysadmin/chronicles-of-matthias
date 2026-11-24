@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { chroniclesBrezalVergeRelief } from './chroniclesTerraScenery.js';
 import { describe, expect, it } from 'vitest';
 import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
@@ -1808,7 +1809,7 @@ describe('Terra scenery', () => {
       biome: b2.biome, scenery: b2.scenery };
     const themed = buildTerraScenery({ ...args, mapId: b2.id });
     const repeat = buildTerraScenery({ ...args, mapId: b2.id });
-    // Untinted baseline shares B2's original transforms; native E2 now
+    // Untinted baseline retains B2's original instances and unsculpted transforms; native E2 now
     // intentionally varies ridge heights, so it is no longer a valid
     // transform baseline for B2.
     const plain = buildTerraScenery(args);
@@ -1857,6 +1858,15 @@ describe('Terra scenery', () => {
         // All 3 v63 authored stones remain low; lichen is unchanged.
         lowAuthoredRuinStones += 1;
         expect(new THREE.Vector3().setFromMatrixScale(matrix).y).toBeLessThan(1.65);
+      } else if (chroniclesBrezalVergeRelief({ grid: b2.grid, x, y }) !== 1) {
+        // V69: existing near-eye blocked perimeter rocks are lower, but
+        // the authored root, world x/z, geometry and lichen stay unchanged.
+        const relief = chroniclesBrezalVergeRelief({ grid: b2.grid, x, y });
+        const now = new THREE.Vector3().setFromMatrixScale(matrix).y;
+        const before = new THREE.Vector3().setFromMatrixScale(otherMatrix).y;
+        expect(now / before).toBeCloseTo(relief, 5);
+        expect(matrix.elements[12]).toBe(otherMatrix.elements[12]);
+        expect(matrix.elements[14]).toBe(otherMatrix.elements[14]);
       } else {
         expect(matrix.elements).toEqual(otherMatrix.elements);
       }
