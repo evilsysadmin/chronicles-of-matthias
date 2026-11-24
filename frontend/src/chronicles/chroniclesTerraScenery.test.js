@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { chroniclesBrezalVergeRelief } from './chroniclesTerraScenery.js';
+import { chroniclesBrezalVergeRelief, chroniclesBannerRoadGroveOffset } from './chroniclesTerraScenery.js';
 import { describe, expect, it } from 'vitest';
 import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadCanopyRhythm, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
@@ -549,6 +549,58 @@ describe('Terra scenery', () => {
       expect(map.grid[13][10]).toBe('.');
       expect(map.grid[12][10]).toBe('.');
     }
+  });
+
+  it.each([false, true])('clusters only the existing C3 exterior roots into staggered groves (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const options = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer };
+    const scene = buildTerraScenery(options);
+    const repeat = buildTerraScenery(options);
+    const trunk = scene.getObjectByName('chronicles-terra-broadleafTrunk');
+    const crown = scene.getObjectByName('chronicles-terra-crown');
+    const twin = repeat.getObjectByName(trunk.name);
+    expect(trunk.count).toBe(crown.count);
+    expect(trunk.count).toBe(twin.count);
+    const noise = (x, y, salt) => {
+      const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
+      return n - Math.floor(n);
+    };
+    const old = [], current = [], occupied = new Set();
+    const matrix = new THREE.Matrix4(), again = new THREE.Matrix4();
+    const width = map.grid[0].length, height = map.grid.length;
+    for (let i = 0; i < trunk.count; i += 1) {
+      trunk.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, again);
+      expect(matrix.elements).toEqual(again.elements);
+      const wx = matrix.elements[12], wz = matrix.elements[14];
+      const x = Math.round(wx / 4) + center.x, y = Math.round(wz / 4) + center.y;
+      const dx = (noise(x, y, 23) - 0.5) * 2;
+      const dz = (noise(y, x, 25) - 0.5) * 2;
+      const cx = (x - center.x) * 4, cz = (y - center.y) * 4;
+      if (x >= 0 && x < width && y >= 0 && y < height) {
+        expect(map.grid[y][x]).toBe('#');
+        expect(wx).toBeCloseTo(cx + dx, 4);
+        expect(wz).toBeCloseTo(cz + dz, 4);
+        continue;
+      }
+      const [ox, oz] = chroniclesBannerRoadGroveOffset(x, y, dx, dz);
+      expect(Math.abs(ox)).toBeLessThanOrEqual(1.45);
+      expect(Math.abs(oz)).toBeLessThanOrEqual(1.45);
+      expect(wx).toBeCloseTo(cx + ox, 4);
+      expect(wz).toBeCloseTo(cz + oz, 4);
+      expect(occupied.has(x + ',' + y)).toBe(false);
+      occupied.add(x + ',' + y);
+      old.push([cx + dx, cz + dz]);
+      current.push([wx, wz]);
+    }
+    expect(current).toHaveLength(coarsePointer ? 102 : 186);
+    const nearest = points => points.map(([x, z], i) => Math.min(...points.map(
+      ([a, b], j) => i === j ? Infinity : Math.hypot(a - x, b - z))));
+    const before = nearest(old), after = nearest(current);
+    expect(after.filter(d => d < 3).length).toBeGreaterThan(
+      before.filter(d => d < 3).length * 1.4);
+    expect(Math.min(...after)).toBeGreaterThan(2.2);
   });
 
   it('gives the distant Banner Road tree line a coherent, bounded height rhythm', () => {
