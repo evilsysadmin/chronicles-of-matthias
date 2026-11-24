@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesLandscapeTileAt } from './chroniclesLandscapeTiles.js';
-import { buildTerraScenery, chroniclesHighlandRidgeProfile } from './chroniclesTerraScenery.js';
+import {
+  buildTerraScenery, chroniclesHighlandRidgeProfile,
+  chroniclesBrezalVergeRelief,
+} from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
 const sceneArgs = (id) => {
@@ -163,9 +166,18 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
             expect(matA.elements[14]).toBe(matB.elements[14]);
           } else if (args.mapId === 'terra-b2' && part === 'boulder'
               && px === 3 && py === 8) {
-            // The 3 authored rubble stones remain the only real B2 change.
+            // The three authored ruin stones retain their low silhouette.
             expect(new THREE.Vector3().setFromMatrixScale(matA).y)
               .toBeLessThan(1.65);
+          } else if (args.mapId === 'terra-b2' && part === 'boulder'
+              && chroniclesBrezalVergeRelief({ grid: args.grid, x: px, y: py }) !== 1) {
+            // V69 lowers only the existing blocked-perimeter boulders.
+            const factor = chroniclesBrezalVergeRelief({ grid: args.grid, x: px, y: py });
+            const was = new THREE.Vector3().setFromMatrixScale(matB).y;
+            const now = new THREE.Vector3().setFromMatrixScale(matA).y;
+            expect(now / was).toBeCloseTo(factor, 5);
+            expect(matA.elements[12]).toBe(matB.elements[12]);
+            expect(matA.elements[14]).toBe(matB.elements[14]);
           } else {
             expect(matA.elements).toEqual(matB.elements);
           }
