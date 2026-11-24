@@ -895,7 +895,7 @@ export function chroniclesMeadowWildflowersGeometry() {
  * textured material handles the entire silhouette. It is built once when
  * the scene mounts; weather, movement and saves never rebuild it.
  */
-export function chroniclesBranchingTrunkGeometry({ coarsePointer = false } = {}) {
+export function chroniclesBranchingTrunkGeometry({ coarsePointer = false, woodland = false } = {}) {
   const radial = coarsePointer ? 5 : 7;
   const trunk = new THREE.CylinderGeometry(0.17, 0.29, 1, radial, coarsePointer ? 2 : 4);
   const points = trunk.getAttribute('position');
@@ -953,6 +953,36 @@ export function chroniclesBranchingTrunkGeometry({ coarsePointer = false } = {})
   const merged = mergeGeometries(pieces, false);
   pieces.forEach(geometry => geometry.dispose());
   if (!merged) throw new Error('Unable to merge Chronicles broadleaf branches');
+  if (woodland) {
+    // C3's bole and all attached limbs share one continuous height-based
+    // shear. Identical positions at seams receive identical displacements.
+    // Keep the lower bole, flare and buttress roots precisely in place.
+    const position = merged.getAttribute('position');
+    const normal = merged.getAttribute('normal');
+    const direction = new THREE.Vector3();
+    for (let i = 0; i < position.count; i += 1) {
+      const y = position.getY(i);
+      if (y <= -0.30) continue;
+      const t = THREE.MathUtils.clamp((y + 0.30) / 1.08, 0, 1);
+      const envelope = t * t * (3 - 2 * t);
+      const a = 2.8 * t + 0.2, b = 2.1 * t;
+      const dx = 0.17 * envelope * Math.sin(a);
+      const dz = -0.13 * envelope * Math.sin(b);
+      position.setXYZ(i, position.getX(i) + dx, y, position.getZ(i) + dz);
+      // Inverse-transpose Jacobian of (x+dx(y), y, z+dz(y)).
+      // Preserve the original UV seam normals instead of recalculating
+      // them independently on the separate indexed branch cylinders.
+      const rate = t < 1 ? 1 / 1.08 : 0;
+      const slope = 6 * t * (1 - t);
+      const ddx = 0.17 * rate * (slope * Math.sin(a) + envelope * 2.8 * Math.cos(a));
+      const ddz = -0.13 * rate * (slope * Math.sin(b) + envelope * 2.1 * Math.cos(b));
+      const nx = normal.getX(i), nz = normal.getZ(i);
+      direction.set(nx, normal.getY(i) - ddx * nx - ddz * nz, nz).normalize();
+      normal.setXYZ(i, direction.x, direction.y, direction.z);
+    }
+    position.needsUpdate = true;
+    normal.needsUpdate = true;
+  }
   merged.computeBoundingSphere();
   return merged;
 }
@@ -1159,7 +1189,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer }), lit(0xffffff, { map: texture('bark', 2, 3) })],
+    broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer, woodland }), lit(0xffffff, { map: texture('bark', 2, 3) })],
     crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer, woodland }),
       lit(0xe6efdc, {
         map: texture(woodland ? 'woodlandleaves' : 'leaves', 3, 3),
