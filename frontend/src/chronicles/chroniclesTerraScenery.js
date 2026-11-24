@@ -217,6 +217,36 @@ export function chroniclesOrganicRockGeometry({ coarsePointer = false, weathered
   return geometry;
 }
 
+/**
+ * B2's low, stratified heath stones replace only the silhouette of the
+ * original boulder mesh. The v69 camera still read the shared near rocks
+ * as large round potatoes forming a fence; eroded tabular faces are a
+ * better foothill transition. Reuse the existing 20/80-triangle rock
+ * topology and the SAME B2 instance matrices, colours and rock material.
+ *
+ * This geometry is built once per scenery batch; no new objects, colliders,
+ * runtime randomness, textures, transparent materials or draw calls.
+ */
+export function chroniclesBrezalStoneGeometry({ coarsePointer = false } = {}) {
+  const geometry = chroniclesOrganicRockGeometry({
+    coarsePointer, weatheredHighland: true,
+  });
+  const position = geometry.getAttribute('position');
+  // Slightly wide, flattened sandstone shelves with clipped upper caps.
+  // This is analytic, per-position displacement, so UV-seam duplicates
+  // remain coincident even on the low-detail mobile geometry.
+  for (let i = 0; i < position.count; i += 1) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const leveled = THREE.MathUtils.clamp(y, -0.73, 0.61);
+    position.setXYZ(i, x * 1.08, leveled * 0.88, z * 1.06);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // A ridge tile is made of irregular, stepped rock peaks, not tall perfect
 // cones. Merge both desktop peaks once into the SAME 'crag' instancing batch.
 // Every vertex/UV is authored locally and the footprint stays inside its
@@ -1047,7 +1077,7 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
 }
 
 // Parts: one geometry + one material each, instanced across the map.
-function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false) {
+function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
   // and pebble batches. B2 heath, snow, forest and marsh rock stay intact.
   const rockMap = texture(naturalHighlands ? 'uplandrock' : 'rock');
@@ -1056,8 +1086,12 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     map: rockMap, flatShading: coarsePointer, ...opts,
   });
   return {
-    boulder: () => [chroniclesOrganicRockGeometry({ coarsePointer,
-      weatheredHighland: naturalHighlands }), roundedRock(0xd8d2c4)],
+    boulder: () => [brezalBackdrop
+      ? chroniclesBrezalStoneGeometry({ coarsePointer })
+      : chroniclesOrganicRockGeometry({ coarsePointer,
+        weatheredHighland: naturalHighlands }), roundedRock(0xd8d2c4, {
+        flatShading: coarsePointer || brezalBackdrop,
+      })],
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
     crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
@@ -2222,7 +2256,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
-  const catalog = partCatalog(coarsePointer, biome, denseMeadow, naturalHighlands);
+  const catalog = partCatalog(coarsePointer, biome, denseMeadow, naturalHighlands, brezalBackdrop);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);

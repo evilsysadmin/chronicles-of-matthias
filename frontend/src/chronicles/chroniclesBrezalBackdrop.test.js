@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import {
   TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesBrezalOuterRelief,
-  chroniclesBrezalVergeRelief,
+  chroniclesBrezalVergeRelief, chroniclesBrezalStoneGeometry,
 } from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
@@ -82,6 +82,29 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     expect(relief(-2, -2, 2)).toBeLessThanOrEqual(0.98);
   });
 
+  it.each([false, true])('uses a deterministic low, stratified rock silhouette at coarse=%s', coarsePointer => {
+    const stone = chroniclesBrezalStoneGeometry({ coarsePointer });
+    const copy = chroniclesBrezalStoneGeometry({ coarsePointer });
+    const geom = stone.getAttribute('position');
+    const baseline = scene('generic-hills', coarsePointer)
+      .getObjectByName('chronicles-terra-boulder').geometry;
+    // Preserve the original mobile/desktop vertex budget and UV topology,
+    // while replacing the tall rounded boulder with a clearly flatter cap.
+    expect(geom.count).toBe(baseline.getAttribute('position').count);
+    expect(stone.getAttribute('uv').count).toBe(baseline.getAttribute('uv').count);
+    expect(stone.index?.count ?? 0).toBe(baseline.index?.count ?? 0);
+    expect(geom.array).toEqual(copy.getAttribute('position').array);
+    expect(stone.boundingBox).toBeTruthy();
+    expect(stone.boundingSphere).toBeTruthy();
+    expect(stone.boundingBox.max.y).toBeLessThanOrEqual(0.61 * 0.88 + 0.0001);
+    expect(stone.boundingBox.min.y).toBeGreaterThanOrEqual(-0.73 * 0.88 - 0.0001);
+    expect(stone.boundingBox.max.x - stone.boundingBox.min.x)
+      .toBeGreaterThan(stone.boundingBox.max.y - stone.boundingBox.min.y);
+    for (const value of geom.array) expect(Number.isFinite(value)).toBe(true);
+    stone.dispose();
+    copy.dispose();
+  });
+
   it('lowers only real B2 perimeter verges, following the exterior saddles', () => {
     const north = Array.from({ length: width - 2 }, (_, n) => vergeRelief(n + 1, 0));
     const south = Array.from({ length: width - 2 }, (_, n) =>
@@ -128,8 +151,20 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
         expect(got.count).toBe(old.count);
         expect(got.count).toBe(same.count);
         expect(B2.children.filter(mesh => mesh.name === name)).toHaveLength(1);
-        expect(got.geometry.getAttribute('position').array)
-          .toEqual(old.geometry.getAttribute('position').array);
+        expect(got.geometry.getAttribute('position').count)
+          .toBe(old.geometry.getAttribute('position').count);
+        if (part === 'boulder') {
+          // V70 changes B2's ONE shared boulder geometry, not instance
+          // population, matrices, colour palette or texture selection.
+          expect(got.geometry.getAttribute('position').array)
+            .not.toEqual(old.geometry.getAttribute('position').array);
+          expect(got.geometry.getAttribute('position').array)
+            .toEqual(same.geometry.getAttribute('position').array);
+          expect(got.material.flatShading).toBe(true);
+        } else {
+          expect(got.geometry.getAttribute('position').array)
+            .toEqual(old.geometry.getAttribute('position').array);
+        }
         expect(got.material.map).toBe(old.material.map);
         const currentM = new THREE.Matrix4(), oldM = new THREE.Matrix4();
         const repeatM = new THREE.Matrix4();
