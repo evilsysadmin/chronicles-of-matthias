@@ -1484,6 +1484,38 @@ describe('Terra scenery', () => {
     [ordinary, shaped, restored].forEach(geometry => geometry.dispose());
   });
 
+  it.each([false, true])('makes the existing eastern road-end oak a landmark without moving its root (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, center, biome: map.biome, coarsePointer };
+    const scene = buildTerraScenery({ ...args, mapId: map.id });
+    const repeat = buildTerraScenery({ ...args, mapId: map.id });
+    const generic = buildTerraScenery(args);
+    const atRoot = (group, part) => {
+      const mesh = group.getObjectByName('chronicles-terra-' + part);
+      const matrix = new THREE.Matrix4(), result = [];
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        if (Math.round(matrix.elements[12] / 4) + center.x === 20
+          && Math.round(matrix.elements[14] / 4) + center.y === 7) result.push(matrix.clone());
+      }
+      expect(result).toHaveLength(1);
+      return result[0];
+    };
+    const trunk = atRoot(scene, 'broadleafTrunk');
+    const base = atRoot(generic, 'broadleafTrunk');
+    const crown = atRoot(scene, 'crown');
+    expect(trunk.elements).toEqual(atRoot(repeat, 'broadleafTrunk').elements);
+    expect(crown.elements).toEqual(atRoot(repeat, 'crown').elements);
+    expect(trunk.elements[12]).toBe(base.elements[12]);
+    expect(trunk.elements[14]).toBe(base.elements[14]);
+    const scale = m => new THREE.Vector3().setFromMatrixScale(m);
+    expect(scale(trunk).y / scale(base).y).toBeCloseTo(1.32, 5);
+    expect(scale(trunk).x / scale(base).x).toBeCloseTo(1.32, 5);
+    expect(crown.elements[13]).toBeGreaterThan(trunk.elements[13] * 2);
+    expect(scene.children.every(child => child.isInstancedMesh)).toBe(true);
+  });
+
   it('layers juvenile trees and low herbs near Banner Road forest without blocking walkable paths', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
