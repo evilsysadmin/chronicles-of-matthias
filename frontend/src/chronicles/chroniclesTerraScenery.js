@@ -1231,6 +1231,27 @@ function bannerRoadPaleTree(x, y) {
   return noise(x, y, 881) > 0.56;
 }
 
+/**
+ * C3-only: a different, continuous crest rhythm for each existing woodland
+ * crown. Keep trunk roots, tree count, lobe count and the landmark gateway
+ * untouched. A broad wave with small seeded variation produces tall,
+ * narrower crowns between lower, wider masses rather than an even forest
+ * of nearly identical green balls. The already-authored yaw reveals each
+ * asymmetric leaf mesh from a different side. No randomness on reload.
+ */
+export function chroniclesBannerRoadCanopyRhythm(x, y) {
+  const wave = 0.19 * Math.sin(x * 0.67 + y * 0.29)
+    + 0.11 * Math.cos(x * 0.23 - y * 0.51)
+    + (noise(x, y, 1139) - 0.5) * 0.09;
+  const crest = THREE.MathUtils.clamp(wave, -0.29, 0.29);
+  return Object.freeze({
+    span: 1 - crest * 0.34,
+    height: 1 + crest * 0.75,
+    depth: 1 + 0.095 * Math.sin(x * 0.37 - y * 0.63)
+      + (noise(x, y, 1141) - 0.5) * 0.06,
+  });
+}
+
 function broadleaf(p, wx, wz, x, y, k, scale = 1, bannerRoad = false, woodlandGateway = false) {
   const s = scale * (0.79 + noise(x, y, k + 21) * 0.65);
   const ox = (noise(x, y, k + 23) - 0.5) * 2;
@@ -1254,13 +1275,20 @@ function broadleaf(p, wx, wz, x, y, k, scale = 1, bannerRoad = false, woodlandGa
   const spreadX = 0.74 + noise(x, y, k + 27) * 0.55;
   const spreadZ = 0.73 + noise(x, y, k + 29) * 0.57;
   const crownHeight = 0.79 + noise(x, y, k + 33) * 0.43;
+  // The two gateway crowns are an authored pair and must keep their
+  // balanced silhouette and clear player headroom exactly as before.
+  const crownRhythm = bannerRoad && !woodlandGateway
+    ? chroniclesBannerRoadCanopyRhythm(x, y) : null;
   p.add('crown', [wx + ox + (noise(x, y, k + 50) - 0.5) * 0.22 * s,
     3.9 * s * trunkHeight, wz + oz + (noise(y, x, k + 51) - 0.5) * 0.22 * s], {
     yaw,
     roll: (noise(x, y, k + 35) - 0.5) * 0.13,
-    scale: [1.9 * s * spreadX * (woodlandGateway ? (pale ? 1.00 : 0.86) : pale ? 0.74 : 1),
-      1.6 * s * crownHeight * (woodlandGateway ? (pale ? 1.08 : 1.24) : pale ? 1.18 : 1),
-      1.9 * s * spreadZ * (woodlandGateway ? (pale ? 0.95 : 0.92) : pale ? 0.76 : 1)],
+    scale: [1.9 * s * spreadX * (woodlandGateway ? (pale ? 1.00 : 0.86) : pale ? 0.74 : 1)
+        * (crownRhythm?.span ?? 1),
+      1.6 * s * crownHeight * (woodlandGateway ? (pale ? 1.08 : 1.24) : pale ? 1.18 : 1)
+        * (crownRhythm?.height ?? 1),
+      1.9 * s * spreadZ * (woodlandGateway ? (pale ? 0.95 : 0.92) : pale ? 0.76 : 1)
+        * (crownRhythm?.depth ?? 1)],
   });
   // Low foliage is planted on the SAME blocked cell as the trunk, never
   // on the walkable road. It enriches the woodland edge without colliders.
