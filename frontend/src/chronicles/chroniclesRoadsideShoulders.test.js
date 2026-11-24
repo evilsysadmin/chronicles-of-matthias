@@ -108,6 +108,32 @@ describe('Banner Road organic grass/earth shoulders', () => {
     [desktop, touch, restored].forEach(g => g.dispose());
   });
 
+  it.each([true, false])('blends the verge into dirt without adding triangles (coarse=%s)', (coarsePointer) => {
+    const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
+    const colors = geometry.getAttribute('color');
+    const count = coarsePointer ? 4 : 8;
+    const at = index => [colors.getX(index), colors.getY(index), colors.getZ(index)];
+    expect(colors.count).toBe(count * 12);
+    for (let i = 0; i < count; i += 1) {
+      const start = i * 12;
+      // Both ground triangles share exactly the same vertex colours.
+      expect(at(start)).toEqual(at(start + 3));
+      expect(at(start + 1)).toEqual(at(start + 5));
+      expect(at(start)).toEqual(at(start + 2));
+      expect(at(start + 1)).toEqual(at(start + 4));
+      // Soil-to-grass and apron-to-tread gradients are real and bounded.
+      expect(at(start)).not.toEqual(at(start + 1));
+      expect(at(start + 6)).toEqual(at(start + 7));
+      expect(at(start + 6)).not.toEqual(at(start + 8));
+    }
+    for (const value of colors.array) {
+      expect(Number.isFinite(value)).toBe(true);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+    geometry.dispose();
+  });
+
   it('adds one visual-only batch to Banner Road, not settlements or other biomes', () => {
     const plan = { id: map.id, mapId: map.id, regionKind: 'wilderness', biome: map.biome,
       width: map.grid[0].length, height: map.grid.length,
