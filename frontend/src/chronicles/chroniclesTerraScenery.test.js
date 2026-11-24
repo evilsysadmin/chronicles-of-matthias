@@ -222,14 +222,14 @@ describe('Terra scenery', () => {
   });
 
 
-  it.each([true, false])('sculpts irregular leaf envelopes at the original exact triangle budget (coarse=%s)', coarsePointer => {
+  it.each([true, false])('sculpts irregular leaf envelopes with bounded mobile refinement (coarse=%s)', coarsePointer => {
     const leaf = chroniclesWoodlandLeafMassGeometry({ coarsePointer });
     const again = chroniclesWoodlandLeafMassGeometry({ coarsePointer });
     const old = chroniclesOrganicCanopyGeometry({ coarsePointer });
     const triangles = shape => (shape.index?.count
       ?? shape.getAttribute('position').count) / 3;
-    expect(triangles(leaf)).toBe(coarsePointer ? 20 : 80);
-    expect(triangles(old)).toBe(triangles(leaf));
+    expect(triangles(leaf)).toBe(coarsePointer ? 36 : 80);
+    expect(triangles(old)).toBe(coarsePointer ? 20 : 80);
     expect(leaf.index).not.toBeNull();
     expect(leaf.getAttribute('normal').count).toBe(leaf.getAttribute('position').count);
     expect(leaf.getAttribute('uv').count).toBe(leaf.getAttribute('position').count);
@@ -262,6 +262,18 @@ describe('Terra scenery', () => {
       }
       expect(shoulderHeights.length).toBeGreaterThanOrEqual(5);
       expect(Math.max(...shoulderHeights)).toBeGreaterThan(leaf.boundingBox.max.y - 0.30);
+      // A complete extra equatorial ring breaks up the old tall facets.
+      const equatorial = [];
+      for (let i = 0; i < positions.count; i++) {
+        if (Math.abs(positions.getY(i)) < 0.03) {
+          equatorial.push(Math.hypot(positions.getX(i), positions.getZ(i)));
+        }
+      }
+      expect(equatorial).toHaveLength(7);
+      expect(Math.max(...equatorial)).toBeLessThan(0.96);
+      expect(Math.min(...equatorial)).toBeGreaterThan(0.60);
+      expect(leaf.parameters.widthSegments).toBe(6);
+      expect(leaf.parameters.heightSegments).toBe(4);
     }
     [leaf, old, again].forEach(geometry => geometry.dispose());
   });
@@ -343,7 +355,7 @@ describe('Terra scenery', () => {
     expect(crowns.material.vertexColors).toBe(true);
     expect(crowns.material.flatShading).toBe(false);
     expect(reference.material.flatShading).toBe(coarsePointer);
-    expect(triangles(crowns.geometry)).toBe(coarsePointer ? 80 : 480);
+    expect(triangles(crowns.geometry)).toBe(coarsePointer ? 144 : 480);
     expect(triangles(reference.geometry)).toBe(coarsePointer ? 60 : 400);
     const woodland = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
     const baseline = chroniclesLayeredCanopyGeometry({ coarsePointer });
@@ -398,7 +410,7 @@ describe('Terra scenery', () => {
     const base = chroniclesLayeredCanopyGeometry({ coarsePointer });
     const restored = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
     const triangles = g => (g.index?.count ?? g.getAttribute('position').count) / 3;
-    expect(triangles(shaped)).toBe(coarsePointer ? 80 : 480);
+    expect(triangles(shaped)).toBe(coarsePointer ? 144 : 480);
     expect(triangles(base)).toBe(coarsePointer ? 60 : 400);
     expect(shaped.getAttribute('position').array).toEqual(restored.getAttribute('position').array);
     expect(shaped.getAttribute('color').array).toEqual(restored.getAttribute('color').array);
@@ -419,7 +431,7 @@ describe('Terra scenery', () => {
     [shaped, base, restored].forEach(g => g.dispose());
   });
 
-  it('adds restrained top-to-bottom crown shading without extra meshes or mobile triangles', () => {
+  it('adds restrained top-to-bottom crown shading without extra meshes', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
     const options = { grid: map.grid, center, biome: map.biome, mapId: map.id };
@@ -755,7 +767,7 @@ describe('Terra scenery', () => {
     expect(originalGateway).toEqual([11]);
     const crownTriangles = (crowns.geometry.index?.count
       ?? crowns.geometry.getAttribute('position').count) / 3;
-    expect(crownTriangles).toBe(coarsePointer ? 80 : 480);
+    expect(crownTriangles).toBe(coarsePointer ? 144 : 480);
   });
 
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
