@@ -1074,7 +1074,7 @@ export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } =
  * Deliberately lower than the player's ankle: only a visual microrelief,
  * never a collider, a raised terrain tile or an interactive object.
  */
-export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false } = {}) {
+export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false, woodland = false } = {}) {
   const positions = [];
   const colors = [];
   const stone = ['#8c8d7a', '#6d7766', '#9b9880', '#737263']
@@ -1111,11 +1111,22 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false } = 
     const z = i ? 0.36 : -0.33;
     const x = i ? -0.46 : -0.55;
     const shade = bark[i % bark.length];
-    add([x, 0.022, z], [x + 0.47, 0.045, z + 0.15],
-      [x + 0.10, 0.025, z + 0.075], shade);
-    add([x + 0.10, 0.025, z + 0.075],
-      [x + 0.47, 0.045, z + 0.15],
-      [x + 0.76, 0.017, z + 0.045], shade);
+    if (woodland) {
+      // Fold the same two faces along a raised, tapering bark ridge.
+      // The thick end points towards the adjacent woodland root.
+      const base = [x, 0.085, z];
+      const tip = [x + 0.76, 0.017, z + 0.045];
+      const left = [x + 0.19, 0.013, z - 0.065];
+      const right = [x + 0.30, 0.013, z + 0.13];
+      add(base, tip, left, shade);
+      add(base, right, tip, shade.clone().lerp(bark[1], 0.35).multiplyScalar(0.84));
+    } else {
+      add([x, 0.022, z], [x + 0.47, 0.045, z + 0.15],
+        [x + 0.10, 0.025, z + 0.075], shade);
+      add([x + 0.10, 0.025, z + 0.075],
+        [x + 0.47, 0.045, z + 0.15],
+        [x + 0.76, 0.017, z + 0.045], shade);
+    }
   }
   for (let i = 0; i < (coarsePointer ? 2 : 5); i += 1) {
     const x = (i % 3 - 1) * 0.25 + 0.035;
@@ -1243,7 +1254,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     forestHerb: () => [chroniclesForestHerbGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
-    microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     fallenWood: () => [chroniclesFallenWoodGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
@@ -2069,7 +2080,11 @@ function addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer) {
   const oz = dy * 0.60 + (noise(y, x, 569) - 0.5) * 0.65;
   const scale = 0.82 + noise(x, y, 571) * 0.27;
   p.add('microrelief', [wx + ox, 0.012, wz + oz], {
-    yaw: noise(x, y, 573) * Math.PI * 2,
+    // Local -X points to the thick end of the root. Aim it back towards
+    // the selected adjacent blocked tree cell, with restrained variation.
+    yaw: borders.length
+      ? Math.atan2(dy, -dx) + (noise(x, y, 573) - 0.5) * 0.48
+      : noise(x, y, 573) * Math.PI * 2,
     scale: [scale, 0.88 + noise(x, y, 577) * 0.2, scale],
   });
 }
