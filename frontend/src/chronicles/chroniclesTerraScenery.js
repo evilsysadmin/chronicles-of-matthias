@@ -1263,10 +1263,25 @@ export function chroniclesBannerRoadCanopyRhythm(x, y) {
   });
 }
 
-function broadleaf(p, wx, wz, x, y, k, scale = 1, bannerRoad = false, woodlandGateway = false) {
+// Shift only existing exterior trees toward staggered three-cell groves.
+ // Different grove strengths and retained individual jitter break the grid.
+ // The maximum 1.45m offset keeps each trunk in its own 4m scenery cell.
+export function chroniclesBannerRoadGroveOffset(x, y, ox, oz) {
+  const band = Math.floor(y / 3);
+  const stagger = ((band % 2) + 2) % 2;
+  const anchorX = Math.floor((x + stagger) / 3) * 3 + 1 - stagger;
+  const anchorY = band * 3 + 1;
+  const weight = 0.45 + 0.35 * noise(anchorX, anchorY, 1561);
+  return [ox * 0.65 + (anchorX - x) * weight,
+    oz * 0.65 + (anchorY - y) * weight];
+}
+
+function broadleaf(p, wx, wz, x, y, k, scale = 1, bannerRoad = false, woodlandGateway = false, backdrop = false) {
   const s = scale * (0.79 + noise(x, y, k + 21) * 0.65);
-  const ox = (noise(x, y, k + 23) - 0.5) * 2;
-  const oz = (noise(y, x, k + 25) - 0.5) * 2;
+  const baseX = (noise(x, y, k + 23) - 0.5) * 2;
+  const baseZ = (noise(y, x, k + 25) - 0.5) * 2;
+  const [ox, oz] = bannerRoad && backdrop
+    ? chroniclesBannerRoadGroveOffset(x, y, baseX, baseZ) : [baseX, baseZ];
   const yaw = noise(x, y, k + 46) * Math.PI * 2;
   // Upright pale woodland tree: same geometry/batches, different proportions.
   const pale = bannerRoad && bannerRoadPaleTree(x, y);
@@ -1464,7 +1479,7 @@ const DRESS = {
     // The mid-height approach grove is anchored exclusively in four real
     // blocked cells, never inside the walkable meadow or on the cart track.
     if (woodlandGateway || gatewayGrove || roll < canopyThreshold) {
-      broadleaf(p, wx, wz, x, y, 0, size, bannerRoad, woodlandGateway);
+      broadleaf(p, wx, wz, x, y, 0, size, bannerRoad, woodlandGateway, backdrop);
     }
     // Only native Terra's NON-COLLIDING outer ring receives an alternate
     // undergrowth scale. Reuse the existing bush instances and materials:
