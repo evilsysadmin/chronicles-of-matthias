@@ -4,6 +4,7 @@ import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import {
   TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesBrezalOuterRelief,
   chroniclesBrezalVergeRelief, chroniclesBrezalStoneGeometry,
+  chroniclesOrganicRockGeometry,
 } from './chroniclesTerraScenery.js';
 
 const center = { x: 10, y: 7 };
@@ -96,11 +97,35 @@ describe('Terra v64 Brezal B2 layered non-colliding rocky backdrop', () => {
     expect(geom.array).toEqual(copy.getAttribute('position').array);
     expect(stone.boundingBox).toBeTruthy();
     expect(stone.boundingSphere).toBeTruthy();
-    expect(stone.boundingBox.max.y).toBeLessThanOrEqual(0.61 * 0.88 + 0.0001);
-    expect(stone.boundingBox.min.y).toBeGreaterThanOrEqual(-0.73 * 0.88 - 0.0001);
+    expect(stone.boundingBox.max.y).toBeLessThanOrEqual(0.70 * 0.89 + 0.0001);
+    expect(stone.boundingBox.min.y).toBeGreaterThanOrEqual(-0.73 * 0.89 - 0.0001);
     expect(stone.boundingBox.max.x - stone.boundingBox.min.x)
       .toBeGreaterThan(stone.boundingBox.max.y - stone.boundingBox.min.y);
+    // V71's tilted, weathered cap must genuinely vary across the rock,
+    // not just reapply the old flat y=0.61 clamp to a different material.
+    // Check it against the exact raw source positions at both LODs.
+    const raw = chroniclesOrganicRockGeometry({
+      coarsePointer, weatheredHighland: true,
+    });
+    const source = raw.getAttribute('position');
+    const clippedCaps = new Set();
+    let changedFromFlatCap = 0;
+    for (let i = 0; i < geom.count; i += 1) {
+      const x = source.getX(i), y = source.getY(i), z = source.getZ(i);
+      const cap = 0.48 + 0.14 * Math.sin(x * 1.85 + z * 0.95)
+        + 0.08 * Math.cos(z * 2.25 - x * 1.40);
+      const expectedY = Math.max(-0.73, Math.min(y, cap)) * 0.89;
+      expect(geom.getX(i)).toBeCloseTo(x * 1.08, 5);
+      expect(geom.getY(i)).toBeCloseTo(expectedY, 5);
+      expect(geom.getZ(i)).toBeCloseTo(z * 1.06, 5);
+      if (y > cap) clippedCaps.add(expectedY.toFixed(4));
+      const flatY = THREE.MathUtils.clamp(y, -0.73, 0.61) * 0.88;
+      if (Math.abs(expectedY - flatY) > 0.001) changedFromFlatCap += 1;
+    }
+    expect(clippedCaps.size).toBeGreaterThan(1);
+    expect(changedFromFlatCap).toBeGreaterThan(1);
     for (const value of geom.array) expect(Number.isFinite(value)).toBe(true);
+    raw.dispose();
     stone.dispose();
     copy.dispose();
   });
