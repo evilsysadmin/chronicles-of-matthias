@@ -992,6 +992,31 @@ describe('Terra scenery', () => {
     expect(colours.size).toBeGreaterThan(1);
   });
 
+  it.each([false, true])('folds forest litter into low two-sided leaves within the original budget (coarse=%s)', coarsePointer => {
+    const g = chroniclesWoodlandUnderstoryGeometry({ coarsePointer });
+    const p = g.getAttribute('position'), c = g.getAttribute('color');
+    const sprigs = coarsePointer ? 5 : 20;
+    const leaves = coarsePointer ? 1 : 3;
+    expect(p.count).toBe((sprigs + leaves * 2 + 1) * 3);
+    const v = (attr, i) => new THREE.Vector3().fromBufferAttribute(attr, i);
+    for (let i = 0; i < leaves; i++) {
+      const n = sprigs * 3 + i * 6;
+      expect(v(p, n)).toEqual(v(p, n + 3));
+      expect(v(p, n + 2)).toEqual(v(p, n + 4));
+      expect(p.getY(n + 2)).toBeGreaterThan(p.getY(n + 1));
+      expect(p.getY(n + 2)).toBeGreaterThan(p.getY(n + 5));
+      expect(v(c, n)).not.toEqual(v(c, n + 3));
+      const left = v(p, n + 1), right = v(p, n + 5);
+      expect(left.distanceTo(right)).toBeGreaterThan(0.09);
+    }
+    for (let i = sprigs * 3; i < p.count; i++) {
+      expect(p.getY(i)).toBeGreaterThan(0.01);
+      expect(p.getY(i)).toBeLessThan(0.04);
+    }
+    expect(g.boundingSphere.radius).toBeLessThan(0.9);
+    g.dispose();
+  });
+
   it('keeps woodland understory finite, opaque and small with mobile LOD', () => {
     const full = chroniclesWoodlandUnderstoryGeometry();
     const mobile = chroniclesWoodlandUnderstoryGeometry({ coarsePointer: true });
