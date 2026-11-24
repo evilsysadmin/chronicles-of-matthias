@@ -1138,6 +1138,54 @@ describe('Terra scenery', () => {
     expect(variants.size).toBeGreaterThan(1);
   });
 
+  it.each([false, true])('folds C3 exposed roots and orients them towards the adjacent forest (coarse=%s)', coarsePointer => {
+    const old = chroniclesMeadowMicroreliefGeometry({ coarsePointer });
+    const shaped = chroniclesMeadowMicroreliefGeometry({ coarsePointer, woodland: true });
+    const p = shaped.getAttribute('position'), c = shaped.getAttribute('color');
+    const base = old.getAttribute('position');
+    expect(p.count).toBe(base.count);
+    const start = (coarsePointer ? 6 : 18) * 3;
+    expect(p.array.slice(0, start * 3)).toEqual(base.array.slice(0, start * 3));
+    const vec = (attr, i) => new THREE.Vector3().fromBufferAttribute(attr, i);
+    for (let j = 0; j < (coarsePointer ? 1 : 2); j++) {
+      const i = start + j * 6;
+      expect(vec(p, i)).toEqual(vec(p, i + 3));
+      expect(vec(p, i + 1)).toEqual(vec(p, i + 5));
+      expect(p.getY(i)).toBeCloseTo(0.085);
+      expect(p.getY(i + 1)).toBeCloseTo(0.017);
+      expect(p.getY(i + 2)).toBeCloseTo(0.013);
+      expect(vec(c, i)).not.toEqual(vec(c, i + 3));
+    }
+    const end = start + (coarsePointer ? 6 : 12);
+    expect(p.array.slice(end * 3)).toEqual(base.array.slice(end * 3));
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const options = { grid: map.grid, center, biome: map.biome, coarsePointer };
+    const mesh = buildTerraScenery({ ...options, mapId: map.id })
+      .getObjectByName('chronicles-terra-microrelief');
+    const generic = buildTerraScenery({ ...options, mapId: 'terra-c4' })
+      .getObjectByName('chronicles-terra-microrelief');
+    expect(mesh.geometry.getAttribute('position').array).toEqual(p.array);
+    expect(generic.geometry.getAttribute('position').array).toEqual(base.array);
+    const matrix = new THREE.Matrix4();
+    let edgeCount = 0;
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      const borders = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .filter(([dx, dy]) => map.grid[y + dy]?.[x + dx] === '#');
+      if (!borders.length) continue;
+      edgeCount++;
+      const root = new THREE.Vector3(-1, 0, 0).transformDirection(matrix);
+      expect(Math.max(...borders.map(([dx, dy]) => root.x * dx + root.z * dy)))
+        .toBeGreaterThan(0.97);
+    }
+    expect(edgeCount).toBeGreaterThan(5);
+    old.dispose();
+    shaped.dispose();
+  });
+
   it('keeps meadow microrelief ankle-low, fully opaque and cheap on mobile', () => {
     const desktop = chroniclesMeadowMicroreliefGeometry();
     const mobile = chroniclesMeadowMicroreliefGeometry({ coarsePointer: true });
