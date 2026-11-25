@@ -986,7 +986,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       ? new THREE.Fog(skyTint, 14, Math.max(width, height) * CELL * 0.95)
       : new THREE.Fog(skyTint, 55, Math.max(width, height) * CELL * 1.65);
   const sunDirection = new THREE.Vector3(-25, 30, -65).normalize();
-  const skyDome = createSwordhavenSkyDome(sunDirection, coarsePointer);
+  const skyDome = createSwordhavenSkyDome(sunDirection, coarsePointer, { woodland: bannerTrail });
   // Swordhaven already creates these weather-aware cloud banks, but the
   // meadow never did: changing its bank opacity was a no-op. Reuse the same
   // procedural cloud atlas, with 4 sprites on mobile / 8 on desktop.
