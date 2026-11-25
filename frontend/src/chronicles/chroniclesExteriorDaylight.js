@@ -121,7 +121,8 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   // never add a cloud animation loop or alter gameplay visibility.
   const cloudMaterial = scene.getObjectByName('swordhaven-cloud-0')
     ?.getObjectByName('cloud-soft-bank')?.material;
-  const panoramaMaterial = dome.getObjectByName('chronicles-sky-cloud-panorama')?.material;
+  const panorama = dome.getObjectByName('chronicles-sky-cloud-panorama');
+  const panoramaMaterial = panorama?.material;
   const distantRidge = dome.getObjectByName('chronicles-banner-distant-ridge')?.material;
   const ridgeDay = new THREE.Color(0x9eb8b6);
   const ridgeNight = new THREE.Color(0x202e42);
@@ -130,6 +131,18 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   // profile and the existing single panorama material/batch unchanged.
   const bannerRoadSky = region?.mapId === 'banner-road-first-book'
     && region?.regionKind === 'wilderness';
+  // A colour attribute on the same sphere provides compass-dependent
+  // illumination without another cloud layer, shader hook or draw call.
+  const cloudPositions = bannerRoadSky ? panorama?.geometry?.getAttribute('position') : null;
+  const cloudColors = cloudPositions
+    ? new THREE.Float32BufferAttribute(new Float32Array(cloudPositions.count * 3).fill(1), 3)
+    : null;
+  const cloudDirection = new THREE.Vector3();
+  if (cloudColors) {
+    panorama.geometry.setAttribute('color', cloudColors);
+    panoramaMaterial.vertexColors = true;
+    panoramaMaterial.needsUpdate = true;
+  }
   const cloudDay = new THREE.Color(0xc4cdd4);
   const clearCloudLight = new THREE.Color(0xf0f5f6);
   const cloudNight = new THREE.Color(0x3b4a5e);
@@ -190,6 +203,22 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
           .lerp(clearCloudLight, 0.72 * clearDaylight * daylight);
       }
       sunVector.set(profile.sun.x, profile.sun.y, profile.sun.z);
+      if (cloudColors) {
+        const direct = sunVisible ? daylight * clearDaylight
+          * (1 - THREE.MathUtils.smoothstep(fogStrength, 0.05, 0.45)) : 0;
+        const lowSun = 1 - THREE.MathUtils.smoothstep(sunVector.y, 0.10, 0.60);
+        for (let i = 0; i < cloudPositions.count; i++) {
+          cloudDirection.fromBufferAttribute(cloudPositions, i).normalize();
+          const facing = THREE.MathUtils.smoothstep(cloudDirection.dot(sunVector), -0.35, 0.75);
+          const altitude = THREE.MathUtils.smoothstep(cloudDirection.y, 0.12, 0.35);
+          const strength = direct * altitude;
+          const dim = strength * (1 - facing) * 0.12;
+          const amber = strength * facing * lowSun;
+          cloudColors.setXYZ(i, 1 - dim, 1 - dim - amber * 0.10,
+            1 - dim - amber * 0.24);
+        }
+        cloudColors.needsUpdate = true;
+      }
       // Never light walls from below. At night, the same shadowless-looking
       // key is a faint, cool lunar fill from above the horizon.
       if (sunVisible) sun.position.copy(sunVector).multiplyScalar(75);

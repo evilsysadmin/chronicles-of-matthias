@@ -395,6 +395,53 @@ describe('Terra solar cycle', () => {
       * (1 - (w?.clouds ?? 0) * 0.15));
   });
 
+  it('lights C3 panorama toward the actual sun without changing clouds elsewhere or at night', () => {
+    const { scene, dome, renderer } = outdoors();
+    const cloud = dome.getObjectByName('chronicles-sky-cloud-panorama');
+    const generic = outdoors();
+    const other = generic.dome.getObjectByName(cloud.name);
+    const region = { mapId: 'banner-road-first-book', regionKind: 'wilderness' };
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
+    const otherCycle = createChroniclesExteriorDaylight(generic.scene, generic.renderer,
+      { mapId: 'terra-c4', regionKind: 'wilderness' });
+    const colors = cloud.geometry.getAttribute('color');
+    const p = cloud.geometry.getAttribute('position');
+    const atlas = cloud.material.map;
+    expect(cloud.material.vertexColors).toBe(true);
+    expect(colors.count).toBe(p.count);
+    expect(other.geometry.getAttribute('color')).toBeUndefined();
+    expect(other.material.vertexColors).toBe(false);
+    const clear = 2205;
+    cycle.sync(clear);
+    otherCycle.sync(clear);
+    const profile = chroniclesExteriorDaylightProfile(clear);
+    const sun = new THREE.Vector3(profile.sun.x, profile.sun.y, profile.sun.z);
+    const direction = new THREE.Vector3();
+    let near = 0, far = 0, nearCount = 0, farCount = 0;
+    for (let i = 0; i < p.count; i++) {
+      direction.fromBufferAttribute(p, i).normalize();
+      const r = colors.getX(i), g = colors.getY(i), b = colors.getZ(i);
+      expect(Math.min(r, g, b)).toBeGreaterThanOrEqual(0.75);
+      expect(Math.max(r, g, b)).toBeLessThanOrEqual(1);
+      if (direction.y < 0.12) expect([r, g, b]).toEqual([1, 1, 1]);
+      if (direction.y > 0.35 && direction.dot(sun) > 0.75) { near += r; nearCount++; }
+      if (direction.y > 0.35 && direction.dot(sun) < 0.1) { far += r; farCount++; }
+    }
+    expect(nearCount).toBeGreaterThan(0);
+    expect(farCount).toBeGreaterThan(0);
+    expect(near / nearCount).toBeGreaterThan(far / farCount + 0.03);
+    const initial = colors.array.slice();
+    const version = colors.version;
+    expect(cycle.sync(clear)).toBe(false);
+    expect(colors.version).toBe(version);
+    cycle.sync(23 * 60 + 45);
+    expect(colors.array.every(value => value === 1)).toBe(true);
+    cycle.sync(clear);
+    expect(colors.array).toEqual(initial);
+    expect(cloud.material.map).toBe(atlas);
+    expect(other.geometry.getAttribute('color')).toBeUndefined();
+  });
+
   it('boosts the FRAME-VISIBLE Banner Road cloud panorama only after actual clear-day world-time sync', () => {
     const { scene, dome, renderer } = outdoors();
     const clouds = dome.getObjectByName('chronicles-sky-cloud-panorama');
