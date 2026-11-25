@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerMeadowRootDistance, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -9,6 +9,7 @@ import terraC4 from './maps/terra-c4.json';
 import terraE2 from './maps/terra-e2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
+import { buildTerraScenery } from './chroniclesTerraScenery.js';
 import { chroniclesBannerRoadBend, chroniclesBannerRoadWidthScale } from './chroniclesRoadsideShoulders.js';
 import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 
@@ -695,6 +696,48 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(chroniclesBannerHorizonRise(10, 7, 21, 15)).toBe(0);
     expect(chroniclesBannerHorizonRise(-1.5, 7, 21, 15)).toBe(0);
     expect(chroniclesBannerHorizonRise(-3.5, 7, 21, 15)).toBeGreaterThan(0.49);
+  });
+
+  it.each([false, true])('synchronizes C3 grass instance pigment with the same terrain habitat field (coarse=%s)', coarsePointer => {
+    const map = bannerRoadFirstBook;
+    const grid = map.grid, center = { x: 10, y: 7 };
+    const plan = { mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      grid, center, width: 21, height: 15, landscape: map.landscape, content: [], scenery: [] };
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, { scenePlan: plan, coarsePointer });
+    const actual = scene.getObjectByName('chronicles-terra-scenery');
+    const keepClear = map.landscape?.roadCells ?? grid.flatMap((row, y) =>
+      [...row].flatMap((tile, x) => tile === '.' && (x === 10 || y === 7) ? [{ x, y }] : []));
+    const original = buildTerraScenery({ grid, center, mapId: map.id,
+      biome: map.biome, keepClear, coarsePointer });
+    const matrix = new THREE.Matrix4(), oldMatrix = new THREE.Matrix4();
+    const old = new THREE.Color(), tint = new THREE.Color();
+    let dryCount = 0, freshCount = 0, unchanged = 0;
+    for (const part of ['tuft', 'meadowSedge']) {
+      const mesh = actual.getObjectByName('chronicles-terra-' + part);
+      const before = original.getObjectByName(mesh.name);
+      expect(mesh.count).toBe(before.count);
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        before.getMatrixAt(i, oldMatrix);
+        expect(matrix.elements).toEqual(oldMatrix.elements);
+        const x = matrix.elements[12] / 4 + center.x, y = matrix.elements[14] / 4 + center.y;
+        const distance = chroniclesBannerMeadowRootDistance(grid, x, y);
+        const dry = chroniclesBannerMeadowDryness(x, y, distance);
+        const fresh = chroniclesBannerMeadowFreshness(x, y, distance);
+        before.getColorAt(i, old);
+        mesh.getColorAt(i, tint);
+        expect(tint.r).toBeCloseTo(old.r * (1 - 0.13 * fresh), 5);
+        expect(tint.g).toBeCloseTo(old.g * (1 - 0.09 * dry - 0.025 * fresh), 5);
+        expect(tint.b).toBeCloseTo(old.b * (1 - 0.20 * dry), 5);
+        if (dry > 0.1) dryCount++;
+        if (fresh > 0.1) freshCount++;
+        if (dry + fresh < 0.01) unchanged++;
+      }
+    }
+    expect(dryCount).toBeGreaterThan(0);
+    expect(freshCount).toBeGreaterThan(0);
+    expect(unchanged).toBeGreaterThan(0);
   });
 
   it('creates localized cool meadow communities without overriding dry clearings or root shadows', () => {

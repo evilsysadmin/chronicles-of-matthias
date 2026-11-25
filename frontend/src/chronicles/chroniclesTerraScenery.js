@@ -2484,7 +2484,7 @@ const SET_PIECES = {
  * @param {object} plan  { grid, center, biome, scenery, coarsePointer }
  * @returns {THREE.Group} the dressing, or an empty group for unknown biomes
  */
-export function buildTerraScenery({ grid = [], center, biome, mapId = null, scenery = [], coarsePointer = false, dressBlocked = true, keepClear = [], groundOffset = null }) {
+export function buildTerraScenery({ grid = [], center, biome, mapId = null, scenery = [], coarsePointer = false, dressBlocked = true, keepClear = [], groundOffset = null, meadowHabitat = null }) {
   const group = new THREE.Group();
   group.name = 'chronicles-terra-scenery';
   const height = grid.length;
@@ -2766,8 +2766,19 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 5), Math.round(e[14] * 5), 439);
-        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
-          Math.floor(seed * shades.length))]);
+        const shade = shades[Math.min(shades.length - 1, Math.floor(seed * shades.length))];
+        if (!meadowHabitat) {
+          mesh.setColorAt(index, shade);
+        } else {
+          const { dry, fresh } = meadowHabitat(e[12] / CELL + center.x, e[14] / CELL + center.y);
+          // Multiply the original per-plant variation by the same continuous
+          // habitat weights as the ground. Do not tint petals or other parts.
+          const tint = shade.clone();
+          tint.r *= 1 - 0.13 * fresh;
+          tint.g *= 1 - 0.09 * dry - 0.025 * fresh;
+          tint.b *= 1 - 0.20 * dry;
+          mesh.setColorAt(index, tint);
+        }
       });
       mesh.instanceColor.needsUpdate = true;
     }
