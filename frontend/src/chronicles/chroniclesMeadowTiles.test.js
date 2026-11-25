@@ -183,6 +183,44 @@ describe('reusable Terra meadow tiles', () => {
     expect(part(mobile, 'microrelief').count).toBeLessThan(90);
   });
 
+  it.each([false, true])('tints native grass by its actual habitat without another draw batch (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-c4');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, mapId: map.id, biome: map.biome, center, coarsePointer };
+    const group = buildTerraScenery(args);
+    const mesh = part(group, 'tuft');
+    const twin = part(buildTerraScenery(args), 'tuft');
+    const generic = part(buildTerraScenery({ ...args, mapId: undefined }), 'tuft');
+    const palettes = {
+      'fern-edge': '#d4e5d0', 'scrub-grass': '#e6e5ca', 'shade-meadow': '#cadbc8',
+      'low-pasture': '#e8edce', 'flower-meadow': '#e6eedc',
+      'dry-tussocks': '#f5e6bc', 'green-meadow': '#d8edcf',
+    };
+    const actual = new THREE.Color(), repeat = new THREE.Color();
+    const pose = new THREE.Matrix4();
+    const habitats = new Set();
+    expect(mesh.instanceColor.count).toBe(mesh.count);
+    expect(generic.instanceColor).toBeNull();
+    expect(group.children.filter(child => child.name === mesh.name)).toHaveLength(1);
+    expect(mesh.material.vertexColors).toBe(true);
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, pose);
+      const x = Math.round(pose.elements[12] / 4) + center.x;
+      const y = Math.round(pose.elements[14] / 4) + center.y;
+      const recipe = chroniclesMeadowTileAt({ grid: map.grid, biome: map.biome, x, y });
+      const target = new THREE.Color(palettes[recipe.id]);
+      mesh.getColorAt(i, actual);
+      twin.getColorAt(i, repeat);
+      expect(actual.toArray()).toEqual(repeat.toArray());
+      habitats.add(recipe.id);
+      for (const channel of ['r', 'g', 'b']) {
+        expect(actual[channel]).toBeGreaterThanOrEqual(1 + (target[channel] - 1) * 0.80 - 1e-6);
+        expect(actual[channel]).toBeLessThanOrEqual(1 + (target[channel] - 1) * 0.55 + 1e-6);
+      }
+    }
+    expect(habitats.size).toBeGreaterThan(2);
+  });
+
   it('retains the authored Banner Road foliage instead of applying meadow recipes twice', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const args = { grid: map.grid, biome: map.biome, mapId: map.id,
