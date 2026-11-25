@@ -368,6 +368,54 @@ describe('Terra solar cycle', () => {
     expect(partial.fill).toBeLessThan(1);
   });
 
+  it('preserves diffuse C3 ground light specifically during golden-hour transitions', () => {
+    const low = { sun: { y: 0.067 }, daylight: 0.688, sunVisible: true, twilight: 0.95 };
+    const baseline = chroniclesBannerWoodlandLight({ ...low, twilight: 0 }, 0.04, 0);
+    const golden = chroniclesBannerWoodlandLight(low, 0.04, 0);
+    expect(golden.fill).toBeGreaterThan(baseline.fill + 0.19);
+    expect(golden.fill).toBeLessThan(1.17);
+    expect(golden.key).toBe(baseline.key);
+    expect(golden.warmth).toBe(baseline.warmth);
+    expect(chroniclesBannerWoodlandLight(low, 0.8, 0).fill).toBe(1);
+    expect(chroniclesBannerWoodlandLight(low, 0, 0.8).fill).toBe(1);
+    const noon = { ...low, sun: { y: 0.95 }, twilight: 0, daylight: 1 };
+    expect(chroniclesBannerWoodlandLight(noon, 0, 0).fill).toBeCloseTo(0.84);
+    expect(chroniclesBannerWoodlandLight({ ...low, daylight: 0, sunVisible: false }, 0, 0).fill).toBe(1);
+    const { scene, dome, renderer } = outdoors();
+    const region = { mapId: 'banner-road-first-book', regionKind: 'wilderness' };
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
+    const minute = 2506;
+    const p = chroniclesExteriorDaylightProfile(minute);
+    const w = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: minute });
+    cycle.sync(minute);
+    const positions = dome.geometry.getAttribute('position');
+    const colors = dome.geometry.getAttribute('color');
+    const dir = new THREE.Vector3();
+    // Reproduce the old sky colour at one actual north-facing horizon
+    // vertex, where the narrow solar glow previously missed most of the view.
+    let sample = -1;
+    for (let i = 0; i < positions.count; i++) {
+      dir.fromBufferAttribute(positions, i).normalize();
+      if (Math.abs(dir.y) < 0.001 && Math.abs(dir.x) < 0.01 && dir.z < -0.99) { sample = i; break; }
+    }
+    expect(sample).toBeGreaterThanOrEqual(0);
+    const sun = new THREE.Vector3(p.sun.x, p.sun.y, p.sun.z);
+    const facing = Math.max(0, (dir.x * sun.x + dir.z * sun.z) / Math.hypot(sun.x, sun.z));
+    const altitude = THREE.MathUtils.smoothstep(dir.y, -0.08, 0.75);
+    const rose = 1 - THREE.MathUtils.smoothstep(dir.y, 0.02, 0.64);
+    const amber = 1 - THREE.MathUtils.smoothstep(dir.y, -0.04, 0.35);
+    const twilight = p.twilight * (1 - w.clouds * 0.62);
+    const old = new THREE.Color(0x263b56).lerp(new THREE.Color(0xb8dce9), p.daylight)
+      .lerp(new THREE.Color(0x74838e), w.clouds * 0.55)
+      .lerp(new THREE.Color(0x09152b).lerp(new THREE.Color(0x65a6d0), p.daylight)
+        .lerp(new THREE.Color(0x74838e), w.clouds * 0.72), altitude)
+      .lerp(new THREE.Color(0xf7a39d), twilight * facing ** 3 * rose * 0.50)
+      .lerp(new THREE.Color(0xffbd78), twilight * facing ** 7 * amber * 0.81)
+      .lerp(new THREE.Color(0xffcb97), Math.max(0, dir.dot(sun)) ** 30 * 0.54 * p.daylight);
+    expect(w.fog).toBe(0);
+    expect(colors.getX(sample) - colors.getZ(sample)).toBeGreaterThan(old.r - old.b + 0.025);
+  });
+
   it('applies woodland contrast to actual light objects, without drift or extra lights', () => {
     const { scene, sun, hemi, renderer } = outdoors();
     const region = { mapId: 'banner-road-first-book', regionKind: 'wilderness' };
