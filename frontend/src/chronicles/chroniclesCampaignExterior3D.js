@@ -773,6 +773,65 @@ export function createBannerRoadDistantRidge(coarsePointer = false) {
   return ridge;
 }
 
+// Small ambient-contact accents for authored trees on shadowless touch
+// devices. These are neither projected solar shadows nor new obstacles.
+export function createBannerRoadRootContacts(scenery, grid, center) {
+  const trunks = scenery.getObjectByName('chronicles-terra-broadleafTrunk');
+  if (!trunks?.isInstancedMesh) return null;
+  const source = new THREE.Matrix4();
+  const scale = new THREE.Vector3();
+  const roots = [];
+  for (let i = 0; i < trunks.count; i++) {
+    trunks.getMatrixAt(i, source);
+    const e = source.elements;
+    const gx = Math.round(e[12] / CELL) + center.x;
+    const gy = Math.round(e[14] / CELL) + center.y;
+    if (grid[gy]?.[gx] !== '#') continue;
+    scale.setFromMatrixScale(source);
+    const ox = e[12] - (gx - center.x) * CELL;
+    const oz = e[14] - (gy - center.y) * CELL;
+    const radius = Math.min(1.05, 0.72 * scale.x + 0.16,
+      CELL / 2 - Math.max(Math.abs(ox), Math.abs(oz)) - 0.06);
+    if (radius < 0.15) continue;
+    roots.push([e[12], e[14], radius]);
+  }
+  if (!roots.length) return null;
+  // A center, an inner ring and a transparent edge soften the penumbra.
+  // Vertex alpha is interpolated by Three's standard vertex-color path.
+  const segments = 12;
+  const positions = [0, 0, 0], colors = [0.16, 0.20, 0.12, 0.31], indices = [];
+  for (const [radius, opacity] of [[0.48, 0.18], [1, 0]]) {
+    for (let i = 0; i < segments; i++) {
+      const a = i * Math.PI * 2 / segments;
+      positions.push(radius * Math.cos(a), 0, radius * Math.sin(a));
+      colors.push(0.16, 0.20, 0.12, opacity);
+    }
+  }
+  for (let i = 0; i < segments; i++) {
+    const a = 1 + i, b = 1 + (i + 1) % segments;
+    indices.push(0, b, a, a, b, a + segments, a + segments, b, b + segments);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+  const contacts = new THREE.InstancedMesh(geometry, new THREE.MeshBasicMaterial({
+    color: 0xffffff, vertexColors: true, transparent: true, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+  }), roots.length);
+  contacts.name = 'chronicles-banner-root-contacts';
+  // The authored blocked cells retain the same flat terrain height as paths.
+  const matrix = new THREE.Matrix4();
+  roots.forEach(([x, z, radius], i) => {
+    matrix.makeScale(radius, 1, radius);
+    matrix.setPosition(x, -0.060, z);
+    contacts.setMatrixAt(i, matrix);
+  });
+  contacts.instanceMatrix.needsUpdate = true;
+  return contacts;
+}
+
 function applyBannerCartWear(material) {
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace(
@@ -1296,11 +1355,16 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   }
 
   if (!settlement && (wilds || forest)) {
-    scene.add(buildTerraScenery({
+    const terraScenery = buildTerraScenery({
       grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, mapId: scenePlan.mapId, scenery: scenePlan.scenery,
       coarsePointer, groundOffset,
       keepClear: [...roadCells, ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean)],
-    }));
+    });
+    scene.add(terraScenery);
+    if (bannerTrail && coarsePointer) {
+      const contacts = createBannerRoadRootContacts(terraScenery, grid, sceneCenter);
+      if (contacts) scene.add(contacts);
+    }
   }
 
   const exitDefinitions = new Map((chroniclesMapById(scenePlan.mapId)?.exits || [])
