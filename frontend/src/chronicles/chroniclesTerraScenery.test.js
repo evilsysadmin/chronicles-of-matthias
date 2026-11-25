@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { chroniclesBrezalVergeRelief, chroniclesBannerRoadGroveOffset, chroniclesBannerTreeCrownProfile } from './chroniclesTerraScenery.js';
+import { chroniclesBrezalVergeRelief, chroniclesBannerRoadGroveOffset, chroniclesBannerTreeCrownProfile, chroniclesBannerMeadowEdge } from './chroniclesTerraScenery.js';
 import { describe, expect, it } from 'vitest';
 import { chroniclesBannerRoadFlowerCells, TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadCanopyRhythm, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
@@ -1494,6 +1494,64 @@ describe('Terra scenery', () => {
     expect([...repeat.getAttribute('position').array]).toEqual([...vertices.array]);
     for (const value of vertices.array) expect(Number.isFinite(value)).toBe(true);
     [thin, sedge, touch, repeat].forEach(geo => geo.dispose());
+  });
+
+  it.each([false, true])('pulls existing C3 meadow plants toward nearby forest roots without changing plant counts (coarse=%s)', coarsePointer => {
+    const edge = chroniclesBannerMeadowEdge;
+    expect(edge(['.....', '.....', '.....'], 2, 1)).toEqual({ x: 0, z: 0, influence: 0 });
+    expect(edge(['.....', '..#..', '.....'], 1, 1)).toEqual({ x: 1, z: 0, influence: 1 });
+    expect(edge(['.....', '.#.#.', '.....'], 2, 1)).toEqual({ x: 0, z: 0, influence: 1 });
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    const clear = new Set(keepClear.map(({x, y}) => x + ',' + y));
+    const scene = buildTerraScenery({ grid: map.grid, biome: map.biome,
+      mapId: map.id, center, keepClear, coarsePointer });
+    const noise = (x, y, salt) => {
+      const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
+      return n - Math.floor(n);
+    };
+    const expected = { tuft: [], meadowSedge: [] };
+    let influenced = 0, unaffected = 0;
+    map.grid.forEach((row, y) => [...row].forEach((tile, x) => {
+      if (tile !== '.' || clear.has(x + ',' + y)) return;
+      const nearPath = [[1,0],[-1,0],[0,1],[0,-1]]
+        .some(([dx,dy]) => clear.has((x+dx) + ',' + (y+dy)));
+      const cover = THREE.MathUtils.clamp(0.50 + 0.34 * Math.sin(x * 0.59 + y * 0.33)
+        * Math.cos(y * 0.46 - x * 0.25) + (noise(x,y,727)-0.5)*0.24, 0, 1);
+      const count = coarsePointer ? (cover < 0.27 ? 1 : 2)
+        : nearPath ? 4 + Math.floor(cover*5) : 2 + Math.floor(cover*5);
+      const habitat = edge(map.grid, x, y);
+      const start = Math.floor(noise(x,y,401)*9);
+      for (let i = 0; i < count; i++) {
+        const slot = (start+i*4)%9;
+        const rawX = (slot%3-1)*1.12+(noise(x+i,y,407)-0.5)*0.46;
+        const rawZ = (Math.floor(slot/3)-1)*1.12+(noise(y+i,x,409)-0.5)*0.46;
+        const sedge = noise(x+i*3,y-i*5,733) < (nearPath ? 0.40 : 0.31);
+        const pull = habitat.influence*0.18;
+        const height = (sedge ? 0.80+noise(x,y+i,421)*0.22 : 0.56+noise(x,y+i,421)*0.65)
+          *(1+habitat.influence*0.12);
+        const ox = THREE.MathUtils.lerp(rawX,habitat.x*0.95,pull);
+        const oz = THREE.MathUtils.lerp(rawZ,habitat.z*0.95,pull);
+        if (pull > 0) influenced++; else unaffected++;
+        expected[sedge?'meadowSedge':'tuft'].push([(x-center.x)*4+ox,(y-center.y)*4+oz,height]);
+      }
+    }));
+    const matrix = new THREE.Matrix4(), scale = new THREE.Vector3();
+    for (const [part, points] of Object.entries(expected)) {
+      const mesh = scene.getObjectByName('chronicles-terra-' + part);
+      expect(mesh.count).toBe(points.length);
+      for (let i=0; i<points.length; i++) {
+        mesh.getMatrixAt(i,matrix);
+        scale.setFromMatrixScale(matrix);
+        expect(matrix.elements[12]).toBeCloseTo(points[i][0],4);
+        expect(matrix.elements[14]).toBeCloseTo(points[i][1],4);
+        expect(scale.y).toBeCloseTo(points[i][2],4);
+      }
+    }
+    expect(influenced).toBeGreaterThan(10);
+    expect(unaffected).toBeGreaterThan(10);
   });
 
   it('intersperses sedges among short turf in deterministic, variable-density patches', () => {
