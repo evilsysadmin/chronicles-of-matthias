@@ -18,6 +18,16 @@ export function chroniclesBannerRoadBend(along, phase = 0) {
   return THREE.MathUtils.lerp(knot(left), knot(left + CELL), (along - left) / CELL);
 }
 
+// Vary the track's transverse scale at the same knots as the bend.
+// The crossing stays at full width. Long, correlated stretches avoid
+// a sawtooth outline and preserve the cart ruts' alignment with the verge.
+export function chroniclesBannerRoadWidthScale(along, phase = 0) {
+  const knot = s => 1 + 0.12 * Math.cos(s * 0.145 + phase + 0.7)
+    * THREE.MathUtils.smoothstep(Math.abs(s), 2, 10);
+  const left = Math.floor((along + 2) / CELL) * CELL - 2;
+  return THREE.MathUtils.lerp(knot(left), knot(left + CELL), (along - left) / CELL);
+}
+
 // Shared GPU deformation for both existing instanced batches. Keep the
 // CPU matrices, terrain, road UVs and collision grid unchanged. Instance
 // bases are orthogonal (yaw + scale), so project the world-space delta
@@ -31,6 +41,14 @@ export function applyBannerRoadBend(material) {
       float chroniclesBendKnot(float s, float phase) {
         return 0.24 * sin((s - 2.0) * 0.19 + phase) * smoothstep(2.0, 10.0, abs(s));
       }
+      float chroniclesWidthKnot(float s, float phase) {
+        return 1.0 + 0.12 * cos(s * 0.145 + phase + 0.7) * smoothstep(2.0, 10.0, abs(s));
+      }
+      float chroniclesWidthScale(float along, float phase) {
+        float left = floor((along + 2.0) / 4.0) * 4.0 - 2.0;
+        return mix(chroniclesWidthKnot(left, phase), chroniclesWidthKnot(left + 4.0, phase),
+          (along - left) / 4.0);
+      }
       float chroniclesBend(float along, float phase) {
         float left = floor((along + 2.0) / 4.0) * 4.0 - 2.0;
         return mix(chroniclesBendKnot(left, phase), chroniclesBendKnot(left + 4.0, phase),
@@ -40,9 +58,11 @@ export function applyBannerRoadBend(material) {
         vec3 chroniclesBendWorld = (instanceMatrix * vec4(position, 1.0)).xyz;
         vec3 chroniclesBendDelta = vec3(0.0);
         if (abs(chroniclesBendWorld.z) > abs(chroniclesBendWorld.x)) {
-          chroniclesBendDelta.x = chroniclesBend(chroniclesBendWorld.z, 0.0);
+          chroniclesBendDelta.x = chroniclesBend(chroniclesBendWorld.z, 0.0)
+            + chroniclesBendWorld.x * (chroniclesWidthScale(chroniclesBendWorld.z, 0.0) - 1.0);
         } else {
-          chroniclesBendDelta.z = chroniclesBend(chroniclesBendWorld.x, 1.4);
+          chroniclesBendDelta.z = chroniclesBend(chroniclesBendWorld.x, 1.4)
+            + chroniclesBendWorld.z * (chroniclesWidthScale(chroniclesBendWorld.x, 1.4) - 1.0);
         }
         vec3 bx = instanceMatrix[0].xyz;
         vec3 bz = instanceMatrix[2].xyz;
@@ -50,7 +70,7 @@ export function applyBannerRoadBend(material) {
         transformed.z += dot(chroniclesBendDelta, bz) / dot(bz, bz);
       #endif`);
   };
-  material.customProgramCacheKey = () => cache + ':chronicles-c3-bend-v101';
+  material.customProgramCacheKey = () => cache + ':chronicles-c3-bend-width-v102';
 }
 
 function hash(x, y, salt = 0) {
