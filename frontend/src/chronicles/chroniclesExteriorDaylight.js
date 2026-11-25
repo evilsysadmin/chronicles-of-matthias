@@ -107,6 +107,9 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const cloudMaterial = scene.getObjectByName('swordhaven-cloud-0')
     ?.getObjectByName('cloud-soft-bank')?.material;
   const panoramaMaterial = dome.getObjectByName('chronicles-sky-cloud-panorama')?.material;
+  const distantRidge = dome.getObjectByName('chronicles-banner-distant-ridge')?.material;
+  const ridgeDay = new THREE.Color(0x9eb8b6);
+  const ridgeNight = new THREE.Color(0x202e42);
   // Banner Road's broad meadow exposes far more sky than a town street.
   // Amplify only clear-day clouds there, keeping every other map/weather
   // profile and the existing single panorama material/batch unchanged.
@@ -246,6 +249,11 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         .lerp(weatherSky, cloudiness * 0.55);
       blendedZenith.copy(zenithNight).lerp(zenithDay, daylight)
         .lerp(weatherSky, cloudiness * 0.72);
+      if (distantRidge) {
+        distantRidge.color.copy(ridgeNight).lerp(ridgeDay, daylight)
+          .lerp(blendedHorizon, cloudiness * 0.22)
+          .lerp(fogTint || blendedHorizon, fogStrength * 0.85);
+      }
       // Anchor dusk/dawn color to the actual seasonal sun azimuth, not
       // the camera heading. Cloud cover softens the amber/rose twilight.
       const sunHorizontal = Math.hypot(sunVector.x, sunVector.z) || 1;
