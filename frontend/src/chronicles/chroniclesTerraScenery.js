@@ -2820,6 +2820,31 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       });
       mesh.instanceColor.needsUpdate = true;
     }
+    if (naturalWoodline && part === 'tuft') {
+      // Native plains grass follows the existing habitat recipe, including
+      // fallback/satellite tufts. Keep the base leaf vertex pigment and
+      // add only a subdued, deterministic instance tint.
+      const shades = Object.fromEntries(Object.entries({
+        'fern-edge': '#d4e5d0',
+        'scrub-grass': '#e6e5ca',
+        'shade-meadow': '#cadbc8',
+        'low-pasture': '#e8edce',
+        'flower-meadow': '#e6eedc',
+        'dry-tussocks': '#f5e6bc',
+        'green-meadow': '#d8edcf',
+      }).map(([id, hex]) => [id, new THREE.Color(hex)]));
+      const neutral = new THREE.Color(0xffffff);
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const recipe = chroniclesMeadowTileAt({ grid, biome, x, y });
+        const tint = shades[recipe?.id] ?? neutral;
+        const strength = 0.55 + 0.25 * noise(Math.round(e[12] * 5), Math.round(e[14] * 5), 1641);
+        mesh.setColorAt(index, neutral.clone().lerp(tint, strength));
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     // Native highlands get quiet stone/lichen tonality per real rock, not
     // identical chess-pawn grey boulders. Same single instanced batch and
     // deterministic transforms; authored heath B2 retains its own palette.
