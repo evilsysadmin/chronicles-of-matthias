@@ -761,6 +761,19 @@ export function chroniclesBannerMeadowFreshness(x, y, rootDistance) {
     * (1 - chroniclesBannerMeadowDryness(x, y, rootDistance));
 }
 
+// The terrain and meadow instances share the same authored root-distance
+// field. Search the bounded neighborhood; farther roots are neutral.
+export function chroniclesBannerMeadowRootDistance(grid, x, y) {
+  let distance = 2.8;
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      const gx = Math.round(x) + dx, gy = Math.round(y) + dy;
+      if (grid[gy]?.[gx] === '#') distance = Math.min(distance, Math.hypot(gx - x, gy - y));
+    }
+  }
+  return distance;
+}
+
 // Raise only the non-playable outer scenery ring. A two-cell flat
 // buffer keeps interpolation between terrain vertices away from traversal.
 export function chroniclesBannerHorizonRise(x, y, width, height) {
@@ -1063,15 +1076,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       }
       const x = THREE.MathUtils.clamp(rawX, 0, width - 1);
       const y = THREE.MathUtils.clamp(rawY, 0, height - 1);
-      let distance = 2.8;
-      for (let dy = -3; dy <= 3; dy += 1) {
-        for (let dx = -3; dx <= 3; dx += 1) {
-          const gx = Math.round(x) + dx, gy = Math.round(y) + dy;
-          if (grid[gy]?.[gx] === '#') {
-            distance = Math.min(distance, Math.hypot(gx - x, gy - y));
-          }
-        }
-      }
+      const distance = chroniclesBannerMeadowRootDistance(grid, x, y);
       const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(distance, 0.6, 2.8));
       // Warm the open clearings relative to the cooler forest floor.
       // Preserve the original red-channel shadow field and neutral roots.
@@ -1418,6 +1423,13 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     const terraScenery = buildTerraScenery({
       grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, mapId: scenePlan.mapId, scenery: scenePlan.scenery,
       coarsePointer, groundOffset,
+      meadowHabitat: bannerTrail && width === 21 && height === 15 ? (x, y) => {
+        const distance = chroniclesBannerMeadowRootDistance(grid, x, y);
+        return {
+          dry: chroniclesBannerMeadowDryness(x, y, distance),
+          fresh: chroniclesBannerMeadowFreshness(x, y, distance),
+        };
+      } : null,
       keepClear: [...roadCells, ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean)],
     });
     scene.add(terraScenery);
