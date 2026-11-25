@@ -105,6 +105,15 @@ try {
   const renderer = new THREE.WebGLRenderer({
     canvas, antialias: false, preserveDrawingBuffer: true,
   });
+  // Three reports failed GLSL compilation via its debug callback, not
+  // necessarily as a JavaScript exception. Record real driver diagnostics.
+  const shaderErrors = [];
+  renderer.debug.checkShaderErrors = true;
+  renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
+    shaderErrors.push([gl.getProgramInfoLog(program),
+      gl.getShaderInfoLog(vertex), gl.getShaderInfoLog(fragment)]
+      .filter(Boolean).join('\n') || 'WebGL shader link failed');
+  };
   renderer.setPixelRatio(1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -181,6 +190,27 @@ try {
     return pixels;
   };
   const withTiles = pixelBuffer();
+  // Independently prove that the actual C3 dirt road contributes visible
+  // pixels, rather than only verifying that vegetation and shoulders draw.
+  let roadVisiblePixels = 0;
+  if (mapId === 'banner-road-first-book' && view === 'canonical') {
+    const road = scene.getObjectByName('chronicles-campaign-road');
+    if (!road?.isInstancedMesh || !road.visible) throw new Error('C3 road batch missing');
+    road.visible = false;
+    try {
+      renderer.render(scene, camera);
+      const withoutRoad = pixelBuffer();
+      for (let i = 0; i < withTiles.length; i += 4) {
+        const d = Math.abs(withTiles[i] - withoutRoad[i])
+          + Math.abs(withTiles[i + 1] - withoutRoad[i + 1])
+          + Math.abs(withTiles[i + 2] - withoutRoad[i + 2]);
+        if (d > 12) roadVisiblePixels++;
+      }
+    } finally {
+      road.visible = true;
+      renderer.render(scene, camera);
+    }
+  }
   const previous = Object.values(meshes).map(mesh => mesh.visible);
   Object.values(meshes).forEach(mesh => { mesh.visible = false; });
   renderer.render(scene, camera);
@@ -291,6 +321,8 @@ try {
   }
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
+    shaderErrors: JSON.stringify(shaderErrors),
+    roadVisiblePixels: String(roadVisiblePixels),
     view,
     mapId, biome: map.biome,
     cameraCell: cameraCell.x + ',' + cameraCell.y,
