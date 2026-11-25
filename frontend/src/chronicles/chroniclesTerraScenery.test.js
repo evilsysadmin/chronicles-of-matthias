@@ -1781,14 +1781,36 @@ describe('Terra scenery', () => {
     expect(shaped.boundingBox.min.y).toBeCloseTo(ordinary.boundingBox.min.y);
     const at = i => [color.getX(i), color.getY(i), color.getZ(i)];
     const stride = coarsePointer ? 6 : 12;
+    const normals = shaped.getAttribute('normal');
+    const faceNormals = shaped.clone();
+    faceNormals.computeVertexNormals();
+    const original = faceNormals.getAttribute('normal');
+    const n = (attr, i) => new THREE.Vector3().fromBufferAttribute(attr, i);
+    let smoothed = 0;
     for (let i = 0; i < pos.count; i += stride) {
+      const joint = n(original, i).add(n(original, i + 4)).normalize();
+      for (const j of [1, 2, 3, 5]) {
+        expect(n(normals, i + j).distanceTo(joint)).toBeLessThan(1e-6);
+        expect(n(normals, i + j).length()).toBeCloseTo(1, 5);
+        if (n(normals, i + j).distanceTo(n(original, i + j)) > 0.01) smoothed++;
+      }
+      expect(n(normals, i)).toEqual(n(original, i));
+      expect(n(normals, i + 4)).toEqual(n(original, i + 4));
+      if (!coarsePointer) {
+        for (let j = 6; j < 12; j++) expect(n(normals, i + j)).toEqual(n(original, i + j));
+      }
+      const palette = ['#48683b', '#587746', '#718554', '#536d3e'];
+      const root = new THREE.Color(palette[(i / stride) % palette.length]);
+      expect(color.getX(i)).toBeGreaterThan(root.r);
       expect(at(i + 1)).toEqual(at(i + 3));
       expect(at(i + 2)).toEqual(at(i + 5));
       expect(at(i)).not.toEqual(at(i + 1));
       expect(at(i + 3)).not.toEqual(at(i + 4));
       expect(pos.getY(i + 4)).toBeGreaterThan(pos.getY(i + 1));
     }
-    [ordinary, shaped, restored].forEach(geometry => geometry.dispose());
+    expect(smoothed).toBeGreaterThan(8);
+    expect(normals.array).toEqual(restored.getAttribute('normal').array);
+    [ordinary, shaped, restored, faceNormals].forEach(geometry => geometry.dispose());
   });
 
   it.each([false, true])('distinguishes young, upright and spreading crowns on existing tree instances (coarse=%s)', coarsePointer => {
