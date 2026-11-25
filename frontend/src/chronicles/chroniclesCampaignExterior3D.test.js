@@ -602,6 +602,55 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(full.geometry.boundingBox.max.y).toBeLessThan(2);
   });
 
+  it('grounds mobile C3 trees with one bounded contact batch and preserves desktop and other maps', () => {
+    const map = bannerRoadFirstBook;
+    const center = { x: 10, y: 7 };
+    const plan = { mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      width: 21, height: 15, grid: map.grid, center, content: [], scenery: [] };
+    const build = (mapId, coarsePointer) => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, { scenePlan: { ...plan, mapId }, coarsePointer });
+      return scene;
+    };
+    const mobile = build(map.id, true);
+    const name = 'chronicles-banner-root-contacts';
+    const contacts = mobile.getObjectByName(name);
+    expect(contacts).toBeInstanceOf(THREE.InstancedMesh);
+    expect(mobile.children.filter(c => c.name === name)).toHaveLength(1);
+    expect(contacts.count).toBeGreaterThan(10);
+    expect(contacts.geometry.index.count / 3).toBe(36);
+    expect(contacts.material.transparent).toBe(true);
+    expect(contacts.material.depthWrite).toBe(false);
+    expect(contacts.material.vertexColors).toBe(true);
+    expect(contacts.castShadow).toBe(false);
+    const color = contacts.geometry.getAttribute('color');
+    expect(color.itemSize).toBe(4);
+    expect(color.getW(0)).toBeCloseTo(0.31);
+    expect(color.getW(1)).toBeCloseTo(0.18);
+    for (let i = 13; i < 25; i++) expect(color.getW(i)).toBe(0);
+    const trunks = mobile.getObjectByName('chronicles-terra-broadleafTrunk');
+    const matrix = new THREE.Matrix4();
+    const key = m => [m.elements[12], m.elements[14]].join(',');
+    const rootPositions = new Set();
+    for (let i = 0; i < trunks.count; i++) {
+      trunks.getMatrixAt(i, matrix);
+      rootPositions.add(key(matrix));
+    }
+    for (let i = 0; i < contacts.count; i++) {
+      contacts.getMatrixAt(i, matrix);
+      expect(rootPositions.has(key(matrix))).toBe(true);
+      const [wx, wy, wz] = matrix.elements.slice(12, 15);
+      const x = Math.round(wx / 4) + center.x, y = Math.round(wz / 4) + center.y;
+      expect(map.grid[y]?.[x]).toBe('#');
+      const radius = matrix.elements[0];
+      expect(Math.abs(wx - (x - center.x) * 4) + radius).toBeLessThan(2);
+      expect(Math.abs(wz - (y - center.y) * 4) + radius).toBeLessThan(2);
+      expect(wy).toBeCloseTo(-0.060);
+    }
+    expect(build(map.id, false).getObjectByName(name)).toBeUndefined();
+    expect(build('terra-c4', true).getObjectByName(name)).toBeUndefined();
+  });
+
   it.each([false, true])('raises only non-playable C3 horizon and seats scenery on the rendered surface (coarse=%s)', coarsePointer => {
     const map = bannerRoadFirstBook;
     const center = { x: 10, y: 7 };
