@@ -1134,7 +1134,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const outside = rawX < -0.5 || rawX > width - 0.5
         || rawY < -0.5 || rawY > height - 0.5;
       const distance = outside ? 0 : chroniclesBannerMeadowRootDistance(grid, rawX, rawY);
-      const shade = 1 - THREE.MathUtils.smoothstep(distance, 0.35, 2.4);
+      const shade = 1 - THREE.MathUtils.smoothstep(distance, 0.35, 1.65);
       colors[i * 3] = 1 - 0.17 * shade;
       colors[i * 3 + 1] = 1 - 0.32 * shade;
       colors[i * 3 + 2] = 1 - 0.23 * shade;

@@ -37,7 +37,7 @@ describe('Rookwood forest floor pigments', () => {
       const x = p.getX(i) / 4 + center.x, y = p.getZ(i) / 4 + center.y;
       const outside = x < -0.5 || x > width - 0.5 || y < -0.5 || y > height - 0.5;
       const d = outside ? 0 : chroniclesBannerMeadowRootDistance(grid, x, y);
-      const shade = 1 - THREE.MathUtils.smoothstep(d, 0.35, 2.4);
+      const shade = 1 - THREE.MathUtils.smoothstep(d, 0.35, 1.65);
       expect(c.getX(i)).toBeCloseTo(1 - 0.17 * shade, 6);
       expect(c.getY(i)).toBeCloseTo(1 - 0.32 * shade, 6);
       expect(c.getZ(i)).toBeCloseTo(1 - 0.23 * shade, 6);
