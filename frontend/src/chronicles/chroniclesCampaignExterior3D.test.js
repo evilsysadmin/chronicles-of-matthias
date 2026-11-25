@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerMeadowDryness, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -916,6 +916,36 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
   });
 
+  it('adds continuous bounded erosion pigments while preserving the central crossing', () => {
+    const pigment = chroniclesBannerRoadErosion;
+    let darkest = 1, brightest = 1;
+    for (let along = -42; along <= 42; along += 0.25) {
+      for (let across = -1.32; across <= 1.321; across += 0.12) {
+        const color = pigment(across, along);
+        for (const value of color) {
+          expect(value).toBeGreaterThanOrEqual(0.9099999);
+          expect(value).toBeLessThanOrEqual(1.1200001);
+          darkest = Math.min(darkest, value);
+          brightest = Math.max(brightest, value);
+        }
+        expect(pigment(along, across)).toEqual(color);
+        if (Math.abs(along) <= 2) expect(color).toEqual([1, 1, 1]);
+        if (Math.abs(along) >= 5) {
+          expect(pigment(0, along)).toEqual([1, 1, 1]);
+        }
+      }
+    }
+    expect(darkest).toBeLessThan(0.94);
+    expect(brightest).toBeGreaterThan(1.08);
+    for (let seam = -42; seam <= 42; seam += 4) {
+      for (const across of [-1.32, -0.66, 0.66, 1.32]) {
+        const a = pigment(across, seam - 0.00001);
+        const b = pigment(across, seam + 0.00001);
+        a.forEach((value, i) => expect(value).toBeCloseTo(b[i], 4));
+      }
+    }
+  });
+
   it('widens and narrows the cart track smoothly within its original walkable cells', () => {
     const width = chroniclesBannerRoadWidthScale;
     for (const phase of [0, 1.4]) {
@@ -1007,7 +1037,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = build(bannerRoadFirstBook), other = build(terraC4);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
-    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-v87:chronicles-c3-bend-width-v102');
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v103:chronicles-c3-bend-width-v102');
     expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-width-v102');
     const shader = {
       vertexShader: THREE.ShaderLib.standard.vertexShader,
@@ -1019,6 +1049,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(shader.vertexShader).toContain('vChroniclesRoadPosition = chroniclesRoadPosition.xz');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition)');
     expect(shader.fragmentShader).toContain('max(wear.x, wear.y)');
+    expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition)');
+    expect(shader.fragmentShader).toContain('vec3(0.12, 0.075, 0.035) * dry');
     expect(shader.vertexShader).toContain('#include <begin_vertex>');
     expect(shader.fragmentShader).toContain('#include <color_fragment>');
     const stock = { vertexShader: THREE.ShaderLib.standard.vertexShader,
