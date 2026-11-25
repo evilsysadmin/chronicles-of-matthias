@@ -41,6 +41,7 @@ describe('Terra solar cycle', () => {
     expect(ridge.renderOrder).toBeLessThan(0);
     expect(ridge.geometry.index.count / 3).toBe(coarsePointer ? 192 : 288);
     expect(ridge.material.transparent).toBe(true);
+    expect(ridge.material.forceSinglePass).toBe(true);
     expect(ridge.renderOrder).toBeGreaterThan(dome.getObjectByName('chronicles-sky-cloud-panorama').renderOrder);
     const p = ridge.geometry.getAttribute('position');
     const colors = ridge.geometry.getAttribute('color');
