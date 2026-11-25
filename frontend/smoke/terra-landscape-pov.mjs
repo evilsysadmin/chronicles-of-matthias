@@ -35,6 +35,8 @@ try {
         await page.screenshot({ path: filename });
         assert.equal(state.sceneError, undefined, JSON.stringify(state));
         assert.deepEqual(errors, [], 'No real renderer JS errors in ' + mapId);
+        assert.deepEqual(JSON.parse(state.shaderErrors), [],
+          'No WebGL shader compile/link errors in ' + mapId + ' at ' + width + 'px');
         assert.equal(state.sceneReady, 'true');
         assert.equal(state.mapId, mapId);
         assert.equal(state.cameraCell, mapId === 'terra-c4' ? '7,5'
@@ -84,6 +86,10 @@ try {
             '390px meadow foreground must exceed the prior 540-pixel real WebGL baseline');
         }
         if (mapId === 'banner-road-first-book') {
+          const roadPixels = Number(state.roadVisiblePixels);
+          console.log('CHRONICLES_C3_ROAD_PIXEL_EVIDENCE width=' + width + ' changed=' + roadPixels);
+          assert.ok(roadPixels > width * height * 0.005,
+            'C3 dirt must visibly contribute >0.5% of the real framebuffer: ' + JSON.stringify(state));
           assert.ok(Number(state.bushCount) > 10,
             'Real C3 woodland approach must include original batched shrubs');
           assert.ok(Number(state.crownCount) > 10,
