@@ -579,8 +579,29 @@ describe('Terra scenery', () => {
       expect(texture.magFilter).toBe(baseline.magFilter);
       expect(texture.minFilter).toBe(baseline.minFilter);
       expect(c3.material.emissive.getHex()).toBe(0);
+      // Avoid applying a second dark green filter to the already coloured
+      // leaf atlas, while preserving the generic biome's original material.
+      expect(c3.material.color.getHex()).toBe(0xffffff);
+      expect(original.material.color.getHex()).toBe(part === 'crown' ? 0xe6efdc : 0xcbdcbd);
       expect(woodland.children.filter(mesh => mesh.name === c3.name)).toHaveLength(1);
       const pixels = texture.image.data, before = baseline.image.data;
+      const currentRamp = [0x405b32, 0x547044, 0x698751, 0x809b60, 0x98ac72];
+      const formerRamp = [0x344b28, 0x456038, 0x587542, 0x708b50, 0x8ca363];
+      const linearLuminance = hex => {
+        const col = new THREE.Color(hex);
+        return col.r * 0.2126 + col.g * 0.7152 + col.b * 0.0722;
+      };
+      const used = new Set();
+      for (let i = 0; i < pixels.length; i += 4) {
+        const hex = (pixels[i] << 16) | (pixels[i + 1] << 8) | pixels[i + 2];
+        const rank = currentRamp.indexOf(hex);
+        expect(rank).toBeGreaterThanOrEqual(0);
+        used.add(rank);
+        const gain = linearLuminance(hex) / linearLuminance(formerRamp[rank]);
+        expect(gain).toBeGreaterThan(1.10);
+        expect(gain).toBeLessThan(1.65);
+      }
+      expect(used.size).toBeGreaterThan(2);
       for (let i = 0; i < pixels.length; i += 4) {
         expect(pixels[i]).toBeGreaterThan(before[i]);
         expect(pixels[i + 1]).toBeGreaterThan(before[i + 1]);

@@ -1306,7 +1306,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
     broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer, woodland }), lit(0xffffff, { map: texture(woodland ? 'woodlandbark' : 'bark', 2, 3) })],
     crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer, woodland }),
-      lit(0xe6efdc, {
+      lit(woodland ? 0xffffff : 0xe6efdc, {
         map: texture(woodland ? 'woodlandleaves' : 'leaves', 3, 3),
         // Smooth leaf normals on touch only for the new multi-lobed woodland
         // silhouette; other locations retain their exact original mobile art.
@@ -1318,7 +1318,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       : biome === 'plains'
         ? chroniclesLayeredShrubGeometry({ coarsePointer, woodland })
         : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
-      lit(0xcbdcbd, { map: texture(woodland ? 'woodlandleaves' : 'leaves', 2, 2), flatShading: coarsePointer })],
+      lit(woodland ? 0xffffff : 0xcbdcbd, { map: texture(woodland ? 'woodlandleaves' : 'leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
