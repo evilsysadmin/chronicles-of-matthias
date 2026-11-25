@@ -55,6 +55,8 @@ const RAMPS = Object.freeze({
   roof: [0x5c5650, 0x9a928a, 0xc4bcb2, 0xe2dbd1, 0xfbf6ee].map(hex),
   cobble: [0x4b453d, 0x7d7468, 0xa59b8c, 0xc8bfae, 0xe6dece].map(hex),
   bark: [0x3a2a1c, 0x5e4630, 0x7f6244, 0x9c7d5a].map(hex),
+  // C3: ash-brown weathered plates, readable in the existing forest shade.
+  woodlandbark: [0x514235, 0x695745, 0x806b53, 0x978365, 0xb19b7a, 0xc3ad8b].map(hex),
   leaves: [0x1f3a19, 0x2f5223, 0x416b2d, 0x58843a, 0x75a04a].map(hex),
   // C3 broadleaf albedo: lift near-black gaps and temper saturated greens.
   // Same clump field and five-level pixel-art ramp, not emissive lighting.
@@ -77,7 +79,7 @@ const RAMPS = Object.freeze({
 });
 
 const SIZES = Object.freeze({
-  grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32, woodlandleaves: 32,
+  grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, woodlandbark: 64, leaves: 32, woodlandleaves: 32,
   snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32, uplandrock: 64,
 });
 
@@ -289,6 +291,18 @@ function sample(kind, x, y, size) {
     const streak = Math.sin((x + hash(plank, 0, 11) * 32) * 0.45 + ly * 0.9) * 0.18;
     const knot = hash(Math.floor(x / 5), plank, 13) > 0.94 && ly > 2 && ly < 6 ? -0.35 : 0;
     return 0.55 + (hash(plank, 1, 12) - 0.5) * 0.3 + streak + knot + grain * 0.1;
+  }
+  if (kind === 'woodlandbark') {
+    // Periodic ridges with gently wandering, broken fissures. All broad
+    // fields are tileable; grain is restrained so it doesn't read as noise.
+    const bend = (valueNoise(x, y, size, 3, 61) - 0.5) * 1.8;
+    const phase = 2 * Math.PI * 7 * x / size + bend;
+    const ridge = 0.5 + 0.5 * Math.sin(phase);
+    const plate = valueNoise(x, y, size, 5, 63);
+    const fissure = Math.pow(1 - ridge, 6) * (0.25 + 0.75 * plate);
+    const flake = valueNoise(x, y, size, 12, 65);
+    return 0.54 + ridge * 0.32 - fissure * 0.40
+      + (plate - 0.5) * 0.16 + (flake - 0.5) * 0.08 + grain * 0.04;
   }
   if (kind === 'bark') {
     const ridge = Math.sin(x * 1.3 + valueNoise(x, y, size, 4, 21) * 5) * 0.32;
