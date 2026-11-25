@@ -2333,7 +2333,10 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer, woodland
     yaw: noise(x, y, 629) * Math.PI * 2,
     scale: [grassScale, coarsePointer
       ? 1.15 + noise(x, y, 631) * 0.20
-      : 0.73 + noise(x, y, 631) * 0.24, grassScale],
+      : 0.73 + noise(x, y, 631) * 0.24,
+      // Slightly elliptical primary clumps vary with the habitat recipe.
+      // Satellite and fallback coverage, height and maximum radius stay.
+      grassScale * (0.84 + 0.16 * (0.6 * recipe.coverage + 0.4 * noise(x, y, 1637)))],
   });
   // A second, slightly separated tuft improves ground cover without a
   // second draw call. Mobile takes a strict subset of desktop's tuft cells
