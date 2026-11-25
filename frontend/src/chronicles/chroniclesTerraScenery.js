@@ -2360,7 +2360,7 @@ const SET_PIECES = {
  * @param {object} plan  { grid, center, biome, scenery, coarsePointer }
  * @returns {THREE.Group} the dressing, or an empty group for unknown biomes
  */
-export function buildTerraScenery({ grid = [], center, biome, mapId = null, scenery = [], coarsePointer = false, dressBlocked = true, keepClear = [] }) {
+export function buildTerraScenery({ grid = [], center, biome, mapId = null, scenery = [], coarsePointer = false, dressBlocked = true, keepClear = [], groundOffset = null }) {
   const group = new THREE.Group();
   group.name = 'chronicles-terra-scenery';
   const height = grid.length;
@@ -2498,7 +2498,13 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
-    matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
+    matrices.forEach((matrix, index) => {
+      if (groundOffset) {
+        const e = matrix.elements;
+        e[13] += groundOffset(e[12], e[14]);
+      }
+      mesh.setMatrixAt(index, matrix);
+    });
     mesh.instanceMatrix.needsUpdate = true;
     // Plains foliage no longer repeats a single near-black green ball: subtle
     // sunlit/sage/olive tints vary per persistent cell, using the same batch.
