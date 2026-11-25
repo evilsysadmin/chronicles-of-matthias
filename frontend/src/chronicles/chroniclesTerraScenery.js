@@ -2845,6 +2845,40 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       });
       mesh.instanceColor.needsUpdate = true;
     }
+    if (naturalHighlands && (part === 'tuft' || part === 'pebble')) {
+      // Tie the low grass and scree to the same existing foothill recipe:
+      // warm thin scree, cooler rockline vegetation and muted open pasture.
+      // No new geometry, material, texture, placement or draw batch.
+      const pigments = part === 'tuft' ? {
+        'broken-scree': '#e4d9ba',
+        'grassy-rockline': '#d2e3c4',
+        'wind-scoured-slope': '#e7dbbb',
+        'short-upland-grass': '#dbe6c9',
+        'stony-pasture': '#e3e2c9',
+        'thin-scree': '#eee2c8',
+      } : {
+        'broken-scree': '#d7d5ce',
+        'grassy-rockline': '#d1dace',
+        'wind-scoured-slope': '#e4d8c7',
+        'short-upland-grass': '#deded3',
+        'stony-pasture': '#e0d9ca',
+        'thin-scree': '#eee3d2',
+      };
+      const palette = Object.fromEntries(Object.entries(pigments)
+        .map(([id, hex]) => [id, new THREE.Color(hex)]));
+      const white = new THREE.Color(0xffffff);
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const recipe = chroniclesFoothillTileAt({ grid, biome, x, y });
+        const pigment = palette[recipe?.id] ?? white;
+        const strength = 0.48 + 0.28 * noise(Math.round(e[12] * 7),
+          Math.round(e[14] * 7), part === 'tuft' ? 1643 : 1645);
+        mesh.setColorAt(index, white.clone().lerp(pigment, strength));
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     // Native highlands get quiet stone/lichen tonality per real rock, not
     // identical chess-pawn grey boulders. Same single instanced batch and
     // deterministic transforms; authored heath B2 retains its own palette.

@@ -94,19 +94,14 @@ describe('native Terra upland stone', () => {
         mesh.getMatrixAt(i, m);
         replay.getMatrixAt(i, twin);
         expect(m.elements).toEqual(twin.elements);
-        if (part === 'pebble') {
-          expect(mesh.instanceColor).toBeNull();
-          continue;
-        }
         mesh.getColorAt(i, tint);
         replay.getColorAt(i, twinTint);
         expect(tint.getHex()).toBe(twinTint.getHex());
         colors.add(tint.getHex());
       }
-      if (part !== 'pebble') {
-        expect(mesh.instanceColor.count).toBe(mesh.count);
-        expect(colors.size).toBeGreaterThan(1);
-      }
+      expect(mesh.instanceColor.count).toBe(mesh.count);
+      expect(mobile.instanceColor.count).toBe(mobile.count);
+      expect(colors.size).toBeGreaterThan(1);
     }
     expect(triangles(touch.getObjectByName('chronicles-terra-boulder').geometry)).toBe(20);
     expect(triangles(e2.getObjectByName('chronicles-terra-boulder').geometry)).toBe(80);
