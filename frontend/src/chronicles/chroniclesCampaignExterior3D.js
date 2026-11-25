@@ -789,7 +789,7 @@ export function createBannerRoadDistantRidge(coarsePointer = false) {
   geometry.computeBoundingSphere();
   const ridge = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
     color: 0x9eb8b6, vertexColors: true, side: THREE.DoubleSide,
-    transparent: true, fog: false, toneMapped: false, depthWrite: false,
+    transparent: true, forceSinglePass: true, fog: false, toneMapped: false, depthWrite: false,
   }));
   ridge.name = 'chronicles-banner-distant-ridge';
   // Composite over the distant cloud panorama, never over foreground
