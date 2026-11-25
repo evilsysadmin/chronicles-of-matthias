@@ -39,16 +39,28 @@ describe('Terra solar cycle', () => {
     expect(ridge.material.fog).toBe(false);
     expect(ridge.renderOrder).toBeGreaterThan(dome.renderOrder);
     expect(ridge.renderOrder).toBeLessThan(0);
-    expect(ridge.geometry.index.count / 3).toBe(coarsePointer ? 96 : 144);
+    expect(ridge.geometry.index.count / 3).toBe(coarsePointer ? 192 : 288);
+    expect(ridge.material.transparent).toBe(true);
+    expect(ridge.material.forceSinglePass).toBe(true);
+    expect(ridge.renderOrder).toBeGreaterThan(dome.getObjectByName('chronicles-sky-cloud-panorama').renderOrder);
     const p = ridge.geometry.getAttribute('position');
+    const colors = ridge.geometry.getAttribute('color');
+    expect(colors.itemSize).toBe(4);
+    expect(colors.count).toBe(p.count);
     const v = i => new THREE.Vector3().fromBufferAttribute(p, i);
-    expect(v(0)).toEqual(v(p.count - 2));
-    expect(v(1)).toEqual(v(p.count - 1));
-    for (let i = 0; i < p.count; i += 2) {
+    for (let i = 0; i < 3; i++) {
+      expect(v(i)).toEqual(v(p.count - 3 + i));
+      expect(colors.getW(i)).toBe(colors.getW(p.count - 3 + i));
+    }
+    for (let i = 0; i < p.count; i += 3) {
       expect(Math.hypot(p.getX(i), p.getZ(i))).toBeCloseTo(55, 4);
       expect(p.getY(i)).toBe(-7);
-      expect(p.getY(i + 1)).toBeGreaterThan(1);
-      expect(p.getY(i + 1)).toBeLessThan(10);
+      expect(p.getY(i + 2)).toBeGreaterThan(1);
+      expect(p.getY(i + 2)).toBeLessThan(10);
+      expect(p.getY(i + 2) - p.getY(i + 1)).toBeCloseTo(0.85, 5);
+      expect(colors.getW(i)).toBeCloseTo(0.92);
+      expect(colors.getW(i + 1)).toBeCloseTo(0.68);
+      expect(colors.getW(i + 2)).toBe(0);
     }
     const copy = createBannerRoadDistantRidge(coarsePointer);
     expect(copy.geometry.getAttribute('position').array).toEqual(p.array);

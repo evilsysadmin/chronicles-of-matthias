@@ -770,24 +770,31 @@ export function createBannerRoadDistantRidge(coarsePointer = false) {
     const h = 5.7 + 2.1 * Math.sin(3 * a + 0.8)
       + 1.3 * Math.cos(5 * a - 0.4) + 0.65 * Math.sin(9 * a + 1.1);
     const x = 55 * Math.cos(a), z = 55 * Math.sin(a);
-    positions.push(x, -7, z, x, h, z);
-    colors.push(0.83, 0.88, 0.86, 0.97, 0.99, 1);
+    // Atmospheric silhouette: a narrow soft crest over the distant
+    // ridge body. Keep the same radius and peak heights, but let sky
+    // colour show through gradually instead of cutting a hard grey edge.
+    positions.push(x, -7, z, x, h - 0.85, z, x, h, z);
+    colors.push(0.83, 0.88, 0.86, 0.92,
+      0.97, 0.99, 1, 0.68, 0.97, 0.99, 1, 0);
     if (i) {
-      const j = 2 * (i - 1);
-      indices.push(j, j + 1, j + 2, j + 2, j + 1, j + 3);
+      const j = 3 * (i - 1);
+      indices.push(j, j + 1, j + 3, j + 3, j + 1, j + 4,
+        j + 1, j + 2, j + 4, j + 4, j + 2, j + 5);
     }
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
   const ridge = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
     color: 0x9eb8b6, vertexColors: true, side: THREE.DoubleSide,
-    fog: false, toneMapped: false, depthWrite: false,
+    transparent: true, forceSinglePass: true, fog: false, toneMapped: false, depthWrite: false,
   }));
   ridge.name = 'chronicles-banner-distant-ridge';
-  ridge.renderOrder = -97;
+  // Composite over the distant cloud panorama, never over foreground
+  // depth-writing scenery; the sky itself remains camera-relative.
+  ridge.renderOrder = -96;
   ridge.frustumCulled = false;
   return ridge;
 }
