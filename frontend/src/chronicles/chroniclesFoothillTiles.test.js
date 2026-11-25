@@ -91,6 +91,57 @@ describe('Terra reusable foothill transitions', () => {
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
+  it.each([false, true])('gives native scree and grass habitat pigments in their existing batches (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-e2');
+    const center = { x: 10, y: 7 };
+    const plan = { grid: map.grid, center, biome: map.biome, mapId: map.id,
+      scenery: map.scenery, coarsePointer };
+    const group = buildTerraScenery(plan);
+    const repeat = buildTerraScenery(plan);
+    const generic = buildTerraScenery({ ...plan, mapId: undefined });
+    const palettes = {
+      tuft: {
+        'broken-scree': '#e4d9ba', 'grassy-rockline': '#d2e3c4',
+        'wind-scoured-slope': '#e7dbbb', 'short-upland-grass': '#dbe6c9',
+        'stony-pasture': '#e3e2c9', 'thin-scree': '#eee2c8',
+      },
+      pebble: {
+        'broken-scree': '#d7d5ce', 'grassy-rockline': '#d1dace',
+        'wind-scoured-slope': '#e4d8c7', 'short-upland-grass': '#deded3',
+        'stony-pasture': '#e0d9ca', 'thin-scree': '#eee3d2',
+      },
+    };
+    const color = new THREE.Color(), twin = new THREE.Color();
+    const matrix = new THREE.Matrix4(), twinMatrix = new THREE.Matrix4();
+    for (const name of ['tuft', 'pebble']) {
+      const mesh = get(group, name), restored = get(repeat, name);
+      const plain = get(generic, name);
+      expect(mesh.instanceColor.count).toBe(mesh.count);
+      expect(plain.instanceColor).toBeNull();
+      expect(mesh.count).toBe(plain.count);
+      expect(group.children.filter(child => child.name === mesh.name)).toHaveLength(1);
+      const habitats = new Set();
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        plain.getMatrixAt(i, twinMatrix);
+        expect(matrix.elements).toEqual(twinMatrix.elements);
+        const x = Math.round(matrix.elements[12] / 4) + center.x;
+        const y = Math.round(matrix.elements[14] / 4) + center.y;
+        const recipe = foothill(map.grid, x, y);
+        const pigment = new THREE.Color(palettes[name][recipe?.id] ?? '#ffffff');
+        if (recipe) habitats.add(recipe.id);
+        mesh.getColorAt(i, color);
+        restored.getColorAt(i, twin);
+        expect(color.toArray()).toEqual(twin.toArray());
+        for (const channel of ['r', 'g', 'b']) {
+          expect(color[channel]).toBeGreaterThanOrEqual(1 + (pigment[channel] - 1) * 0.76 - 1e-6);
+          expect(color[channel]).toBeLessThanOrEqual(1 + (pigment[channel] - 1) * 0.48 + 1e-6);
+        }
+      }
+      expect(habitats.size).toBeGreaterThan(1);
+    }
+  });
+
   it('keeps native Brezal heather on its original blocked roots', () => {
     const map = chroniclesMapById('terra-b2');
     const a = buildTerraScenery({ grid: map.grid, center: { x: 10, y: 7 },
