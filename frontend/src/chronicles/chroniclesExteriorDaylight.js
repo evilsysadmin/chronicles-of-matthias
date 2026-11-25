@@ -194,10 +194,13 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         // coverage or amplify rain, fog, twilight darkness or night skies.
         // This is the final frame-visible opacity; a value set while
         // building the sky dome would be overwritten on the first sync.
-        // Limit the extra 0.20 to Banner Road's genuinely clear daylight:
-        // cloudy/rainy weather, fog, night and other maps are untouched.
+        // The v122 real framebuffer audit measured 90% of upper-sky
+        // pixels changing when this panorama was removed. Keep distant
+        // clouds readable, but reduce C3's extra clear-day opacity so the
+        // broad veil does not overwhelm the nearer sculpted cloud banks.
+        // The base weather/night term and other regions remain unchanged.
         panoramaMaterial.opacity = 0.11 + cloudiness * 0.79
-          + (0.24 + (bannerRoadSky ? 0.52 : 0)) * clearDaylight * daylight;
+          + (0.24 + (bannerRoadSky ? 0.32 : 0)) * clearDaylight * daylight;
         panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
           .lerp(cloudStorm, cloudiness * 0.62)
           // The procedural atlas already has broken bright crowns and darker
