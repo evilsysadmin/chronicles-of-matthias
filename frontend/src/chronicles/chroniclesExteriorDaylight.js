@@ -38,6 +38,20 @@ export function chroniclesExteriorDaylightProfile(worldMinutes) {
   });
 }
 
+// C3's exposed meadow needs stronger separation between sunlit crowns
+// and shaded trunks. Preserve the old light balance in fog, cloud and night.
+export function chroniclesBannerWoodlandLight(profile, cloudiness, fogStrength) {
+  const clear = (1 - THREE.MathUtils.smoothstep(cloudiness, 0.08, 0.48))
+    * (1 - THREE.MathUtils.smoothstep(fogStrength, 0.05, 0.45));
+  const strength = profile.sunVisible ? clear * profile.daylight : 0;
+  const lowSun = 1 - THREE.MathUtils.smoothstep(profile.sun.y, 0.10, 0.55);
+  return {
+    key: 1 + 0.14 * strength,
+    fill: 1 - 0.16 * strength,
+    warmth: 0.48 * strength * lowSun,
+  };
+}
+
 // Updates existing lights and sky vertices only when the game-world minute
 // changes. No timers, new light sources, new shadow maps or runtime assets.
 // A dungeon lacks the outdoor dome+sun pair and is intentionally ignored.
@@ -69,6 +83,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const blendedHorizon = new THREE.Color();
   const blendedZenith = new THREE.Color();
   const sunColorDay = new THREE.Color(0xffe6ba);
+  const woodlandLowSun = new THREE.Color(0xffb36c);
   const moonColor = new THREE.Color(0x92b3d8);
   const nightFog = new THREE.Color(0x1d2b43);
   const weatherSky = new THREE.Color(0x74838e);
@@ -183,6 +198,12 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       sun.color.copy(moonColor).lerp(sunColorDay, daylight);
       if (hemi) {
         hemi.intensity = hemiBase * (0.46 + 0.54 * daylight) * (1 - cloudiness * 0.15);
+      }
+      if (bannerRoadSky) {
+        const balance = chroniclesBannerWoodlandLight(profile, cloudiness, fogStrength);
+        sun.intensity *= balance.key;
+        sun.color.lerp(woodlandLowSun, balance.warmth);
+        if (hemi) hemi.intensity *= balance.fill;
       }
       // Only the authored urban fixtures participate. Dungeons and wild
       // biomes have no such batches, so remain exactly as before.

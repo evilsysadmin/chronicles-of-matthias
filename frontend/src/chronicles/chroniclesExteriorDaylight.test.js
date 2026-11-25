@@ -6,7 +6,7 @@ import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 import { buildChroniclesCampaignExterior, createBannerRoadDistantRidge } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
-import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
+import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight, chroniclesBannerWoodlandLight } from './chroniclesExteriorDaylight.js';
 import { chroniclesSeasonalSunTimes } from './chroniclesWorldTime.js';
 
 function outdoors() {
@@ -335,6 +335,64 @@ describe('Terra solar cycle', () => {
     expect(scene.getObjectByName('chronicles-town-street-window-night-glow')).toBeUndefined();
     expect(scene.getObjectByName('chronicles-town-wall-lantern-glass')).toBeUndefined();
     expect(createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1 })?.sync(1320)).toBe(true);
+  });
+
+  it('sculpts clear C3 daylight but leaves fog, overcast and night lighting unchanged', () => {
+    const profile = (y, daylight = 1, sunVisible = true) => ({ sun: { y }, daylight, sunVisible });
+    const noon = chroniclesBannerWoodlandLight(profile(0.95), 0, 0);
+    const low = chroniclesBannerWoodlandLight(profile(0.15), 0, 0);
+    expect(noon.key).toBeCloseTo(1.14);
+    expect(noon.fill).toBeCloseTo(0.84);
+    expect(noon.warmth).toBe(0);
+    expect(low.warmth).toBeGreaterThan(0.4);
+    const neutral = { key: 1, fill: 1, warmth: 0 };
+    expect(chroniclesBannerWoodlandLight(profile(0.15), 0.8, 0)).toEqual(neutral);
+    expect(chroniclesBannerWoodlandLight(profile(0.15), 0, 0.8)).toEqual(neutral);
+    expect(chroniclesBannerWoodlandLight(profile(-0.6, 0, false), 0, 0)).toEqual(neutral);
+    const partial = chroniclesBannerWoodlandLight(profile(0.4), 0.28, 0.25);
+    expect(partial.key).toBeGreaterThan(1);
+    expect(partial.key).toBeLessThan(noon.key);
+    expect(partial.fill).toBeGreaterThan(noon.fill);
+    expect(partial.fill).toBeLessThan(1);
+  });
+
+  it('applies woodland contrast to actual light objects, without drift or extra lights', () => {
+    const { scene, sun, hemi, renderer } = outdoors();
+    const region = { mapId: 'banner-road-first-book', regionKind: 'wilderness' };
+    const key = sun.intensity, fill = hemi.intensity;
+    const count = scene.children.length;
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
+    const check = minute => {
+      const profile = chroniclesExteriorDaylightProfile(minute);
+      const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: minute });
+      const clouds = weather?.clouds ?? 0, fog = weather?.fog ?? 0;
+      const balance = chroniclesBannerWoodlandLight(profile, clouds, fog);
+      expect(cycle.sync(minute)).toBe(true);
+      expect(sun.intensity).toBeCloseTo(key * (0.20 + 0.80 * profile.daylight)
+        * (1 - clouds * 0.48) * balance.key, 6);
+      expect(hemi.intensity).toBeCloseTo(fill * (0.46 + 0.54 * profile.daylight)
+        * (1 - clouds * 0.15) * balance.fill, 6);
+      const tint = new THREE.Color(0x92b3d8).lerp(new THREE.Color(0xffe6ba), profile.daylight)
+        .lerp(new THREE.Color(0xffb36c), balance.warmth);
+      expect(sun.color.toArray()).toEqual(tint.toArray());
+      expect(scene.children).toHaveLength(count);
+      return [sun.intensity, hemi.intensity, ...sun.color.toArray()];
+    };
+    const first = check(2205);
+    check(1320);
+    check(360);
+    expect(check(2205)).toEqual(first);
+    expect(cycle.sync(2205)).toBe(false);
+    const generic = outdoors();
+    const other = { ...region, mapId: 'terra-c4' };
+    const otherCycle = createChroniclesExteriorDaylight(generic.scene, generic.renderer, other);
+    otherCycle.sync(2205);
+    const p = chroniclesExteriorDaylightProfile(2205);
+    const w = chroniclesRegionalWeatherTransition({ ...other, worldMinutes: 2205 });
+    expect(generic.sun.intensity).toBeCloseTo(key * (0.20 + 0.80 * p.daylight)
+      * (1 - (w?.clouds ?? 0) * 0.48));
+    expect(generic.hemi.intensity).toBeCloseTo(fill * (0.46 + 0.54 * p.daylight)
+      * (1 - (w?.clouds ?? 0) * 0.15));
   });
 
   it('boosts the FRAME-VISIBLE Banner Road cloud panorama only after actual clear-day world-time sync', () => {
