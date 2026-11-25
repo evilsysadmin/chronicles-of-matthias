@@ -8,7 +8,8 @@ import heath from '../src/chronicles/maps/terra-b2.json';
 import bannerRoad from '../src/chronicles/maps/banner-road-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
-import { createChroniclesExteriorDaylight } from '../src/chronicles/chroniclesExteriorDaylight.js';
+import { createChroniclesExteriorDaylight, chroniclesExteriorDaylightProfile } from '../src/chronicles/chroniclesExteriorDaylight.js';
+import { chroniclesSeasonalSunTimes } from '../src/chronicles/chroniclesWorldTime.js';
 import {
   chroniclesRegionalWeather, chroniclesRegionalWeatherTransition,
 } from '../src/chronicles/chroniclesRegionalWeather.js';
@@ -318,6 +319,50 @@ try {
           + ',' + withTiles[index + 2]);
       }
     }
+  }
+  // Audit the complete solar cycle on the SAME live scene and camera.
+  // No additional browser/page startup, fabricated weather or production hook.
+  if (mapId === 'banner-road-first-book' && view === 'canonical') {
+    const noon = clearMinute ?? 765;
+    const day = Math.floor(noon / 1440) * 1440;
+    const solar = chroniclesSeasonalSunTimes(noon);
+    const phases = {
+      dawn: day + Math.round(solar.sunrise * 60 + 15),
+      noon,
+      dusk: day + Math.round(solar.sunset * 60 - 15),
+      night: day + 23 * 60 + 45,
+    };
+    window.chroniclesSmokeSolarFrame = phase => {
+      if (!Object.hasOwn(phases, phase)) throw new Error('Unknown solar audit phase');
+      const minute = phases[phase];
+      cycle.sync(minute);
+      renderer.render(scene, camera);
+      const pixels = pixelBuffer();
+      let light = 0, groundLight = 0, groundCount = 0, changed = 0, count = 0;
+      const palette = new Set();
+      for (let y = 4; y < height - 4; y += 4) {
+        for (let x = 4; x < width - 4; x += 4) {
+          const i = (y * width + x) * 4;
+          const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+          const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          light += luma;
+          count++;
+          if (y < height * 0.42) { groundLight += luma; groundCount++; }
+          if (Math.abs(r - withTiles[i]) + Math.abs(g - withTiles[i + 1])
+            + Math.abs(b - withTiles[i + 2]) > 12) changed++;
+          palette.add((r << 16) | (g << 8) | b);
+        }
+      }
+      const profile = chroniclesExteriorDaylightProfile(minute);
+      const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: minute });
+      return { phase, minute, daylight: profile.daylight, sun: profile.sun,
+        weather: chroniclesRegionalWeather({ ...region, worldMinutes: minute })?.kind,
+        clouds: weather.clouds, fog: weather.fog, meanLuma: light / count,
+        groundLuma: groundLight / groundCount, changedFraction: changed / count,
+        palette: palette.size, shaderErrors: [...shaderErrors],
+        drawCalls: renderer.info.render.calls, cameraCell: cameraCell.x + ',' + cameraCell.y,
+        yaw: camera.rotation.y, pitch: camera.rotation.x };
+    };
   }
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
