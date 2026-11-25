@@ -47,7 +47,9 @@ export function chroniclesBannerWoodlandLight(profile, cloudiness, fogStrength) 
   const lowSun = 1 - THREE.MathUtils.smoothstep(profile.sun.y, 0.10, 0.55);
   return {
     key: 1 + 0.14 * strength,
-    fill: 1 - 0.16 * strength,
+    // At low solar altitude, diffuse sky light keeps the path readable
+    // even when the directional key barely illuminates horizontal ground.
+    fill: 1 - 0.16 * strength + 0.32 * strength * lowSun * (profile.twilight ?? 0),
     warmth: 0.48 * strength * lowSun,
   };
 }
@@ -80,6 +82,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const warm = new THREE.Color(0xffcb97);
   const twilightRose = new THREE.Color(0xf7a39d);
   const twilightAmber = new THREE.Color(0xffbd78);
+  const woodlandTwilight = new THREE.Color(0xe6b9a7);
   const blendedHorizon = new THREE.Color();
   const blendedZenith = new THREE.Color();
   const sunColorDay = new THREE.Color(0xffe6ba);
@@ -319,6 +322,13 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         const amberBand = 1 - THREE.MathUtils.smoothstep(direction.y, -0.04, 0.35);
         const glow = Math.pow(Math.max(0, direction.dot(sunVector)), 30) * 0.54;
         color.copy(blendedHorizon).lerp(blendedZenith, altitude);
+        if (bannerRoadSky) {
+          // Broad, subdued twilight scattering beyond the narrow solar
+          // glow. Preserve the blue zenith and keep heavy fog neutral.
+          const scattering = twilightStrength * (1 - fogStrength)
+            * (0.34 + 0.66 * facingSun) * roseBand * 0.34;
+          color.lerp(woodlandTwilight, clamp01(scattering));
+        }
         color.lerp(twilightRose,
           clamp01(twilightStrength * Math.pow(facingSun, 3) * roseBand * 0.50));
         color.lerp(twilightAmber,
