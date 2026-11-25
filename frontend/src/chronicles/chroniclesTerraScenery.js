@@ -2664,8 +2664,20 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         const pale = denseMeadow && part === 'crown'
           && grid[gridY]?.[gridX] === '#' && bannerRoadPaleTree(gridX, gridY);
         const palette = pale ? paleLeaves : shades;
-        mesh.setColorAt(index, palette[Math.min(palette.length - 1,
-          Math.floor(seed * palette.length))]);
+        const tint = palette[Math.min(palette.length - 1, Math.floor(seed * palette.length))];
+        // Distant C3 groves share a broad, deterministic pigment field
+        // rather than unrelated tree-by-tree colour noise. Keep authored
+        // trees (including the gateway and road-end oak) exactly as before.
+        const outside = gridX < 0 || gridY < 0
+          || gridX >= (grid[0]?.length ?? 0) || gridY >= grid.length;
+        if (denseMeadow && part === 'crown' && outside) {
+          const grove = 0.5 + 0.5 * Math.sin(gridX * 0.36 + gridY * 0.23)
+            * Math.cos(gridY * 0.31 - gridX * 0.17);
+          const target = new THREE.Color('#d3e2db').lerp(new THREE.Color('#f4e6c6'), grove);
+          mesh.setColorAt(index, tint.clone().lerp(target, 0.48));
+        } else {
+          mesh.setColorAt(index, tint);
+        }
       });
       mesh.instanceColor.needsUpdate = true;
     }

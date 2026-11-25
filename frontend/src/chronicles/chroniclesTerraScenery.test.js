@@ -723,6 +723,45 @@ describe('Terra scenery', () => {
     expect(current.filter(p => p.k === 0)).toHaveLength(coarsePointer ? 102 : 186);
   });
 
+  it.each([false, true])('grades only distant C3 crowns into coherent warm and cool groves (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer };
+    const mesh = buildTerraScenery(args).getObjectByName('chronicles-terra-crown');
+    const m = new THREE.Matrix4(), actual = new THREE.Color();
+    const noise = (x, y, salt) => {
+      const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
+      return n - Math.floor(n);
+    };
+    const standard = ['#f3f4e8', '#e4eddc', '#ffffff', '#e8e9d2', '#dce9d9'];
+    const pale = ['#cbdcbd', '#b8d2bc', '#dde3c1', '#c4d8b5'];
+    let warm = 0, cool = 0, inside = 0;
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, m);
+      mesh.getColorAt(i, actual);
+      const x = Math.round(m.elements[12] / 4) + center.x;
+      const y = Math.round(m.elements[14] / 4) + center.y;
+      const seed = noise(Math.round(m.elements[12] * 8), Math.round(m.elements[14] * 8), 193);
+      const palette = map.grid[y]?.[x] === '#' && noise(x, y, 881) > 0.56 ? pale : standard;
+      const base = new THREE.Color(palette[Math.floor(seed * palette.length)]);
+      if (x < 0 || y < 0 || x >= map.grid[0].length || y >= map.grid.length) {
+        const field = 0.5 + 0.5 * Math.sin(x * 0.36 + y * 0.23)
+          * Math.cos(y * 0.31 - x * 0.17);
+        base.lerp(new THREE.Color('#d3e2db').lerp(new THREE.Color('#f4e6c6'), field), 0.48);
+        if (field > 0.75) warm++;
+        if (field < 0.25) cool++;
+      } else inside++;
+      // Instance positions are float32; palette selection must remain
+      // stable at the existing seed's rounded world coordinates.
+      expect(actual.r).toBeCloseTo(base.r, 5);
+      expect(actual.g).toBeCloseTo(base.g, 5);
+      expect(actual.b).toBeCloseTo(base.b, 5);
+    }
+    expect(warm).toBeGreaterThan(5);
+    expect(cool).toBeGreaterThan(5);
+    expect(inside).toBeGreaterThan(10);
+  });
+
   it('gives the distant Banner Road tree line a coherent, bounded height rhythm', () => {
     // Each horizon ring should have an undulating silhouette rather than
     // virtually equal crowns with only tiny per-tree jitter.
