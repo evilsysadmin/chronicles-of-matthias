@@ -334,7 +334,7 @@ describe('Seamless Terra cloud panorama', () => {
       const clearDaylight = 1 - THREE.MathUtils.smoothstep(weather.clouds, 0.08, 0.48);
       const fogVeil = 1 - weather.fog * 0.74 * 0.18;
       return (0.11 + weather.clouds * 0.79
-        + (0.24 + (withBoost ? 0.52 : 0)) * clearDaylight * daylight)
+        + (0.24 + (withBoost ? 0.32 : 0)) * clearDaylight * daylight)
         * fogVeil;
     };
     banner.cycle.sync(clear);
@@ -360,8 +360,8 @@ describe('Seamless Terra cloud panorama', () => {
       .toBeGreaterThan(new THREE.Color(0xc4cdd4).r + 0.04);
     // This is the measured AFTER-sync midday cloud strength. The old
     // constructor-only edit was silently replaced before the first frame.
-    expect(daytimeOpacity).toBeGreaterThan(0.84);
-    expect(daytimeOpacity).toBeLessThan(0.96);
+    expect(daytimeOpacity).toBeGreaterThan(0.64);
+    expect(daytimeOpacity).toBeLessThan(0.76);
     expect(banner.dome.getObjectByName('chronicles-sky-cloud-panorama').material.map)
       .toBe(originalAtlas);
     expect(banner.scene.children.length).toBe(initialCount);
