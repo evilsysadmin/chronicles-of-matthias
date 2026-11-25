@@ -405,6 +405,45 @@ describe('Terra scenery', () => {
     [woodland, baseline].forEach(shape => shape.dispose());
   });
 
+  it.each([false, true])('unifies woodland lobe lighting while preserving outward normals and the shared mesh budget (coarse=%s)', coarsePointer => {
+    const crown = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
+    const leaf = chroniclesWoodlandLeafMassGeometry({ coarsePointer });
+    const p = crown.getAttribute('position'), n = crown.getAttribute('normal');
+    const c = crown.getAttribute('color');
+    const localN = leaf.getAttribute('normal');
+    const count = leaf.getAttribute('position').count;
+    // The unchanged source lobe transforms allow direct comparison with
+    // its original normal field before the shared crown lighting pass.
+    const scales = [[0.72, 0.90, 0.72], [0.48, 0.60, 0.47], [0.48, 0.58, 0.49],
+      ...(!coarsePointer ? [[0.46, 0.48, 0.48], [0.43, 0.54, 0.46]] : []),
+      [0.55, 0.46, 0.68]];
+    const old = new THREE.Vector3(), actual = new THREE.Vector3(), radial = new THREE.Vector3();
+    let improved = 0, total = 0, upper = 0, lower = 0, nu = 0, nl = 0;
+    expect(p.count).toBe(count * scales.length);
+    expect(crown.index.count / 3).toBe(coarsePointer ? 144 : 480);
+    for (let i = 0; i < p.count; i++) {
+      const scale = scales[Math.floor(i / count)];
+      old.fromBufferAttribute(localN, i % count);
+      old.set(old.x / scale[0], old.y / scale[1], old.z / scale[2]).normalize();
+      actual.fromBufferAttribute(n, i);
+      expect(actual.length()).toBeCloseTo(1, 5);
+      expect(actual.dot(old)).toBeGreaterThan(0.80);
+      radial.set(p.getX(i), (p.getY(i) - 0.10) * 0.80, (p.getZ(i) - 0.12) * 0.78).normalize();
+      expect(actual.dot(radial)).toBeGreaterThanOrEqual(old.dot(radial) - 0.00001);
+      if (actual.dot(radial) > old.dot(radial) + 0.01) improved++;
+      total++;
+      const luminance = (c.getX(i) + c.getY(i) + c.getZ(i)) / 3;
+      if (p.getY(i) > 0.65) { upper += luminance; nu++; }
+      if (p.getY(i) < -0.25) { lower += luminance; nl++; }
+    }
+    expect(improved / total).toBeGreaterThan(0.25);
+    expect(nu).toBeGreaterThan(0);
+    expect(nl).toBeGreaterThan(0);
+    expect(upper / nu - lower / nl).toBeGreaterThan(0.10);
+    crown.dispose();
+    leaf.dispose();
+  });
+
   it.each([false, true])('builds taller asymmetric woodland crowns without altering original foliage (coarse=%s)', coarsePointer => {
     const shaped = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
     const base = chroniclesLayeredCanopyGeometry({ coarsePointer });

@@ -594,6 +594,35 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false, woodlan
   const merged = mergeGeometries(pieces, false);
   pieces.forEach(piece => piece.dispose());
   if (!merged) throw new Error('Unable to merge Chronicles broadleaf canopy');
+  if (woodland) {
+    // Light the visible masses as parts of a single crown. Blend the
+    // lobe normals towards a broad ellipsoid only where they agree with
+    // its outward direction; retain local normals in deep concavities.
+    // This preserves silhouette, leaf texture and original topology.
+    const p = merged.getAttribute('position');
+    const normals = merged.getAttribute('normal');
+    const colors = merged.getAttribute('color');
+    const local = new THREE.Vector3(), envelope = new THREE.Vector3();
+    const tint = new THREE.Color(), shared = new THREE.Color();
+    const lower = new THREE.Color('#c6d9c0'), upper = new THREE.Color('#f7f8e9');
+    for (let i = 0; i < p.count; i++) {
+      local.fromBufferAttribute(normals, i).normalize();
+      envelope.set(p.getX(i), (p.getY(i) - 0.10) * 0.80, (p.getZ(i) - 0.12) * 0.78);
+      if (envelope.lengthSq() > 0.0001) {
+        envelope.normalize();
+        const blend = 0.56 * THREE.MathUtils.smoothstep(local.dot(envelope), 0.05, 0.65);
+        local.lerp(envelope, blend).normalize();
+        normals.setXYZ(i, local.x, local.y, local.z);
+      }
+      // Shared height-based light response replaces the conspicuous
+      // per-ball reset while preserving 30% of local foliage pigment.
+      shared.copy(lower).lerp(upper, THREE.MathUtils.smoothstep(p.getY(i), -0.55, 0.95));
+      tint.setRGB(colors.getX(i), colors.getY(i), colors.getZ(i)).lerp(shared, 0.70);
+      colors.setXYZ(i, tint.r, tint.g, tint.b);
+    }
+    normals.needsUpdate = true;
+    colors.needsUpdate = true;
+  }
   merged.computeBoundingSphere();
   return merged;
 }
