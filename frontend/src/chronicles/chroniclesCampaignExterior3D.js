@@ -750,6 +750,17 @@ export function chroniclesBannerMeadowDryness(x, y, rootDistance) {
     * THREE.MathUtils.smoothstep(rootDistance, 1, 2.8);
 }
 
+// Cool, fresher meadow communities between the dry clearings and shaded
+// roots. This is static habitat pigmentation, not simulated rainfall or
+// a new gameplay zone. Keep dry and cool pigments mutually attenuated.
+export function chroniclesBannerMeadowFreshness(x, y, rootDistance) {
+  const northwest = Math.exp(-((x - 4.5) ** 2 / 15 + (y - 2.8) ** 2 / 5));
+  const southeast = Math.exp(-((x - 15.7) ** 2 / 14 + (y - 11.4) ** 2 / 6));
+  return Math.max(northwest, southeast)
+    * THREE.MathUtils.smoothstep(rootDistance, 0.8, 2.2)
+    * (1 - chroniclesBannerMeadowDryness(x, y, rootDistance));
+}
+
 // Raise only the non-playable outer scenery ring. A two-cell flat
 // buffer keeps interpolation between terrain vertices away from traversal.
 export function chroniclesBannerHorizonRise(x, y, width, height) {
@@ -1066,8 +1077,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       // Preserve the original red-channel shadow field and neutral roots.
       const dryness = width === 21 && height === 15
         ? chroniclesBannerMeadowDryness(x, y, distance) : 0;
-      colors[i * 3] = 1 - shade;
-      colors[i * 3 + 1] = 1 - shade * 0.80 - dryness * 0.07;
+      const freshness = width === 21 && height === 15
+        ? chroniclesBannerMeadowFreshness(x, y, distance) : 0;
+      // Fresher grass is slightly deeper and cooler, never cyan. Retain
+      // the underlying texture detail and root-shadow field.
+      colors[i * 3] = 1 - shade - freshness * 0.095;
+      colors[i * 3 + 1] = 1 - shade * 0.80 - dryness * 0.07 - freshness * 0.025;
       colors[i * 3 + 2] = 1 - shade * 0.65 - dryness * 0.18;
     }
     terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
