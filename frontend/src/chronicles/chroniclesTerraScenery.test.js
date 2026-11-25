@@ -1379,6 +1379,32 @@ describe('Terra scenery', () => {
     shaped.dispose();
   });
 
+  it.each([false, true])('blends C3 stone caps into mossy soil contact without new geometry (coarse=%s)', coarsePointer => {
+    const generic = chroniclesMeadowMicroreliefGeometry({ coarsePointer });
+    const woodland = chroniclesMeadowMicroreliefGeometry({ coarsePointer, woodland: true });
+    const p = woodland.getAttribute('position'), c = woodland.getAttribute('color');
+    const original = generic.getAttribute('position'), originalColor = generic.getAttribute('color');
+    const count = coarsePointer ? 1 : 3;
+    const vec = (a, i) => new THREE.Vector3().fromBufferAttribute(a, i);
+    const luma = v => v.x * 0.2126 + v.y * 0.7152 + v.z * 0.0722;
+    expect(p.count).toBe(original.count);
+    expect(p.array.slice(0, count * 54)).toEqual(original.array.slice(0, count * 54));
+    for (let k = 0; k < count; k++) {
+      const start = k * 18;
+      for (let face = 0; face < 6; face++) {
+        const i = start + face * 3;
+        const next = start + ((face + 1) % 6) * 3;
+        expect(vec(c, i + 1)).toEqual(vec(c, start + 1));
+        expect(vec(c, i + 2)).toEqual(vec(c, next));
+        expect(luma(vec(c, i))).toBeLessThan(luma(vec(c, i + 1)));
+        expect(vec(originalColor, i)).toEqual(vec(originalColor, i + 1));
+      }
+      expect(vec(c, start)).not.toEqual(vec(c, start + 9));
+    }
+    generic.dispose();
+    woodland.dispose();
+  });
+
   it('keeps meadow microrelief ankle-low, fully opaque and cheap on mobile', () => {
     const desktop = chroniclesMeadowMicroreliefGeometry();
     const mobile = chroniclesMeadowMicroreliefGeometry({ coarsePointer: true });

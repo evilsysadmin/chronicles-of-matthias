@@ -1147,8 +1147,16 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false, woo
         cz + Math.sin(angle) * r * 0.78]);
     }
     const top = [cx + radius * 0.11, height, cz - radius * 0.08];
+    // C3 stones share a continuous mineral cap and damp, mossy rim.
+    // Preserve their exact geometry and the generic meadow face palette.
+    const cap = stone[seed % stone.length];
+    const moss = new THREE.Color('#536443');
+    const rimTints = rim.map((_, i) => cap.clone().lerp(moss,
+      0.35 + 0.20 * (0.5 + 0.5 * Math.cos(i * Math.PI / 3 + seed))).multiplyScalar(0.78));
     for (let i = 0; i < rim.length; i += 1) {
-      add(rim[i], top, rim[(i + 1) % rim.length], stone[(seed + i) % stone.length]);
+      const next = (i + 1) % rim.length;
+      if (woodland) add(rim[i], top, rim[next], rimTints[i], cap, rimTints[next]);
+      else add(rim[i], top, rim[next], stone[(seed + i) % stone.length]);
     }
   };
   rock(0.12, -0.11, 0.30, 0.17, 0);
