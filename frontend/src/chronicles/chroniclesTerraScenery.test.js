@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { chroniclesBrezalVergeRelief, chroniclesBannerRoadGroveOffset } from './chroniclesTerraScenery.js';
+import { chroniclesBrezalVergeRelief, chroniclesBannerRoadGroveOffset, chroniclesBannerTreeCrownProfile } from './chroniclesTerraScenery.js';
 import { describe, expect, it } from 'vitest';
 import { chroniclesBannerRoadFlowerCells, TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadCanopyRhythm, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
@@ -1636,6 +1636,68 @@ describe('Terra scenery', () => {
       expect(pos.getY(i + 4)).toBeGreaterThan(pos.getY(i + 1));
     }
     [ordinary, shaped, restored].forEach(geometry => geometry.dispose());
+  });
+
+  it.each([false, true])('distinguishes young, upright and spreading crowns on existing tree instances (coarse=%s)', coarsePointer => {
+    const profile = chroniclesBannerTreeCrownProfile;
+    expect(profile(4, 8, 0.6, false)).toMatchObject({ family: 'young' });
+    expect(profile(4, 8, 1, true)).toMatchObject({ family: 'upright' });
+    expect(profile(4, 8, 1, false)).toMatchObject({ family: 'spreading' });
+    for (const [x, y] of [[9, 4], [11, 4], [6, 4], [20, 7]]) {
+      expect(profile(x, y, 0.6, true)).toEqual({ family: 'landmark', span: 1, height: 1, depth: 1 });
+    }
+    expect(profile(5, 8, 1, false, true).family).toBe('landmark');
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const group = buildTerraScenery({ grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer });
+    const trunks = group.getObjectByName('chronicles-terra-broadleafTrunk');
+    const crowns = group.getObjectByName('chronicles-terra-crown');
+    expect(trunks.count).toBe(crowns.count);
+    expect(crowns.geometry.index.count / 3).toBe(coarsePointer ? 144 : 480);
+    const trunk = new THREE.Matrix4(), crown = new THREE.Matrix4();
+    const ts = new THREE.Vector3(), cs = new THREE.Vector3();
+    const noise = (x, y, salt) => {
+      const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
+      return n - Math.floor(n);
+    };
+    const seen = new Set(), duplicates = new Set(), keys = [];
+    for (let i = 0; i < trunks.count; i++) {
+      trunks.getMatrixAt(i, trunk);
+      const x = Math.round(trunk.elements[12] / 4) + center.x;
+      const y = Math.round(trunk.elements[14] / 4) + center.y;
+      const key = x + ',' + y;
+      if (seen.has(key)) duplicates.add(key);
+      seen.add(key);
+      keys.push([x, y, key]);
+    }
+    const families = new Map();
+    for (let i = 0; i < trunks.count; i++) {
+      const [x, y, key] = keys[i];
+      // Only single primary roots in the authored map: exclude secondary
+      // trees and the protected gateway/landmarks from the scale comparison.
+      if (duplicates.has(key) || map.grid[y]?.[x] !== '#'
+        || (y === 4 && x >= 6 && x <= 13) || (x === 20 && y === 7)) continue;
+      trunks.getMatrixAt(i, trunk);
+      crowns.getMatrixAt(i, crown);
+      ts.setFromMatrixScale(trunk);
+      cs.setFromMatrixScale(crown);
+      const pale = noise(x, y, 881) > 0.56;
+      const size = ts.y / (3 * (pale ? 1.12 : 1));
+      const originalScale = size / (0.79 + noise(x, y, 21) * 0.65);
+      const family = profile(x, y, originalScale, pale);
+      const rhythm = chroniclesBannerRoadCanopyRhythm(x, y);
+      const expectedX = 1.9 * size * (0.74 + noise(x, y, 27) * 0.55)
+        * (pale ? 0.74 : 1) * rhythm.span * family.span;
+      const expectedY = 1.6 * size * (0.79 + noise(x, y, 33) * 0.43)
+        * (pale ? 1.18 : 1) * rhythm.height * family.height;
+      expect(cs.x).toBeCloseTo(expectedX, 4);
+      expect(cs.y).toBeCloseTo(expectedY, 4);
+      expect(Math.abs(crown.elements[12] - trunk.elements[12])).toBeLessThan(0.4);
+      families.set(family.family, (families.get(family.family) || 0) + 1);
+    }
+    expect(families.get('young')).toBeGreaterThan(2);
+    expect(families.get('upright')).toBeGreaterThan(2);
+    expect(families.get('spreading')).toBeGreaterThan(2);
   });
 
   it.each([false, true])('makes the existing eastern road-end oak a landmark without moving its root (coarse=%s)', coarsePointer => {
