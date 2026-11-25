@@ -845,9 +845,10 @@ export function chroniclesForestHerbGeometry({ coarsePointer = false, woodland =
     const tip = [x + outwardX * reach, h * (woodland ? 0.74 + (i % 3) * 0.035 : 1), z + outwardZ * reach];
     const root = lower[i % lower.length], leaf = upper[i % upper.length];
     if (woodland) {
+      const basal = root.clone().lerp(leaf, 0.20);
       const mid = root.clone().lerp(leaf, 0.62);
       const rim = mid.clone().lerp(leaf, 0.22);
-      triangle([x, 0.012, z], left, right, root, mid, rim);
+      triangle([x, 0.012, z], left, right, basal, mid, rim);
       triangle(left, tip, right, mid, leaf, rim);
     } else {
       triangle([x, 0.012, z], left, right, root);
@@ -874,6 +875,24 @@ export function chroniclesForestHerbGeometry({ coarsePointer = false, woodland =
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
+  if (woodland) {
+    // The central blade is two triangles sharing both shoulder vertices.
+    // Give their duplicate vertices one averaged unit normal, retaining
+    // the face normals at the root and tip. Avoid an origami-like crease
+    // without merging geometry, adding triangles or smoothing across leaves.
+    const normal = geometry.getAttribute('normal');
+    const lowerNormal = new THREE.Vector3(), upperNormal = new THREE.Vector3();
+    const joint = new THREE.Vector3();
+    const stride = coarsePointer ? 6 : 12;
+    for (let i = 0; i < normal.count; i += stride) {
+      lowerNormal.fromBufferAttribute(normal, i);
+      upperNormal.fromBufferAttribute(normal, i + 4);
+      joint.copy(lowerNormal).add(upperNormal).normalize();
+      for (const j of [1, 2, 3, 5]) {
+        normal.setXYZ(i + j, joint.x, joint.y, joint.z);
+      }
+    }
+  }
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
