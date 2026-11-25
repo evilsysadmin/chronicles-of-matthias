@@ -116,6 +116,32 @@ describe('reusable Terra meadow tiles', () => {
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
+  it.each([false, true])('varies native meadow clump footprints while keeping the shared batch (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-c4');
+    const center = { x: 10, y: 7 };
+    const group = buildTerraScenery({ grid: map.grid, mapId: map.id,
+      biome: map.biome, center, coarsePointer });
+    const mesh = part(group, 'tuft');
+    const scale = new THREE.Vector3(), pose = new THREE.Matrix4();
+    const aspects = new Set();
+    let elongated = 0, round = 0;
+    expect(group.children.filter(child => child.name === mesh.name)).toHaveLength(1);
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, pose);
+      scale.setFromMatrixScale(pose);
+      const aspect = scale.z / scale.x;
+      expect(aspect).toBeGreaterThanOrEqual(0.8399);
+      expect(aspect).toBeLessThanOrEqual(1.0001);
+      if (aspect < 0.995) {
+        elongated++;
+        aspects.add(Math.round(aspect * 1000));
+      } else round++;
+    }
+    expect(elongated).toBeGreaterThan(20);
+    expect(round).toBeGreaterThan(20);
+    expect(aspects.size).toBeGreaterThan(10);
+  });
+
   it('makes mobile meadow plants legible without crossing a protected cell or growing above the knee', () => {
     const map = chroniclesMapById('terra-c4');
     const center = { x: 10, y: 7 };
