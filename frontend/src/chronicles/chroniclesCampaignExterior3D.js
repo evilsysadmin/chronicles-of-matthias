@@ -741,6 +741,38 @@ export function chroniclesBannerHorizonRise(x, y, width, height) {
   return ramp * ridge;
 }
 
+// An atmospheric distant ridge, not an extension of the collision grid.
+ // It follows the camera-relative dome and is painted before world geometry.
+export function createBannerRoadDistantRidge(coarsePointer = false) {
+  const segments = coarsePointer ? 48 : 72;
+  const positions = [], colors = [], indices = [];
+  for (let i = 0; i <= segments; i++) {
+    const a = i === segments ? 0 : i * Math.PI * 2 / segments;
+    const h = 5.7 + 2.1 * Math.sin(3 * a + 0.8)
+      + 1.3 * Math.cos(5 * a - 0.4) + 0.65 * Math.sin(9 * a + 1.1);
+    const x = 55 * Math.cos(a), z = 55 * Math.sin(a);
+    positions.push(x, -7, z, x, h, z);
+    colors.push(0.83, 0.88, 0.86, 0.97, 0.99, 1);
+    if (i) {
+      const j = 2 * (i - 1);
+      indices.push(j, j + 1, j + 2, j + 2, j + 1, j + 3);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+  const ridge = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+    color: 0x9eb8b6, vertexColors: true, side: THREE.DoubleSide,
+    fog: false, toneMapped: false, depthWrite: false,
+  }));
+  ridge.name = 'chronicles-banner-distant-ridge';
+  ridge.renderOrder = -97;
+  ridge.frustumCulled = false;
+  return ridge;
+}
+
 function applyBannerCartWear(material) {
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace(
@@ -864,7 +896,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // They are visual sky decoration, not lights, colliders or map content.
   // Their FINAL daytime opacity belongs to chroniclesExteriorDaylight.sync:
   // writing it here is overwritten before the first visible frame.
-  if (bannerTrail) addSwordhavenClouds(skyDome, coarsePointer);
+  if (bannerTrail) {
+    addSwordhavenClouds(skyDome, coarsePointer);
+    skyDome.add(createBannerRoadDistantRidge(coarsePointer));
+  }
   scene.add(skyDome);
   // Book One shopfronts need a directional key to reveal dressed stone,
   // projecting eaves and recessed windows. Leave wilderness lighting intact.
