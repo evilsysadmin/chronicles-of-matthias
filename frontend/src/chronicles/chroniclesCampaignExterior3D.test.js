@@ -9,6 +9,7 @@ import terraC4 from './maps/terra-c4.json';
 import terraE2 from './maps/terra-e2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
+import { chroniclesBannerRoadBend } from './chroniclesRoadsideShoulders.js';
 import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 
 const demo = {
@@ -866,6 +867,48 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
   });
 
+  it('bends the visual road continuously between existing tile corners with a flat crossing', () => {
+    const bend = chroniclesBannerRoadBend;
+    for (const phase of [0, 1.4]) {
+      let lo = 0, hi = 0;
+      for (let x = -42; x <= 42; x += 0.125) {
+        const value = bend(x, phase);
+        expect(Math.abs(value)).toBeLessThanOrEqual(0.2400001);
+        if (Math.abs(x) <= 2) expect(value).toBe(0);
+        lo = Math.min(lo, value);
+        hi = Math.max(hi, value);
+      }
+      expect(lo).toBeLessThan(-0.12);
+      expect(hi).toBeGreaterThan(0.12);
+      for (let left = -42; left < 42; left += 4) {
+        const right = left + 4;
+        expect(bend(left + 1, phase)).toBeCloseTo(bend(left, phase) * 0.75 + bend(right, phase) * 0.25, 8);
+        expect(bend(right - 0.0001, phase)).toBeCloseTo(bend(right + 0.0001, phase), 4);
+      }
+    }
+    const scene = new THREE.Scene();
+    const map = bannerRoadFirstBook;
+    buildChroniclesCampaignExterior(scene, { scenePlan: {
+      mapId: map.id, regionKind: 'wilderness', biome: map.biome, grid: map.grid,
+      center: { x: 10, y: 7 }, content: [], scenery: [],
+    } });
+    const road = scene.getObjectByName('chronicles-campaign-road');
+    const shoulder = scene.getObjectByName('chronicles-banner-road-shoulders');
+    const shader = mat => {
+      const code = { vertexShader: THREE.ShaderLib.standard.vertexShader,
+        fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+      mat.onBeforeCompile(code);
+      return code;
+    };
+    for (const mesh of [road, shoulder]) {
+      expect(mesh.isInstancedMesh).toBe(true);
+      expect(mesh.material.customProgramCacheKey()).toContain('chronicles-c3-bend-v101');
+      expect(shader(mesh.material).vertexShader).toContain('chroniclesBendKnot');
+      expect(shader(mesh.material).vertexShader).toContain('transformed.x += dot(chroniclesBendDelta, bx)');
+    }
+    expect(shader(road.material).fragmentShader).toContain('chroniclesCartWear(vChroniclesRoadPosition)');
+  });
+
   it.each([false, true])('applies cart wear only to C3 road material (coarse=%s)', coarsePointer => {
     const build = map => {
       const scene = new THREE.Scene();
@@ -878,13 +921,14 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = build(bannerRoadFirstBook), other = build(terraC4);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
-    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-v87');
-    expect(other.material.customProgramCacheKey()).not.toBe('chronicles-c3-cart-wear-v87');
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-v87:chronicles-c3-bend-v101');
+    expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-v101');
     const shader = {
       vertexShader: THREE.ShaderLib.standard.vertexShader,
       fragmentShader: THREE.ShaderLib.standard.fragmentShader,
     };
     road.material.onBeforeCompile(shader);
+    expect(shader.vertexShader).toContain('chroniclesBend(chroniclesBendWorld.z, 0.0)');
     expect(shader.vertexShader).toContain('instanceMatrix * chroniclesRoadPosition');
     expect(shader.vertexShader).toContain('vChroniclesRoadPosition = chroniclesRoadPosition.xz');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition)');
