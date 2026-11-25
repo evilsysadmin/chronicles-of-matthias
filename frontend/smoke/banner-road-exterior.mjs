@@ -100,7 +100,7 @@ try {
       assert.equal(Number(state.sedgeTriangles), coarse ? 8 : 16,
         'Keep the second species within a fixed small mobile/desktop budget');
       assert.ok(Number(state.canopyTints) > 1, 'Tree instances must not all share one tint');
-      assert.equal(Number(state.canopyTriangles), coarse ? 80 : 480,
+      assert.equal(Number(state.canopyTriangles), coarse ? 144 : 480,
         'Banner Road gets one bounded extra leaf lobe, never another draw batch');
       assert.equal(state.canopyFlatShading, 'false',
         'Smooth normals must replace faceted flat shading in touch forest foliage');
