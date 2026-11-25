@@ -1037,7 +1037,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = build(bannerRoadFirstBook), other = build(terraC4);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
-    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v103:chronicles-c3-bend-width-v102');
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v108:chronicles-c3-bend-width-v102');
     expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-width-v102');
     const shader = {
       vertexShader: THREE.ShaderLib.standard.vertexShader,
@@ -1051,6 +1051,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(shader.fragmentShader).toContain('max(wear.x, wear.y)');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition)');
     expect(shader.fragmentShader).toContain('vec3(0.12, 0.075, 0.035) * dry');
+    // GLSL reserves "patch": a CPU-equivalent function and a successful
+    // screenshot capture do not guarantee this fragment shader compiles.
+    expect(shader.fragmentShader).not.toMatch(/\bfloat\s+patch\b/);
+    expect(shader.fragmentShader).toContain('float erosionPatch =');
     expect(shader.vertexShader).toContain('#include <begin_vertex>');
     expect(shader.fragmentShader).toContain('#include <color_fragment>');
     const stock = { vertexShader: THREE.ShaderLib.standard.vertexShader,
