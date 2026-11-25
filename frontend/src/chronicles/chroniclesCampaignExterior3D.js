@@ -877,12 +877,13 @@ function applyBannerCartWear(material) {
         float along = vertical ? p.y : p.x;
         float across = vertical ? p.x : p.y;
         float fade = smoothstep(2.0, 5.0, abs(along));
-        float patch = 0.5 + 0.3 * sin(along * 0.67 + across * 2.1)
+        // 'patch' is a reserved GLSL keyword, even on WebGL2.
+        float erosionPatch = 0.5 + 0.3 * sin(along * 0.67 + across * 2.1)
           + 0.2 * cos(along * 1.41 - across * 3.4);
         float edge = smoothstep(0.83, 1.29, abs(across));
         float rut = 1.0 - smoothstep(0.06, 0.30, abs(abs(across) - 0.66));
-        float dry = fade * edge * patch;
-        float compact = fade * rut * (1.0 - patch);
+        float dry = fade * edge * erosionPatch;
+        float compact = fade * rut * (1.0 - erosionPatch);
         return vec3(1.0) + vec3(0.12, 0.075, 0.035) * dry
           - vec3(0.07, 0.085, 0.09) * compact;
       }`,
@@ -890,7 +891,7 @@ function applyBannerCartWear(material) {
       diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition);
       diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition);`);
   };
-  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v103';
+  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v108';
 }
 
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
