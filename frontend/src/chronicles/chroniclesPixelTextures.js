@@ -301,8 +301,8 @@ function sample(kind, x, y, size) {
     const plate = valueNoise(x, y, size, 5, 63);
     const fissure = Math.pow(1 - ridge, 6) * (0.25 + 0.75 * plate);
     const flake = valueNoise(x, y, size, 12, 65);
-    return 0.54 + ridge * 0.24 - fissure * 0.34
-      + (plate - 0.5) * 0.20 + (flake - 0.5) * 0.15 + grain * 0.07;
+    return 0.54 + ridge * 0.32 - fissure * 0.40
+      + (plate - 0.5) * 0.16 + (flake - 0.5) * 0.08 + grain * 0.04;
   }
   if (kind === 'bark') {
     const ridge = Math.sin(x * 1.3 + valueNoise(x, y, size, 4, 21) * 5) * 0.32;
