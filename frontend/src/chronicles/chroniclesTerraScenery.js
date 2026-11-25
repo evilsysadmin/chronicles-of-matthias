@@ -1979,12 +1979,17 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
     const width = sedge
       ? 0.77 + noise(x, y + i, 413) * 0.38
       : 0.69 + noise(x, y + i, 413) * 0.58;
+    // Broad, coherent patches of slightly elongated and nearly round
+    // clumps break the repeated radial silhouette. Compress only one axis:
+    // the original maximum footprint, root pull and height stay intact.
+    const aspect = 0.76 + 0.24 * (0.65 * meadowCover
+      + 0.35 * noise(x + i, y - i, 1631));
     p.add(sedge ? 'meadowSedge' : 'tuft', [wx + ox, 0.012, wz + oz], {
       yaw: noise(x + i, y, 419) * Math.PI * 2,
       scale: [width,
         (sedge ? 0.80 + noise(x, y + i, 421) * 0.22
           : 0.56 + noise(x, y + i, 421) * 0.65) * (1 + (edge?.influence ?? 0) * 0.12),
-        width],
+        width * aspect],
     });
   }
   if (!coarsePointer && flower) {
