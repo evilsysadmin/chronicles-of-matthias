@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerMeadowDryness } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerMeadowDryness, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -529,7 +529,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(original.material.map.image.height).toBe(panorama.material.map.image.height);
   });
 
-  it('shades the real C3 woodland margin continuously on one flat terrain mesh', () => {
+  it('shades the real C3 woodland margin continuously on one terrain mesh', () => {
     const map = bannerRoadFirstBook;
     const grid = map.grid;
     const plan = { mapId: map.id, regionKind: 'wilderness', biome: map.biome,
@@ -560,9 +560,14 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(full.position.y).toBeCloseTo(-0.19);
     let darkest = 1, brightest = 0, warmest = 0, neutral = 0;
     for (let i = 0; i < pos.count; i += 1) {
-      expect(Math.abs(pos.getY(i))).toBeCloseTo(0.125);
-      const x = THREE.MathUtils.clamp(pos.getX(i) / 4 + plan.center.x, 0, plan.width - 1);
-      const y = THREE.MathUtils.clamp(pos.getZ(i) / 4 + plan.center.y, 0, plan.height - 1);
+      const rawX = pos.getX(i) / 4 + plan.center.x;
+      const rawY = pos.getZ(i) / 4 + plan.center.y;
+      const height = pos.getY(i);
+      if (height < 0) expect(height).toBeCloseTo(-0.125);
+      else expect(height).toBeCloseTo(0.125
+        + chroniclesBannerHorizonRise(rawX, rawY, plan.width, plan.height), 5);
+      const x = THREE.MathUtils.clamp(rawX, 0, plan.width - 1);
+      const y = THREE.MathUtils.clamp(rawY, 0, plan.height - 1);
       let nearest = Infinity;
       grid.forEach((row, gy) => [...row].forEach((tile, gx) => {
         if (tile === '#') nearest = Math.min(nearest, Math.hypot(gx - x, gy - y));
@@ -591,7 +596,53 @@ describe('Chronicles file-authored exterior renderer', () => {
     full.geometry.computeBoundingBox();
     other.geometry.computeBoundingBox();
     expect(full.geometry.boundingBox.min.toArray()).toEqual(other.geometry.boundingBox.min.toArray());
-    expect(full.geometry.boundingBox.max.toArray()).toEqual(other.geometry.boundingBox.max.toArray());
+    expect(full.geometry.boundingBox.max.x).toBe(other.geometry.boundingBox.max.x);
+    expect(full.geometry.boundingBox.max.z).toBe(other.geometry.boundingBox.max.z);
+    expect(full.geometry.boundingBox.max.y).toBeGreaterThan(0.9);
+    expect(full.geometry.boundingBox.max.y).toBeLessThan(2);
+  });
+
+  it.each([false, true])('raises only non-playable C3 horizon and seats scenery on the rendered surface (coarse=%s)', coarsePointer => {
+    const map = bannerRoadFirstBook;
+    const center = { x: 10, y: 7 };
+    const plan = { mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      width: 21, height: 15, grid: map.grid, center, content: [], scenery: [] };
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, { scenePlan: plan, coarsePointer });
+    scene.updateMatrixWorld(true);
+    const terrain = scene.getObjectByName('chronicles-campaign-terrain');
+    const scenery = scene.getObjectByName('chronicles-terra-scenery');
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0));
+    const height = (x, z) => {
+      ray.ray.origin.set(x, 5, z);
+      return ray.intersectObject(terrain, false)[0]?.point.y;
+    };
+    for (let y = 0; y < plan.height; y += 0.5) {
+      for (let x = 0; x < plan.width; x += 0.5) {
+        // All traversable cells and their complete footprints remain flat.
+        if (map.grid[Math.round(y)]?.[Math.round(x)] !== '.') continue;
+        expect(height((x - center.x) * 4, (y - center.y) * 4)).toBeCloseTo(-0.065, 5);
+      }
+    }
+    const mesh = scenery.getObjectByName('chronicles-terra-broadleafTrunk');
+    const matrix = new THREE.Matrix4();
+    const scale = new THREE.Vector3();
+    let raised = 0;
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, matrix);
+      const [wx, wz] = [matrix.elements[12], matrix.elements[14]];
+      const surface = height(wx, wz);
+      if (surface === undefined || surface < 0.15) continue;
+      scale.setFromMatrixScale(matrix);
+      const root = matrix.elements[13] - scale.y / 2;
+      // Root level before relief is zero, 6.5cm above the flat terrain.
+      expect(root - surface).toBeCloseTo(0.065, 4);
+      raised++;
+    }
+    expect(raised).toBeGreaterThan(5);
+    expect(chroniclesBannerHorizonRise(10, 7, 21, 15)).toBe(0);
+    expect(chroniclesBannerHorizonRise(-1.5, 7, 21, 15)).toBe(0);
+    expect(chroniclesBannerHorizonRise(-3.5, 7, 21, 15)).toBeGreaterThan(0.49);
   });
 
   it('keeps dry meadow pigments localized and away from shaded forest roots', () => {
