@@ -1909,7 +1909,30 @@ export function chroniclesBannerRoadFlowerCells(grid, clear = new Set()) {
  * including those beside the road. The authored grid, paving and interaction
  * clearances are unchanged. Mobile draws fewer patches with fewer blades.
  */
-function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath = false, flower = false } = {}) {
+export function chroniclesBannerMeadowEdge(grid, x, y) {
+  // Nearby authored tree roots pull the existing low grass toward the
+  // woodline. Opposing forest edges cancel rather than favoring one axis.
+  let vx = 0, vz = 0, total = 0, nearest = Infinity;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const d = Math.hypot(dx, dy);
+      if (d === 0 || d > 2.25 || grid?.[y + dy]?.[x + dx] !== '#') continue;
+      const weight = (1 - d / 2.5) ** 2;
+      vx += dx / d * weight;
+      vz += dy / d * weight;
+      total += weight;
+      nearest = Math.min(nearest, d);
+    }
+  }
+  const influence = 1 - THREE.MathUtils.smoothstep(nearest, 1, 2.25);
+  return {
+    x: total ? vx / total * influence : 0,
+    z: total ? vz / total * influence : 0,
+    influence,
+  };
+}
+
+function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath = false, flower = false, edge = null } = {}) {
   // Soft, several-cell patches leave short turf in open areas and fuller,
   // mixed sedges near the woodland. Never a uniform 7-tuft-per-tile stamp.
   // The total number of grass instances is not increased; each slot becomes
@@ -1927,8 +1950,11 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
     const slot = (start + i * 4) % 9;
     const col = slot % 3 - 1;
     const row = Math.floor(slot / 3) - 1;
-    const ox = col * 1.12 + (noise(x + i, y, 407) - 0.5) * 0.46;
-    const oz = row * 1.12 + (noise(y + i, x, 409) - 0.5) * 0.46;
+    const rawX = col * 1.12 + (noise(x + i, y, 407) - 0.5) * 0.46;
+    const rawZ = row * 1.12 + (noise(y + i, x, 409) - 0.5) * 0.46;
+    const pull = (edge?.influence ?? 0) * 0.18;
+    const ox = THREE.MathUtils.lerp(rawX, (edge?.x ?? 0) * 0.95, pull);
+    const oz = THREE.MathUtils.lerp(rawZ, (edge?.z ?? 0) * 0.95, pull);
     const variety = noise(x + i * 3, y - i * 5, 733);
     const sedge = variety < (nearPath ? 0.40 : 0.31);
     const width = sedge
@@ -1937,8 +1963,8 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
     p.add(sedge ? 'meadowSedge' : 'tuft', [wx + ox, 0.012, wz + oz], {
       yaw: noise(x + i, y, 419) * Math.PI * 2,
       scale: [width,
-        sedge ? 0.80 + noise(x, y + i, 421) * 0.22
-          : 0.56 + noise(x, y + i, 421) * 0.65,
+        (sedge ? 0.80 + noise(x, y + i, 421) * 0.22
+          : 0.56 + noise(x, y + i, 421) * 0.65) * (1 + (edge?.influence ?? 0) * 0.12),
         width],
     });
   }
@@ -2526,6 +2552,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
             .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
           addBannerRoadMeadow(p, wx, wz, x, y, {
             coarsePointer, nearPath, flower: flowerCells?.has(x + ',' + y) ?? false,
+            edge: chroniclesBannerMeadowEdge(grid, x, y),
           });
           // The canonical Banner Road paving follows the central axes even
           // when a direct scenery caller omits keepClear. Never put soft
