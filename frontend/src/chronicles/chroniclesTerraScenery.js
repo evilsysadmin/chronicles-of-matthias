@@ -2592,6 +2592,25 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer);
         }
       } else if (clutter && !clear.has(x + ',' + y)) {
+        // Rookwood's sparse generic grass is retained. Add fern colonies
+        // only beside actual blocked forest roots, never on reserved content.
+        // Offset toward the nearest root and keep the central lane readable.
+        if (mapId === 'rookwood-first-book' && biome === 'forest' && tile === '.') {
+          const edges = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+            .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
+          const colony = 0.5 + 0.5 * Math.sin(x * 0.52 + y * 0.24)
+            * Math.cos(y * 0.39 - x * 0.18);
+          if (edges.length && noise(x, y, 1651) < (coarsePointer ? 0.46 : 0.76) * (0.55 + 0.45 * colony)) {
+            const [dx, dy] = edges[Math.floor(noise(x, y, 1653) * edges.length)];
+            const drift = (noise(x, y, 1655) - 0.5) * 0.48;
+            const spread = 0.70 + 0.25 * noise(x, y, 1657);
+            p.add('forestHerb', [wx + dx * 1.02 - dy * drift, 0.012,
+              wz + dy * 1.02 + dx * drift], {
+              yaw: noise(x, y, 1659) * Math.PI * 2,
+              scale: [spread, 0.40 + 0.17 * noise(x, y, 1661), spread],
+            });
+          }
+        }
         if (denseMeadow && tile === '.') {
           const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
