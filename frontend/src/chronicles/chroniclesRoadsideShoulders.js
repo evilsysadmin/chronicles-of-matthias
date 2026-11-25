@@ -8,6 +8,51 @@ const DIRECTIONS = Object.freeze([
   { dx: -1, dy: 0, yaw: -Math.PI / 2 },
 ]);
 
+// Sample the same centreline at the 4m tile boundaries, then interpolate
+// linearly within a tile. This guarantees that the road's existing corner
+// vertices and the more finely tessellated shoulder agree exactly.
+export function chroniclesBannerRoadBend(along, phase = 0) {
+  const knot = s => 0.24 * Math.sin((s - 2) * 0.19 + phase)
+    * THREE.MathUtils.smoothstep(Math.abs(s), 2, 10);
+  const left = Math.floor((along + 2) / CELL) * CELL - 2;
+  return THREE.MathUtils.lerp(knot(left), knot(left + CELL), (along - left) / CELL);
+}
+
+// Shared GPU deformation for both existing instanced batches. Keep the
+// CPU matrices, terrain, road UVs and collision grid unchanged. Instance
+// bases are orthogonal (yaw + scale), so project the world-space delta
+// back into local coordinates before Three applies the instance matrix.
+export function applyBannerRoadBend(material) {
+  const previous = material.onBeforeCompile.bind(material);
+  const cache = material.customProgramCacheKey();
+  material.onBeforeCompile = shader => {
+    previous(shader);
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>
+      float chroniclesBendKnot(float s, float phase) {
+        return 0.24 * sin((s - 2.0) * 0.19 + phase) * smoothstep(2.0, 10.0, abs(s));
+      }
+      float chroniclesBend(float along, float phase) {
+        float left = floor((along + 2.0) / 4.0) * 4.0 - 2.0;
+        return mix(chroniclesBendKnot(left, phase), chroniclesBendKnot(left + 4.0, phase),
+          (along - left) / 4.0);
+      }`).replace('#include <begin_vertex>', `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+        vec3 chroniclesBendWorld = (instanceMatrix * vec4(position, 1.0)).xyz;
+        vec3 chroniclesBendDelta = vec3(0.0);
+        if (abs(chroniclesBendWorld.z) > abs(chroniclesBendWorld.x)) {
+          chroniclesBendDelta.x = chroniclesBend(chroniclesBendWorld.z, 0.0);
+        } else {
+          chroniclesBendDelta.z = chroniclesBend(chroniclesBendWorld.x, 1.4);
+        }
+        vec3 bx = instanceMatrix[0].xyz;
+        vec3 bz = instanceMatrix[2].xyz;
+        transformed.x += dot(chroniclesBendDelta, bx) / dot(bx, bx);
+        transformed.z += dot(chroniclesBendDelta, bz) / dot(bz, bz);
+      #endif`);
+  };
+  material.customProgramCacheKey = () => cache + ':chronicles-c3-bend-v101';
+}
+
 function hash(x, y, salt = 0) {
   let n = Math.imul(x + 374761393 + salt * 668265263, 0x27d4eb2d)
     ^ Math.imul(y + 668265263, 0x165667b1);
@@ -137,6 +182,7 @@ export function createBannerRoadShoulders({
     color: 0xffffff, vertexColors: true, side: THREE.DoubleSide,
     roughness: 1, metalness: 0,
   });
+  applyBannerRoadBend(mat);
   const mesh = new THREE.InstancedMesh(geometry, mat, edges.length);
   mesh.name = 'chronicles-banner-road-shoulders';
   mesh.castShadow = false;
