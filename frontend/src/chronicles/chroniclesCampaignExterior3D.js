@@ -1423,7 +1423,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         if (x < 0 || y < 0 || x >= width || y >= height) outskirts.push({ x, y });
       }
     }
-    scene.add(buildForestCanopy([...blocked, ...outskirts], sceneCenter, { coarsePointer }));
+    scene.add(buildForestCanopy([...blocked, ...outskirts], sceneCenter, {
+      coarsePointer, organic: scenePlan.mapId === 'rookwood-first-book',
+    }));
   } else if (wilds) {
     // Blocked cells become scenery; collision is still the grid alone.
   } else if (blocked.length) {
@@ -1796,7 +1798,34 @@ function cellNoise(x, y, salt = 0) {
 
 // Impassable cells of a forest map are tree clumps, not stone blocks: the
 // collision grid stays the single source of truth, only its dressing changes.
-function buildForestCanopy(blocked, center, { coarsePointer = false } = {}) {
+// Rookwood's original two perfect cones looked like identical stacked
+// traffic cones. Two shared, low-poly irregular crown geometries retain
+// the pixel-art atlas while breaking their straight silhouette and rim.
+export function chroniclesRookwoodCrownGeometry(radius, height, phase = 0) {
+  const geometry = new THREE.ConeGeometry(radius, height, 8, 3);
+  const positions = geometry.getAttribute('position');
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+    const t = (y + height / 2) / height;
+    const r = Math.hypot(x, z);
+    const angle = Math.atan2(z, x);
+    // The cap perimeter and side ring receive the same displacement.
+    // The cap centre stays put and the apex has one common offset.
+    const lobe = r > 1e-6 ? 0.90 + 0.10 * Math.sin(3 * angle + phase + t * 2) : 1;
+    const profile = t < 0.5 ? 1 + 0.17 * Math.sin(t * Math.PI * 2) : 1 - 0.13 * Math.sin((t - 0.5) * Math.PI * 2);
+    const ragged = r > 1e-6 ? radius * 0.10 * (r / radius)
+      * Math.cos(3 * angle + phase) * (1 - t) : 0;
+    positions.setXYZ(i, x * lobe * profile + radius * 0.10 * t * t,
+      y + ragged, z * lobe * profile + radius * 0.06 * t * t);
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+function buildForestCanopy(blocked, center, { coarsePointer = false, organic = false } = {}) {
   const group = new THREE.Group();
   group.name = 'chronicles-campaign-forest';
   const perCell = coarsePointer ? 1 : 2;
@@ -1810,8 +1839,15 @@ function buildForestCanopy(blocked, center, { coarsePointer = false } = {}) {
   );
   const foliage = chroniclesPixelTexture('leaves');
   foliage.repeat.set(6, 2);
-  const lower = new THREE.InstancedMesh(new THREE.ConeGeometry(1.75, 3.4, 8), material(0xc8d6c0, { map: foliage }), count);
-  const upper = new THREE.InstancedMesh(new THREE.ConeGeometry(1.2, 2.7, 8), material(0xffffff, { map: foliage }), count);
+  const lower = new THREE.InstancedMesh(organic
+    ? chroniclesRookwoodCrownGeometry(1.75, 3.4, 0.4)
+    : new THREE.ConeGeometry(1.75, 3.4, 8), material(0xc8d6c0, { map: foliage }), count);
+  const upper = new THREE.InstancedMesh(organic
+    ? chroniclesRookwoodCrownGeometry(1.2, 2.7, 2.1)
+    : new THREE.ConeGeometry(1.2, 2.7, 8), material(0xffffff, { map: foliage }), count);
+  trunks.name = 'chronicles-forest-trunks';
+  lower.name = 'chronicles-forest-lower-crowns';
+  upper.name = 'chronicles-forest-upper-crowns';
   const dummy = new THREE.Object3D();
   let index = 0;
   blocked.forEach(({ x, y }) => {
@@ -1822,14 +1858,25 @@ function buildForestCanopy(blocked, center, { coarsePointer = false } = {}) {
       const scale = 0.85 + cellNoise(x, y, k + 7) * 0.5;
       const yaw = cellNoise(x, y, k + 11) * Math.PI * 2;
       dummy.rotation.set(0, yaw, 0);
-      dummy.scale.setScalar(scale);
-      dummy.position.set(wx + ox, 1.6 * scale, wz + oz);
+      // Narrow spires, heavy mature crowns and younger trees share all
+      // three batches. The footprint never exceeds the old crown radius.
+      const age = organic ? cellNoise(x, y, k + 169) : 0.5;
+      const profile = !organic ? [1, 1, 1, 1] : age < 0.34
+        ? [0.70, 1, 0.72, 0.82] : age < 0.72
+          ? [1, 0.92, 0.92, 1] : [0.82, 0.69, 0.80, 0.74];
+      const [width, height, upperWidth, trunkWidth] = profile;
+      const rise = scale * height;
+      dummy.scale.set(scale * trunkWidth, rise, scale * trunkWidth);
+      dummy.position.set(wx + ox, 1.6 * rise, wz + oz);
       dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
-      dummy.position.set(wx + ox, 4.1 * scale, wz + oz);
+      dummy.scale.set(scale * width, rise, scale * width);
+      dummy.position.set(wx + ox, 4.1 * rise, wz + oz);
       dummy.updateMatrix();
       lower.setMatrixAt(index, dummy.matrix);
-      dummy.position.set(wx + ox, 5.7 * scale, wz + oz);
+      dummy.scale.set(scale * upperWidth, rise, scale * upperWidth);
+      dummy.rotation.y = yaw + (organic ? 0.46 : 0);
+      dummy.position.set(wx + ox, 5.7 * rise, wz + oz);
       dummy.updateMatrix();
       upper.setMatrixAt(index, dummy.matrix);
       index += 1;

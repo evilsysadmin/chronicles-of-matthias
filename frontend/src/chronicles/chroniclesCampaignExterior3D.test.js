@@ -2120,6 +2120,49 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(scene.getObjectByName('chronicles-campaign-visible-blockers').geometry.parameters.height).toBe(6.4);
   });
 
+  it.each([false, true])('breaks Rookwood cone silhouettes without extra batches or blocked cells (coarse=%s)', coarsePointer => {
+    const grid = rookwood.grid;
+    const center = { x: Math.floor(grid[0].length / 2), y: Math.floor(grid.length / 2) };
+    const scenePlan = { mapId: rookwood.id, regionKind: 'wilderness', biome: 'forest',
+      width: grid[0].length, height: grid.length, center, grid, content: [] };
+    const build = plan => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, { coarsePointer, scenePlan: plan });
+      return scene.getObjectByName('chronicles-campaign-forest');
+    };
+    const forest = build(scenePlan), repeat = build(scenePlan);
+    const legacy = build({ ...scenePlan, mapId: 'generic-forest-fixture' });
+    expect(forest.children).toHaveLength(3);
+    const a = new THREE.Matrix4(), b = new THREE.Matrix4();
+    const pos = new THREE.Vector3(), q = new THREE.Quaternion(), scale = new THREE.Vector3();
+    for (let k = 0; k < 3; k++) {
+      const mesh = forest.children[k], other = repeat.children[k], old = legacy.children[k];
+      expect(mesh.isInstancedMesh).toBe(true);
+      expect(mesh.count).toBe(old.count);
+      const ratios = new Set();
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, a);
+        other.getMatrixAt(i, b);
+        expect(a.elements).toEqual(b.elements);
+        a.decompose(pos, q, scale);
+        old.getMatrixAt(i, b);
+        expect(a.elements[12]).toBe(b.elements[12]);
+        expect(a.elements[14]).toBe(b.elements[14]);
+        ratios.add(Math.round(scale.x / scale.y * 100));
+      }
+      expect(ratios.size).toBeGreaterThan(1);
+      if (k > 0) {
+        const p = mesh.geometry.getAttribute('position');
+        expect(mesh.geometry.parameters.heightSegments).toBe(3);
+        expect(mesh.geometry.index.count).toBeLessThanOrEqual(144);
+        expect(p.count).toBe(mesh.geometry.getAttribute('uv').count);
+        expect([...p.array].every(Number.isFinite)).toBe(true);
+        const rim = [...p.array].filter((_, i) => i % 3 === 1);
+        expect(new Set(rim.map(y => Math.round(y * 100))).size).toBeGreaterThan(4);
+      }
+    }
+  });
+
   it('builds the Rookwood forest with pixel-art bark and foliage', () => {
     const grid = rookwood.grid;
     const scene = new THREE.Scene();
