@@ -7,7 +7,7 @@ import {
   createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture,
 } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
-import { createBannerRoadShoulders } from './chroniclesRoadsideShoulders.js';
+import { createBannerRoadShoulders, applyBannerRoadBend } from './chroniclesRoadsideShoulders.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
@@ -924,7 +924,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       normalScale: new THREE.Vector2(0.72, 0.72),
     } : {}),
   });
-  if (bannerTrail) applyBannerCartWear(paver);
+  if (bannerTrail) {
+    applyBannerCartWear(paver);
+    applyBannerRoadBend(paver);
+  }
   const timber = material(0x4d3424);
 
   const plaque = material(0xc4aa70, { metalness: 0.47, roughness: 0.45 });
