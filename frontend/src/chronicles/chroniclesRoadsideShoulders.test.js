@@ -177,6 +177,21 @@ describe('Banner Road organic grass/earth shoulders', () => {
     geometry.dispose();
   });
 
+  it.each([true, false])('uses diverse meadow and soil pigments along the verge (coarse=%s)', coarsePointer => {
+    const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
+    const colors = geometry.getAttribute('color');
+    const count = coarsePointer ? 4 : 8;
+    const outer = Array.from({ length: count }, (_, i) => {
+      const index = i * 12 + 1;
+      return [colors.getX(index), colors.getY(index), colors.getZ(index)];
+    });
+    expect(new Set(outer.map(rgb => rgb.map(n => n.toFixed(5)).join(','))).size)
+      .toBe(coarsePointer ? 4 : 6);
+    expect(outer.some(([r, g]) => r > g)).toBe(true);
+    expect(outer.some(([r, g]) => g > r)).toBe(true);
+    geometry.dispose();
+  });
+
   it('adds one visual-only batch to Banner Road, not settlements or other biomes', () => {
     const plan = { id: map.id, mapId: map.id, regionKind: 'wilderness', biome: map.biome,
       width: map.grid[0].length, height: map.grid.length,
