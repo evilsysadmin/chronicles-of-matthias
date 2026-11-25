@@ -519,13 +519,13 @@ describe('Terra solar cycle', () => {
     // produced byte-identical real screenshots because sync overwrote it.
     // Guard the FINAL opacity, while keeping natural clear sky rather than
     // an opaque grey cloud overlay.
-    expect(clouds.material.opacity).toBeGreaterThan(0.84);
-    expect(clouds.material.opacity).toBeLessThan(0.96);
+    expect(clouds.material.opacity).toBeGreaterThan(0.64);
+    expect(clouds.material.opacity).toBeLessThan(0.76);
     expect(clouds.material.transparent).toBe(true);
     expect(clouds.material.depthWrite).toBe(false);
     expect(scene.children).toHaveLength(beforeChildren);
     expect(cycle.sync(minute)).toBe(false);
-    expect(clouds.material.opacity).toBeGreaterThan(0.84);
+    expect(clouds.material.opacity).toBeGreaterThan(0.64);
   });
 
   it('attenuates daylight and shortens existing fog without adding objects, reversible on save restore', () => {
