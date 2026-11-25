@@ -103,14 +103,39 @@ try {
     sum + Math.abs(value - skyWithoutClouds[i]), 0) / skyWithClouds.length;
   // Check the near cloud silhouettes separately so a healthy panorama
   // cannot hide missing or invisible foreground banks from the tests.
-  const cloudBankPixels = sampleUpperSky();
+  // The old 44-point sample can miss broken, localized cloud shapes
+  // at desktop aspect ratios. Inspect the complete same upper-sky region.
+  const sampleBankRegion = () => {
+    const width = gl.drawingBufferWidth;
+    const y = Math.floor(gl.drawingBufferHeight * 0.68);
+    const height = Math.floor(gl.drawingBufferHeight * 0.96) - y;
+    const pixels = new Uint8Array(width * height * 4);
+    gl.readPixels(0, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    return pixels;
+  };
+  const cloudBankPixels = sampleBankRegion();
+  let withoutCloudBanks;
   for (const bank of cloudBanks) bank.visible = false;
-  renderer.render(scene, camera);
-  const withoutCloudBanks = sampleUpperSky();
-  for (const bank of cloudBanks) bank.visible = true;
-  renderer.render(scene, camera);
-  const cloudBankPixelDifference = cloudBankPixels.reduce((sum, value, i) =>
-    sum + Math.abs(value - withoutCloudBanks[i]), 0) / cloudBankPixels.length;
+  try {
+    renderer.render(scene, camera);
+    withoutCloudBanks = sampleBankRegion();
+  } finally {
+    for (const bank of cloudBanks) bank.visible = true;
+    renderer.render(scene, camera);
+  }
+  let cloudBankChangedPixels = 0, cloudBankDiff = 0;
+  for (let i = 0; i < cloudBankPixels.length; i += 4) {
+    const diff = Math.abs(cloudBankPixels[i] - withoutCloudBanks[i])
+      + Math.abs(cloudBankPixels[i + 1] - withoutCloudBanks[i + 1])
+      + Math.abs(cloudBankPixels[i + 2] - withoutCloudBanks[i + 2]);
+    if (diff > 12) {
+      cloudBankChangedPixels++;
+      cloudBankDiff += diff;
+    }
+  }
+  const cloudBankChangedFraction = cloudBankChangedPixels / (cloudBankPixels.length / 4);
+  const cloudBankPixelDifference = cloudBankChangedPixels
+    ? cloudBankDiff / (cloudBankChangedPixels * 3) : 0;
 
   const foliage = scene.getObjectByName('chronicles-terra-scenery');
   const crowns = foliage?.getObjectByName('chronicles-terra-crown');
@@ -359,6 +384,8 @@ try {
     cloudBankCount: String(cloudBanks.length),
     cloudBankOpacity: String(cloudBankOpacity),
     cloudBankPixelDifference: String(cloudBankPixelDifference),
+    cloudBankChangedPixels: String(cloudBankChangedPixels),
+    cloudBankChangedFraction: String(cloudBankChangedFraction),
     skyCloudPixelDifference: String(skyPixelDifference),
     skyCloudSampleMinute: String(clearMinute),
     skyCloudAtlasWidth: String(skyCloudAtlasWidth),
