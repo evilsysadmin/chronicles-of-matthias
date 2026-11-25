@@ -123,6 +123,29 @@ try {
           const restored = await page.evaluate(() => window.chroniclesSmokeSolarFrame('noon'));
           assert.ok(Math.abs(restored.meanLuma - audit.noon.meanLuma) < 0.1,
             'Restoring the same world minute must restore the rendered lighting');
+          if (!coarse) {
+            // Three extra diagnostic images, desktop only, in the already
+            // running canonical context. The normal noon frame is retained.
+            try {
+              for (const mode of ['no-panorama', 'no-banks', 'no-clouds']) {
+                const frame = await page.evaluate(mode => window.chroniclesSmokeCloudLayer(mode), mode);
+                console.log('CHRONICLES_C3_CLOUD_LAYER ' + JSON.stringify(frame));
+                assert.deepEqual(frame.shaderErrors, []);
+                assert.equal(frame.panoramaVisible, mode === 'no-banks');
+                assert.equal(frame.visibleBanks, mode === 'no-panorama' ? 8 : 0);
+                await page.screenshot({
+                  path: 'smoke-terra-landscape-' + mapId + '-' + width + '-' + mode + '.png',
+                });
+              }
+            } finally {
+              const frame = await page.evaluate(() => window.chroniclesSmokeCloudLayer('all'));
+              assert.equal(frame.panoramaVisible, true);
+              assert.equal(frame.visibleBanks, 8);
+              assert.ok(frame.changedFraction < 0.001,
+                'Cloud layer diagnostics must restore the original real noon frame');
+              assert.deepEqual(frame.shaderErrors, []);
+            }
+          }
           assert.deepEqual(errors, [], 'No browser errors during solar audit');
         } else if (mapId === 'terra-e2') {
           assert.ok(Number(state.cragCount) > 0, 'Real blocked ridges must render');
