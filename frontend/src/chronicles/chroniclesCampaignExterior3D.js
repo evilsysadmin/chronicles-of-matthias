@@ -721,6 +721,25 @@ export function chroniclesBannerCartWear(x, z) {
   return 1 - 0.18 * Math.max(ns, ew);
 }
 
+// Local erosion in the undeformed road coordinate system. The same
+// pigments follow the existing bend/width shader without visible seams.
+export function chroniclesBannerRoadErosion(x, z) {
+  const smooth = (v, a, b) => THREE.MathUtils.smoothstep(v, a, b);
+  const vertical = Math.abs(z) > Math.abs(x);
+  const along = vertical ? z : x;
+  const across = vertical ? x : z;
+  const fade = smooth(Math.abs(along), 2, 5);
+  const patch = 0.5 + 0.3 * Math.sin(along * 0.67 + across * 2.1)
+    + 0.2 * Math.cos(along * 1.41 - across * 3.4);
+  const edge = smooth(Math.abs(across), 0.83, 1.29);
+  const rut = 1 - smooth(Math.abs(Math.abs(across) - 0.66), 0.06, 0.30);
+  const dry = fade * edge * patch;
+  const compact = fade * rut * (1 - patch);
+  return [1 + 0.12 * dry - 0.07 * compact,
+    1 + 0.075 * dry - 0.085 * compact,
+    1 + 0.035 * dry - 0.09 * compact];
+}
+
 // Two broad sun-dried meadow communities in canonical C3. These are
 // pigments baked into the existing terrain vertices, not gameplay zones.
 // Fade out at woodland roots, so the shaded forest-floor ramp survives.
@@ -852,11 +871,26 @@ function applyBannerCartWear(material) {
         vec2 fade = smoothstep(vec2(0.85), vec2(2.0), a.yx);
         vec2 wear = rut * axis * fade;
         return 1.0 - 0.18 * max(wear.x, wear.y);
+      }
+      vec3 chroniclesRoadErosion(vec2 p) {
+        bool vertical = abs(p.y) > abs(p.x);
+        float along = vertical ? p.y : p.x;
+        float across = vertical ? p.x : p.y;
+        float fade = smoothstep(2.0, 5.0, abs(along));
+        float patch = 0.5 + 0.3 * sin(along * 0.67 + across * 2.1)
+          + 0.2 * cos(along * 1.41 - across * 3.4);
+        float edge = smoothstep(0.83, 1.29, abs(across));
+        float rut = 1.0 - smoothstep(0.06, 0.30, abs(abs(across) - 0.66));
+        float dry = fade * edge * patch;
+        float compact = fade * rut * (1.0 - patch);
+        return vec3(1.0) + vec3(0.12, 0.075, 0.035) * dry
+          - vec3(0.07, 0.085, 0.09) * compact;
       }`,
     ).replace('#include <color_fragment>', `#include <color_fragment>
-      diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition);`);
+      diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition);
+      diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition);`);
   };
-  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-v87';
+  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v103';
 }
 
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
