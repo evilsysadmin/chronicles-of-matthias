@@ -126,7 +126,9 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     const b = [x + width, 0, 0.012];
     const c = [x + width * 0.55 + lean, 0, depth];
     const d = [x - width * 0.70 + lean, 0, depth * 0.76];
-    const shade = palette[(i * 3) % palette.length];
+    // Interleave earthy and grassy patches. A stride of three over six
+    // pigments previously selected only two; both LODs now show variety.
+    const shade = palette[[0, 4, 2, 1, 5, 3][i % 6]];
     // Wind both triangles upward for reliable overhead lighting.
     // Blend the existing quad from dusty, compacted soil at the track
     // to muted grass at the outer edge. Shared vertices keep identical
