@@ -96,6 +96,34 @@ try {
             'C3 approach must preserve existing forest canopy batches');
           assert.ok(Number(state.herbCount) > 0,
             'C3 approach needs real low ground vegetation');
+          // Reuse the canonical live scene/context. The noon screenshot
+          // already exists; only three additional captures per viewport.
+          const audit = {};
+          for (const phase of ['noon', 'dawn', 'dusk', 'night']) {
+            const frame = await page.evaluate(phase => window.chroniclesSmokeSolarFrame(phase), phase);
+            if (phase !== 'noon') await page.screenshot({
+              path: 'smoke-terra-landscape-' + mapId + '-' + width + '-' + phase + '.png',
+            });
+            audit[phase] = frame;
+            console.log('CHRONICLES_C3_SOLAR_AUDIT width=' + width + ' ' + JSON.stringify(frame));
+            assert.deepEqual(frame.shaderErrors, [], phase + ' must compile all shaders');
+            assert.equal(frame.cameraCell, state.cameraCell);
+            assert.equal(frame.yaw, Number(state.cameraYaw));
+            assert.ok(Math.abs(frame.pitch) < 0.00001);
+            assert.ok(frame.palette > 20 && frame.meanLuma > 4 && frame.groundLuma > 3,
+              phase + ' must render a legible, nonblank scene');
+            assert.ok(frame.drawCalls > 0 && frame.drawCalls < 160);
+            if (phase !== 'noon') assert.ok(frame.changedFraction > 0.02,
+              phase + ' must visibly differ from noon');
+          }
+          assert.ok(audit.noon.daylight > audit.dawn.daylight);
+          assert.ok(audit.noon.daylight > audit.dusk.daylight);
+          assert.equal(audit.night.daylight, 0);
+          assert.ok(audit.night.meanLuma < audit.noon.meanLuma);
+          const restored = await page.evaluate(() => window.chroniclesSmokeSolarFrame('noon'));
+          assert.ok(Math.abs(restored.meanLuma - audit.noon.meanLuma) < 0.1,
+            'Restoring the same world minute must restore the rendered lighting');
+          assert.deepEqual(errors, [], 'No browser errors during solar audit');
         } else if (mapId === 'terra-e2') {
           assert.ok(Number(state.cragCount) > 0, 'Real blocked ridges must render');
           assert.ok(Number(state.pebbleCount) > 10, 'Walkable foothills need scree');
