@@ -28,7 +28,9 @@ describe('Banner Road organic grass/earth shoulders', () => {
     expect(full.count).toBeGreaterThan(25);
     expect(full.name).toBe('chronicles-banner-road-shoulders');
     expect(full.material.vertexColors).toBe(true);
-    expect(full.material.transparent).toBe(false);
+    expect(full.material.transparent).toBe(true);
+    expect(full.material.forceSinglePass).toBe(true);
+    expect(full.material.depthWrite).toBe(false);
     expect(full.castShadow).toBe(false);
     expect(full.instanceColor.count).toBe(full.count);
 
@@ -143,6 +145,7 @@ describe('Banner Road organic grass/earth shoulders', () => {
     const count = coarsePointer ? 4 : 8;
     const at = index => [colors.getX(index), colors.getY(index), colors.getZ(index)];
     expect(colors.count).toBe(count * 12);
+    expect(colors.itemSize).toBe(4);
     for (let i = 0; i < count; i += 1) {
       const start = i * 12;
       // Both ground triangles share exactly the same vertex colours.
@@ -154,6 +157,17 @@ describe('Banner Road organic grass/earth shoulders', () => {
       expect(at(start)).not.toEqual(at(start + 1));
       expect(at(start + 6)).toEqual(at(start + 7));
       expect(at(start + 6)).not.toEqual(at(start + 8));
+      // Preserve solid contact and fade only the flat polygon edges.
+      expect(colors.getW(start)).toBeCloseTo(0.85);
+      expect(colors.getW(start + 1)).toBe(0);
+      expect(colors.getW(start + 2)).toBeCloseTo(0.85);
+      expect(colors.getW(start + 3)).toBeCloseTo(0.85);
+      expect(colors.getW(start + 4)).toBe(0);
+      expect(colors.getW(start + 5)).toBe(0);
+      expect(colors.getW(start + 6)).toBeCloseTo(0.78);
+      expect(colors.getW(start + 7)).toBeCloseTo(0.78);
+      expect(colors.getW(start + 8)).toBe(0);
+      if (i % 2) expect(colors.getW(start + 11)).toBe(1);
     }
     for (const value of colors.array) {
       expect(Number.isFinite(value)).toBe(true);

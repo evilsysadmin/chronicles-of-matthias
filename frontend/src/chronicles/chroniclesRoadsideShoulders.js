@@ -82,7 +82,7 @@ function hash(x, y, salt = 0) {
 }
 
 /**
- * One opaque, instanced meadow-to-earth transition for the exposed edges of
+ * One single-pass, instanced meadow-to-earth transition for the exposed edges of
  * Banner Road's 2.64m-wide visual cart track. Low groundcover, loam, blades,
  * and irregular flat moss tongues break its ruler-straight edge without
  * changing the underlying 4m walkable grid or adding draw calls.
@@ -103,11 +103,11 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     .map(hex => new THREE.Color(hex));
   const tread = ['#8b7753', '#806d49', '#8a7859', '#867451']
     .map(hex => new THREE.Color(hex));
-  const add = (a, b, c, shade, shadeB = shade, shadeC = shade) => {
+  const add = (a, b, c, shade, shadeB = shade, shadeC = shade, alpha = [1, 1, 1]) => {
     positions.push(...a, ...b, ...c);
-    for (const tint of [shade, shadeB, shadeC]) {
-      colors.push(tint.r, tint.g, tint.b);
-    }
+    [shade, shadeB, shadeC].forEach((tint, i) => {
+      colors.push(tint.r, tint.g, tint.b, alpha[i]);
+    });
   };
 
   // Eight distinct irregular edges fit within the original desktop 100
@@ -134,8 +134,10 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     const loam = palette[grass.length + (i % soil.length)];
     const inner = shade.clone().lerp(loam, 0.68);
     const outer = shade.clone().lerp(loam, 0.12);
-    add(a, c, b, inner, outer, inner);
-    add(a, d, c, inner, outer, outer);
+    // Feather the outer edge into the actual terrain atlas; identical
+    // shared vertex alpha avoids a visible diagonal across the quad.
+    add(a, c, b, inner, outer, inner, [0.85, 0, 0.85]);
+    add(a, d, c, inner, outer, outer, [0.85, 0, 0]);
 
     // The old groundcover stopped below the raised road top, leaving an
     // almost perfectly straight dirt outline. Lay short, narrow tongues
@@ -147,14 +149,15 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     const fringe = aprons[(i * 5 + 1) % aprons.length];
     add([x - width * 0.64, 0.085, 0.08],
       [x + width * 0.58, 0.085, 0.055],
-      [tipX, 0.085, -intrusion], fringe, fringe, tread[i % tread.length]);
+      [tipX, 0.085, -intrusion], fringe, fringe, tread[i % tread.length],
+      [0.78, 0.78, 0]);
 
     if (i % 2 === 0) {
       // A second much smaller sliver breaks up each earthy margin.
       const moss = aprons[(i + 1) % aprons.length];
       add([x - width * 0.40, 0.087, -0.038],
         [x + width * 0.26, 0.087, 0.004],
-        [x - width * 0.13, 0.087, -0.006], moss);
+        [x - width * 0.13, 0.087, -0.006], moss, moss, moss, [0.45, 0.65, 0.45]);
     }
     if (i % 2 === 1) {
       // Low upright leaf tips interrupt the ruler-straight grass silhouette.
@@ -167,7 +170,7 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
@@ -200,6 +203,7 @@ export function createBannerRoadShoulders({
   const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
   const mat = new THREE.MeshStandardMaterial({
     color: 0xffffff, vertexColors: true, side: THREE.DoubleSide,
+    transparent: true, forceSinglePass: true, depthWrite: false,
     roughness: 1, metalness: 0,
   });
   applyBannerRoadBend(mat);
