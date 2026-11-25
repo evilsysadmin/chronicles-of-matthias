@@ -1539,6 +1539,7 @@ describe('Terra scenery', () => {
       }
     }));
     const matrix = new THREE.Matrix4(), scale = new THREE.Vector3();
+    const aspects = new Set();
     for (const [part, points] of Object.entries(expected)) {
       const mesh = scene.getObjectByName('chronicles-terra-' + part);
       expect(mesh.count).toBe(points.length);
@@ -1548,10 +1549,17 @@ describe('Terra scenery', () => {
         expect(matrix.elements[12]).toBeCloseTo(points[i][0],4);
         expect(matrix.elements[14]).toBeCloseTo(points[i][1],4);
         expect(scale.y).toBeCloseTo(points[i][2],4);
+        const aspect = scale.z / scale.x;
+        expect(aspect).toBeGreaterThanOrEqual(0.7599);
+        expect(aspect).toBeLessThanOrEqual(1.0001);
+        aspects.add(Math.round(aspect * 100));
       }
     }
     expect(influenced).toBeGreaterThan(10);
     expect(unaffected).toBeGreaterThan(10);
+    expect(aspects.size).toBeGreaterThan(8);
+    expect(Math.min(...aspects)).toBeLessThan(87);
+    expect(Math.max(...aspects)).toBeGreaterThan(92);
   });
 
   it('intersperses sedges among short turf in deterministic, variable-density patches', () => {
