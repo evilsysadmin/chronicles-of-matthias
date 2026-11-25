@@ -954,7 +954,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const height = Math.max(1, Number(scenePlan.height) || grid.length || 15);
   const sceneCenter = scenePlan.center || { x: Math.floor(width / 2), y: Math.floor(height / 2) };
   const roadMap = scenePlan.mapId === 'banner-road';
-  const forest = scenePlan.mapId === 'rookwood-first-book' || scenePlan.biome === 'forest';
+  const rookwoodGround = scenePlan.mapId === 'rookwood-first-book';
+  const forest = rookwoodGround || scenePlan.biome === 'forest';
   // Terra biomes tint ground, rock and sky; collision is always the grid.
   const biome = TERRA_BIOMES[scenePlan.biome] || null;
   // Authored towns (First Book Swordhaven) dress their interior blocks as the
@@ -1084,8 +1085,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // footprint, material count and single draw call remain unchanged.
   const terrainGeometry = new THREE.BoxGeometry(
     (width + margin) * CELL, 0.25, (height + margin) * CELL,
-    bannerTrail ? Math.ceil((width + margin) / 2) : 1, 1,
-    bannerTrail ? Math.ceil((height + margin) / 2) : 1,
+    rookwoodGround ? width + margin : bannerTrail ? Math.ceil((width + margin) / 2) : 1, 1,
+    rookwoodGround ? height + margin : bannerTrail ? Math.ceil((height + margin) / 2) : 1,
   );
   if (bannerTrail) {
     const positions = terrainGeometry.getAttribute('position');
@@ -1120,6 +1121,25 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     terrainGeometry.computeVertexNormals();
     terrainGeometry.computeBoundingBox();
     terrainGeometry.computeBoundingSphere();
+    earth.vertexColors = true;
+  }
+  if (rookwoodGround) {
+    // Static canopy occlusion and brownish needle litter near real tree
+    // roots. Clearings retain their original grass; no physical relief.
+    const positions = terrainGeometry.getAttribute('position');
+    const colors = new Float32Array(positions.count * 3);
+    for (let i = 0; i < positions.count; i++) {
+      const rawX = positions.getX(i) / CELL + sceneCenter.x;
+      const rawY = positions.getZ(i) / CELL + sceneCenter.y;
+      const outside = rawX < -0.5 || rawX > width - 0.5
+        || rawY < -0.5 || rawY > height - 0.5;
+      const distance = outside ? 0 : chroniclesBannerMeadowRootDistance(grid, rawX, rawY);
+      const shade = 1 - THREE.MathUtils.smoothstep(distance, 0.35, 2.4);
+      colors[i * 3] = 1 - 0.17 * shade;
+      colors[i * 3 + 1] = 1 - 0.32 * shade;
+      colors[i * 3 + 2] = 1 - 0.23 * shade;
+    }
+    terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     earth.vertexColors = true;
   }
   const terrain = new THREE.Mesh(terrainGeometry, earth);
