@@ -731,6 +731,16 @@ export function chroniclesBannerMeadowDryness(x, y, rootDistance) {
     * THREE.MathUtils.smoothstep(rootDistance, 1, 2.8);
 }
 
+// Raise only the non-playable outer scenery ring. A two-cell flat
+// buffer keeps interpolation between terrain vertices away from traversal.
+export function chroniclesBannerHorizonRise(x, y, width, height) {
+  const outside = Math.max(0, -x, x - width + 1, -y, y - height + 1);
+  const ramp = THREE.MathUtils.smoothstep(outside, 1.5, 3.5);
+  const ridge = 1.15 + 0.65 * Math.sin(x * 0.37 + y * 0.28)
+    * Math.cos(y * 0.31 - x * 0.18);
+  return ramp * ridge;
+}
+
 function applyBannerCartWear(material) {
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace(
@@ -883,8 +893,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // C3 only: a coarse, static forest-floor shade field. Sample the actual
   // blocked woodland roots, not the repeating meadow atlas, so the clearing
   // retains sunlight while the forest edge gains continuous soft depth.
-  // The terrain remains perfectly flat and retains its original footprint,
-  // UVs, atlas, material count and single draw call on both quality levels.
+  // The playable area remains flat. The non-playable scenery ring gains
+  // low distant relief on the existing vertices; UVs, atlas, topology,
+  // footprint, material count and single draw call remain unchanged.
   const terrainGeometry = new THREE.BoxGeometry(
     (width + margin) * CELL, 0.25, (height + margin) * CELL,
     bannerTrail ? Math.ceil((width + margin) / 2) : 1, 1,
@@ -894,8 +905,14 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     const positions = terrainGeometry.getAttribute('position');
     const colors = new Float32Array(positions.count * 3);
     for (let i = 0; i < positions.count; i += 1) {
-      const x = THREE.MathUtils.clamp(positions.getX(i) / CELL + sceneCenter.x, 0, width - 1);
-      const y = THREE.MathUtils.clamp(positions.getZ(i) / CELL + sceneCenter.y, 0, height - 1);
+      const rawX = positions.getX(i) / CELL + sceneCenter.x;
+      const rawY = positions.getZ(i) / CELL + sceneCenter.y;
+      if (positions.getY(i) > 0 && width === 21 && height === 15) {
+        positions.setY(i, positions.getY(i)
+          + chroniclesBannerHorizonRise(rawX, rawY, width, height));
+      }
+      const x = THREE.MathUtils.clamp(rawX, 0, width - 1);
+      const y = THREE.MathUtils.clamp(rawY, 0, height - 1);
       let distance = 2.8;
       for (let dy = -3; dy <= 3; dy += 1) {
         for (let dx = -3; dx <= 3; dx += 1) {
@@ -915,6 +932,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       colors[i * 3 + 2] = 1 - shade * 0.65 - dryness * 0.18;
     }
     terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    positions.needsUpdate = true;
+    terrainGeometry.computeVertexNormals();
+    terrainGeometry.computeBoundingBox();
+    terrainGeometry.computeBoundingSphere();
     earth.vertexColors = true;
   }
   const terrain = new THREE.Mesh(terrainGeometry, earth);
@@ -922,6 +943,27 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   terrain.position.y = -0.19;
   terrain.receiveShadow = true;
   scene.add(terrain);
+  // Sample the rendered triangles, not the continuous design function:
+  // coarse terrain interpolation is authoritative for scenery placement.
+  // This runs only during construction, never during a frame.
+  let groundOffset = null;
+  if (bannerTrail && width === 21 && height === 15) {
+    terrain.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 5, 0),
+      new THREE.Vector3(0, -1, 0));
+    const cache = new Map();
+    groundOffset = (wx, wz) => {
+      const x = wx / CELL + sceneCenter.x, y = wz / CELL + sceneCenter.y;
+      if (x >= 0 && x <= width - 1 && y >= 0 && y <= height - 1) return 0;
+      const key = wx + ',' + wz;
+      if (!cache.has(key)) {
+        ray.ray.origin.set(wx, 5, wz);
+        const hit = ray.intersectObject(terrain, false)[0];
+        cache.set(key, hit ? Math.max(0, hit.point.y - (terrain.position.y + 0.125)) : 0);
+      }
+      return cache.get(key);
+    };
+  }
 
   // A forest has no paved axes: its paths are the gaps between trees.
   const roadCells = forest ? [] : visibleRoadCells(scenePlan, sceneCenter).filter(({ x, y }) => grid[y]?.[x] === '.');
@@ -1221,7 +1263,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   if (!settlement && (wilds || forest)) {
     scene.add(buildTerraScenery({
       grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, mapId: scenePlan.mapId, scenery: scenePlan.scenery,
-      coarsePointer, keepClear: [...roadCells, ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean)],
+      coarsePointer, groundOffset,
+      keepClear: [...roadCells, ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean)],
     }));
   }
 
