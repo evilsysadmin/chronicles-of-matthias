@@ -332,6 +332,40 @@ try {
       dusk: day + Math.round(solar.sunset * 60 - 15),
       night: day + 23 * 60 + 45,
     };
+    // Isolate each cloud layer in the same real camera and weather.
+    // Diagnostic frames never change production sky settings.
+    const panorama = dome.getObjectByName('chronicles-sky-cloud-panorama');
+    const banks = dome.children.filter(child => child.name.startsWith('swordhaven-cloud-'));
+    if (!panorama || !banks.length) throw new Error('Missing C3 cloud audit layers');
+    const originalVisibility = [panorama, ...banks].map(object => object.visible);
+    window.chroniclesSmokeCloudLayer = mode => {
+      if (!['all', 'no-panorama', 'no-banks', 'no-clouds'].includes(mode)) {
+        throw new Error('Unknown cloud audit mode');
+      }
+      cycle.sync(noon);
+      panorama.visible = originalVisibility[0] && mode !== 'no-panorama' && mode !== 'no-clouds';
+      banks.forEach((bank, index) => {
+        bank.visible = originalVisibility[index + 1] && mode !== 'no-banks' && mode !== 'no-clouds';
+      });
+      renderer.render(scene, camera);
+      const pixels = pixelBuffer();
+      let count = 0, changed = 0, delta = 0;
+      // Upper third: measure clouds rather than ground or most trees.
+      for (let y = Math.floor(height * 0.67); y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4;
+          const d = Math.abs(pixels[i] - withTiles[i])
+            + Math.abs(pixels[i + 1] - withTiles[i + 1])
+            + Math.abs(pixels[i + 2] - withTiles[i + 2]);
+          if (d > 12) changed++;
+          delta += d;
+          count++;
+        }
+      }
+      return { mode, changedPixels: changed, changedFraction: changed / count,
+        meanRgbDifference: delta / (count * 3), shaderErrors: [...shaderErrors],
+        panoramaVisible: panorama.visible, visibleBanks: banks.filter(bank => bank.visible).length };
+    };
     window.chroniclesSmokeSolarFrame = phase => {
       if (!Object.hasOwn(phases, phase)) throw new Error('Unknown solar audit phase');
       const minute = phases[phase];
