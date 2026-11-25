@@ -1296,6 +1296,22 @@ describe('Terra scenery', () => {
     }
     const end = start + (coarsePointer ? 6 : 12);
     expect(p.array.slice(end * 3)).toEqual(base.array.slice(end * 3));
+    const oldColors = old.getAttribute('color');
+    const luma = v => v.x * 0.2126 + v.y * 0.7152 + v.z * 0.0722;
+    for (let i = start; i < end; i += 6) {
+      expect(vec(c, i + 1)).toEqual(vec(c, i + 5));
+      expect(vec(c, i + 2)).toEqual(vec(c, i + 4));
+      expect(luma(vec(c, i + 2))).toBeLessThan(luma(vec(c, i)));
+    }
+    for (let i = end; i < p.count; i += 3) {
+      expect(vec(oldColors, i)).toEqual(vec(oldColors, i + 1));
+      expect(vec(oldColors, i)).toEqual(vec(oldColors, i + 2));
+      expect(vec(c, i)).not.toEqual(vec(c, i + 1));
+      expect(vec(c, i + 1)).not.toEqual(vec(c, i + 2));
+    }
+    for (const value of c.array) {
+      expect(Number.isFinite(value) && value >= 0 && value <= 1).toBe(true);
+    }
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
     const options = { grid: map.grid, center, biome: map.biome, coarsePointer };

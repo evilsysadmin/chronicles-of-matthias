@@ -1134,9 +1134,9 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false, woo
   const bark = ['#615443', '#817059'].map(value => new THREE.Color(value));
   const litter = ['#887750', '#a09265', '#707b4c']
     .map(value => new THREE.Color(value));
-  const add = (a, b, c, tint) => {
+  const add = (a, b, c, tint, tintB = tint, tintC = tint) => {
     positions.push(...a, ...b, ...c);
-    for (let j = 0; j < 3; j += 1) colors.push(tint.r, tint.g, tint.b);
+    for (const shade of [tint, tintB, tintC]) colors.push(shade.r, shade.g, shade.b);
   };
   const rock = (cx, cz, radius, height, seed) => {
     const rim = [];
@@ -1170,8 +1170,13 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false, woo
       const tip = [x + 0.76, 0.017, z + 0.045];
       const left = [x + 0.19, 0.013, z - 0.065];
       const right = [x + 0.30, 0.013, z + 0.13];
-      add(base, tip, left, shade);
-      add(base, right, tip, shade.clone().lerp(bark[1], 0.35).multiplyScalar(0.84));
+      // Weathered bark darkens toward the soil contact. Keep the ridge
+      // readable without adding a single face or a separate texture.
+      const tipTint = shade.clone().lerp(litter[0], 0.35).multiplyScalar(0.88);
+      const contact = shade.clone().multiplyScalar(0.68);
+      const shaded = shade.clone().lerp(bark[1], 0.35).multiplyScalar(0.84);
+      add(base, tip, left, shade, tipTint, contact);
+      add(base, right, tip, shaded, contact, tipTint);
     } else {
       add([x, 0.022, z], [x + 0.47, 0.045, z + 0.15],
         [x + 0.10, 0.025, z + 0.075], shade);
@@ -1183,8 +1188,13 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false, woo
   for (let i = 0; i < (coarsePointer ? 2 : 5); i += 1) {
     const x = (i % 3 - 1) * 0.25 + 0.035;
     const z = (Math.floor(i / 3) - 0.5) * 0.54 + 0.15;
+    const shade = litter[i % litter.length];
+    // C3 leaf fragments fade from damp earthy bases to dry raised tips.
+    // Generic Terra keeps its original flat pigment.
+    const baseTint = woodland ? shade.clone().lerp(bark[0], 0.30) : shade;
+    const tipTint = woodland ? shade.clone().lerp(litter[1], 0.24) : shade;
     add([x - 0.06, 0.015, z], [x + 0.035, 0.015, z + 0.07],
-      [x + 0.075, 0.020, z - 0.04], litter[i % litter.length]);
+      [x + 0.075, 0.020, z - 0.04], shade, baseTint, tipTint);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
