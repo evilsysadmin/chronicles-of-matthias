@@ -1444,6 +1444,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     scene.add(barrier);
   }
 
+  if (forest && scenePlan.mapId === 'rookwood-first-book') {
+    const canopy = scene.getObjectByName('chronicles-campaign-forest');
+    if (canopy) tintRookwoodGroves(canopy, sceneCenter);
+  }
+
   if (!settlement && (wilds || forest)) {
     const terraScenery = buildTerraScenery({
       grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, mapId: scenePlan.mapId, scenery: scenePlan.scenery,
@@ -1842,6 +1847,30 @@ function buildForestCanopy(blocked, center, { coarsePointer = false } = {}) {
     group.add(mesh);
   });
   return group;
+}
+
+// Correlated patches of cool firs and warm sun-exposed pines, rather than
+// independent random colors that look like a confetti forest. Both crown
+// layers use the same pigment, retaining their existing base-material contrast.
+function tintRookwoodGroves(group, center) {
+  const [trunks, lower, upper] = group.children;
+  const cool = new THREE.Color('#b9d0be'), warm = new THREE.Color('#e7e1b6');
+  const darkBark = new THREE.Color('#b9b1a3'), paleBark = new THREE.Color('#e3d4ba');
+  const matrix = new THREE.Matrix4(), crown = new THREE.Color(), bark = new THREE.Color();
+  for (let i = 0; i < trunks.count; i++) {
+    trunks.getMatrixAt(i, matrix);
+    const x = matrix.elements[12] / CELL + center.x;
+    const y = matrix.elements[14] / CELL + center.y;
+    const grove = 0.5 + 0.5 * Math.sin(x * 0.42 + y * 0.19) * Math.cos(y * 0.33 - x * 0.21);
+    const detail = cellNoise(Math.round(x * 16), Math.round(y * 16), 173);
+    const blend = 0.82 * grove + 0.18 * detail;
+    crown.copy(cool).lerp(warm, blend);
+    bark.copy(darkBark).lerp(paleBark, blend);
+    trunks.setColorAt(i, bark);
+    lower.setColorAt(i, crown);
+    upper.setColorAt(i, crown);
+  }
+  [trunks, lower, upper].forEach(mesh => { mesh.instanceColor.needsUpdate = true; });
 }
 
 // The Oak of Names: a broad old tree whose empty cords fill with the
