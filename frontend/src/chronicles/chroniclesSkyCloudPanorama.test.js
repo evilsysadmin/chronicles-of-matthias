@@ -145,6 +145,58 @@ describe('Seamless Terra cloud panorama', () => {
     expect(Buffer.compare(Buffer.from(generic.getObjectByName(actual.name).material.map.image.data), Buffer.from(original.data))).toBe(0);
   });
 
+  it.each([false, true])('uses distinct C3 cumulus sprites with bounded coverage and original sprite budget (coarse=%s)', coarse => {
+    const build = woodland => {
+      const root = new THREE.Group();
+      addSwordhavenClouds(root, coarse, { woodland });
+      return root;
+    };
+    const original = build(false), shaped = build(true), restored = build(true);
+    const sprites = group => group.children.map(child => child.getObjectByName('cloud-soft-bank'));
+    const before = sprites(original), after = sprites(shaped);
+    expect(after.length).toBe(coarse ? 4 : 8);
+    const material = after[0].material, atlas = material.map.image;
+    expect([atlas.width, atlas.height]).toEqual([256, 128]);
+    expect(after.every(sprite => sprite.material === material)).toBe(true);
+    for (let i = 0; i < after.length; i++) {
+      expect(after[i].scale.toArray()).toEqual(before[i].scale.toArray());
+      expect(after[i].parent.position.toArray()).toEqual(before[i].parent.position.toArray());
+    }
+    expect(Buffer.compare(Buffer.from(atlas.data), Buffer.from(sprites(restored)[0].material.map.image.data))).toBe(0);
+    expect(Buffer.compare(Buffer.from(atlas.data), Buffer.from(before[0].material.map.image.data))).not.toBe(0);
+    const { width, height, data } = atlas;
+    let solid = 0, visible = 0, border = 0;
+    let upper = 0, lower = 0, upperCount = 0, lowerCount = 0;
+    const peaks = new Set();
+    for (let x = 0; x < width; x++) {
+      let top = -1;
+      for (let y = 0; y < height; y++) {
+        const i = (y * width + x) * 4, alpha = data[i + 3];
+        if ((x === 0 || y === 0 || x === width - 1 || y === height - 1) && alpha) border++;
+        if (alpha > 32) visible++;
+        if (alpha > 170) { solid++; top = y; }
+        if (alpha > 100 && y > height * 0.60) { upper += data[i + 1]; upperCount++; }
+        if (alpha > 100 && y < height * 0.40) { lower += data[i + 1]; lowerCount++; }
+      }
+      if (x > width * 0.2 && x < width * 0.8 && top >= 0) peaks.add(top);
+    }
+    expect(border).toBe(0);
+    expect(solid).toBeGreaterThan(width * height * 0.15);
+    expect(visible).toBeLessThan(width * height * 0.75);
+    expect(peaks.size).toBeGreaterThan(12);
+    expect(upperCount).toBeGreaterThan(width);
+    expect(lowerCount).toBeGreaterThan(width);
+    expect(upper / upperCount).toBeGreaterThan(lower / lowerCount + 15);
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, { coarsePointer: coarse, scenePlan: {
+      mapId: bannerRoad.id, regionKind: bannerRoad.regionKind, biome: bannerRoad.biome,
+      width: 21, height: 15, grid: bannerRoad.grid, center: { x: 10, y: 7 },
+      landscape: bannerRoad.landscape, scenery: [], content: [],
+    } });
+    const actual = scene.getObjectByName('swordhaven-cloud-0').getObjectByName('cloud-soft-bank');
+    expect(Buffer.compare(Buffer.from(actual.material.map.image.data), Buffer.from(data))).toBe(0);
+  });
+
   it('stays centred on a moving camera without rotating with player yaw', () => {
     const dome = createSwordhavenSkyDome(new THREE.Vector3(-25, 30, -65).normalize(), true);
     const cloud = dome.getObjectByName('chronicles-sky-cloud-panorama');

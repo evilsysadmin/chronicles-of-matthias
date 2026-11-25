@@ -3364,7 +3364,7 @@ export function createSwordhavenMaterials() {
   };
 }
 
-export function addSwordhavenClouds(root, coarsePointer = false) {
+export function addSwordhavenClouds(root, coarsePointer = false, { woodland = false } = {}) {
   // One deterministic, reusable cloud atlas instead of smooth white ellipses.
   // Layered value noise carves out broken storm shelves with dark pockets and
   // softly illuminated edges. No images, timers, random runtime state or lights.
@@ -3391,6 +3391,13 @@ export function addSwordhavenClouds(root, coarsePointer = false) {
       fy,
     );
   };
+  // Overlapping asymmetric cumulus lobes, rather than a uniform
+  // horizontal mist band. Only Banner Road uses this authored atlas variant.
+  const lobes = [
+    [-0.67, -0.12, 0.30, 0.43], [-0.40, 0.02, 0.32, 0.58],
+    [-0.10, 0.15, 0.30, 0.64], [0.20, 0.02, 0.36, 0.53],
+    [0.48, 0.11, 0.27, 0.58], [0.70, -0.14, 0.27, 0.36],
+  ];
   for (let y = 0; y < height; y += 1) {
     const ny = (y / (height - 1)) * 2 - 1;
     for (let x = 0; x < width; x += 1) {
@@ -3416,6 +3423,26 @@ export function addSwordhavenClouds(root, coarsePointer = false) {
       pixels[offset + 1] = shade;
       pixels[offset + 2] = Math.min(255, shade + 11);
       pixels[offset + 3] = alpha;
+      if (woodland) {
+        let body = -Infinity;
+        for (const [cx, cy, rx, ry] of lobes) {
+          body = Math.max(body, 1 - Math.hypot((nx - cx) / rx, (ny - cy) / ry));
+        }
+        // Break up the lobe contour at two scales while preserving
+        // substantial opaque interiors and soft but narrow edges.
+        const irregular = body + (folds - 0.5) * 0.24 + (wisps - 0.5) * 0.11;
+        const silhouette = smooth(-0.09, 0.20, irregular)
+          * (1 - smooth(0.84, 1, Math.abs(nx)));
+        const base = smooth(-0.68, -0.30, ny);
+        const crown = smooth(-0.02, 0.47, ny);
+        const billow = smooth(0.32, 0.73, folds * 0.72 + wisps * 0.28);
+        const tone = 163 + 40 * base + 28 * crown + 15 * billow
+          - 23 * (1 - billow) * (1 - crown);
+        pixels[offset] = Math.round(THREE.MathUtils.clamp(tone - 12 + 9 * crown, 0, 255));
+        pixels[offset + 1] = Math.round(THREE.MathUtils.clamp(tone, 0, 255));
+        pixels[offset + 2] = Math.round(THREE.MathUtils.clamp(tone + 15 - 9 * crown, 0, 255));
+        pixels[offset + 3] = Math.round(236 * silhouette * (0.80 + 0.20 * billow));
+      }
     }
   }
   const texture = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat);

@@ -1001,7 +1001,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // Their FINAL daytime opacity belongs to chroniclesExteriorDaylight.sync:
   // writing it here is overwritten before the first visible frame.
   if (bannerTrail) {
-    addSwordhavenClouds(skyDome, coarsePointer);
+    addSwordhavenClouds(skyDome, coarsePointer, { woodland: true });
     skyDome.add(createBannerRoadDistantRidge(coarsePointer));
   }
   scene.add(skyDome);
