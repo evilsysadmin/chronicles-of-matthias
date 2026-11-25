@@ -25,7 +25,8 @@ describe('Rookwood forest floor pigments', () => {
     expect([...c.array]).toEqual([...replay.geometry.getAttribute('color').array]);
     expect(geometry.parameters.widthSegments).toBe(width + 6);
     expect(geometry.parameters.depthSegments).toBe(height + 6);
-    expect(geometry.index.count / 3).toBeLessThan(1400);
+    // Both horizontal faces and all four thin sides share the original box.
+    expect(geometry.index.count / 3).toBe(4 * ((width + 6) * (height + 6) + width + height + 12));
     geometry.computeBoundingBox();
     legacy.geometry.computeBoundingBox();
     expect(geometry.boundingBox.min.toArray()).toEqual(legacy.geometry.boundingBox.min.toArray());
