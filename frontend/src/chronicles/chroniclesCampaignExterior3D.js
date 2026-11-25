@@ -718,7 +718,11 @@ export function chroniclesBannerCartWear(x, z) {
   const rut = q => 1 - smooth(Math.abs(q - 0.66), 0.066, 0.3696);
   const ns = rut(ax) * (1 - smooth(ax, 1.10, 1.32)) * smooth(az, 0.85, 2);
   const ew = rut(az) * (1 - smooth(az, 1.10, 1.32)) * smooth(ax, 0.85, 2);
-  return 1 - 0.18 * Math.max(ns, ew);
+  // Packed wheel tracks alternate between weathered and freshly worn
+  // stretches. Use absolute along-axis distance for continuous symmetric
+  // wear on all approaches; the junction and road edges remain unchanged.
+  const strength = along => 0.825 + 0.175 * Math.cos(along * 0.58);
+  return 1 - 0.18 * Math.max(ns * strength(az), ew * strength(ax));
 }
 
 // Local erosion in the undeformed road coordinate system. The same
@@ -901,6 +905,8 @@ function applyBannerCartWear(material) {
         vec2 axis = 1.0 - smoothstep(vec2(1.10), vec2(1.32), a);
         vec2 fade = smoothstep(vec2(0.85), vec2(2.0), a.yx);
         vec2 wear = rut * axis * fade;
+        vec2 wearStrength = vec2(0.825) + 0.175 * cos(a.yx * 0.58);
+        wear *= wearStrength;
         return 1.0 - 0.18 * max(wear.x, wear.y);
       }
       vec3 chroniclesRoadErosion(vec2 p) {
@@ -922,7 +928,7 @@ function applyBannerCartWear(material) {
       diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition);
       diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition);`);
   };
-  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v108';
+  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v128';
 }
 
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {

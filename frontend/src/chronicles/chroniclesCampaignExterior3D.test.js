@@ -957,16 +957,22 @@ describe('Chronicles file-authored exterior renderer', () => {
   it('gives cart tracks continuous symmetric wear with a clean junction and bounded contrast', () => {
     const wear = chroniclesBannerCartWear;
     expect(wear(0, 0)).toBe(1);
-    expect(wear(0.66, 10)).toBeCloseTo(0.82, 8);
-    expect(wear(10, -0.66)).toBeCloseTo(0.82, 8);
+    const expected = 1 - 0.18 * (0.825 + 0.175 * Math.cos(10 * 0.58));
+    expect(wear(0.66, 10)).toBeCloseTo(expected, 8);
+    expect(wear(10, -0.66)).toBeCloseTo(expected, 8);
+    expect(wear(0.66, Math.PI / 0.58)).toBeCloseTo(0.883, 8);
+    expect(wear(0.66, 2 * Math.PI / 0.58)).toBeCloseTo(0.82, 8);
+    for (let seam = -42; seam <= 42; seam += 4) {
+      expect(wear(0.66, seam - 0.00001)).toBeCloseTo(wear(0.66, seam + 0.00001), 4);
+    }
     expect(wear(1.32, 10)).toBe(1);
     expect(wear(0, 10)).toBe(1);
     expect(wear(0.66, 1.4)).toBeGreaterThan(0.82);
     expect(wear(0.66, 1.4)).toBeLessThan(1);
     for (let i = 0; i <= 132; i++) {
       const p = i / 100 - 0.66;
-      expect(wear(p, 2)).toBeCloseTo(wear(p, 6), 10);
-      expect(wear(2, p)).toBeCloseTo(wear(6, p), 10);
+      expect(wear(p, 2)).toBeCloseTo(wear(2, p), 10);
+      expect(wear(p, 6)).toBeCloseTo(wear(6, p), 10);
       for (let j = 0; j <= 40; j++) {
         const q = j / 10;
         const shade = wear(p, q);
@@ -1099,7 +1105,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = build(bannerRoadFirstBook), other = build(terraC4);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
-    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v108:chronicles-c3-bend-width-v102');
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v128:chronicles-c3-bend-width-v102');
     expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-width-v102');
     const shader = {
       vertexShader: THREE.ShaderLib.standard.vertexShader,
@@ -1111,6 +1117,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(shader.vertexShader).toContain('vChroniclesRoadPosition = chroniclesRoadPosition.xz');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition)');
     expect(shader.fragmentShader).toContain('max(wear.x, wear.y)');
+    expect(shader.fragmentShader).toContain('wear *= wearStrength;');
+    expect(shader.fragmentShader).toContain('0.175 * cos(a.yx * 0.58)');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition)');
     expect(shader.fragmentShader).toContain('vec3(0.12, 0.075, 0.035) * dry');
     // GLSL reserves "patch": a CPU-equivalent function and a successful
