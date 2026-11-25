@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
 import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
-import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, createBannerRoadDistantRidge } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
+import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
 import { chroniclesSeasonalSunTimes } from './chroniclesWorldTime.js';
 
@@ -24,6 +25,47 @@ function outdoors() {
 }
 
 describe('Terra solar cycle', () => {
+  it.each([false, true])('renders a seamless distant C3 ridge with bounded geometry and solar tint (coarse=%s)', coarsePointer => {
+    const scene = new THREE.Scene();
+    const map = bannerRoadFirstBook;
+    const plan = { mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      width: 21, height: 15, center: { x: 10, y: 7 }, grid: map.grid, content: [], scenery: [] };
+    buildChroniclesCampaignExterior(scene, { scenePlan: plan, coarsePointer });
+    const dome = scene.getObjectByName('swordhaven-sky-dome');
+    const ridge = dome.getObjectByName('chronicles-banner-distant-ridge');
+    expect(ridge).toBeInstanceOf(THREE.Mesh);
+    expect(ridge.parent).toBe(dome);
+    expect(ridge.material.depthWrite).toBe(false);
+    expect(ridge.material.fog).toBe(false);
+    expect(ridge.renderOrder).toBeGreaterThan(dome.renderOrder);
+    expect(ridge.renderOrder).toBeLessThan(0);
+    expect(ridge.geometry.index.count / 3).toBe(coarsePointer ? 96 : 144);
+    const p = ridge.geometry.getAttribute('position');
+    const v = i => new THREE.Vector3().fromBufferAttribute(p, i);
+    expect(v(0)).toEqual(v(p.count - 2));
+    expect(v(1)).toEqual(v(p.count - 1));
+    for (let i = 0; i < p.count; i += 2) {
+      expect(Math.hypot(p.getX(i), p.getZ(i))).toBeCloseTo(55, 4);
+      expect(p.getY(i)).toBe(-7);
+      expect(p.getY(i + 1)).toBeGreaterThan(1);
+      expect(p.getY(i + 1)).toBeLessThan(10);
+    }
+    const copy = createBannerRoadDistantRidge(coarsePointer);
+    expect(copy.geometry.getAttribute('position').array).toEqual(p.array);
+    const cycle = createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1.08 }, plan);
+    cycle.sync(720);
+    const noon = ridge.material.color.clone();
+    cycle.sync(1320);
+    const night = ridge.material.color.clone();
+    expect(noon.r + noon.g + noon.b).toBeGreaterThan(night.r + night.g + night.b);
+    expect(cycle.sync(1320)).toBe(false);
+    const other = new THREE.Scene();
+    buildChroniclesCampaignExterior(other, { scenePlan: { ...plan, mapId: 'terra-c4' }, coarsePointer });
+    expect(other.getObjectByName(ridge.name)).toBeUndefined();
+    copy.geometry.dispose();
+    copy.material.dispose();
+  });
+
   it('uses persisted minutes with smooth dawn/dusk boundaries and correct solar orientation', () => {
     expect(chroniclesExteriorDaylightProfile(480).daylight).toBe(1);
     expect(chroniclesExteriorDaylightProfile(1320).daylight).toBe(0);
