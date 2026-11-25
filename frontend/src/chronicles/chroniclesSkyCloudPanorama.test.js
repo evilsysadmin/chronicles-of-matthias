@@ -104,6 +104,7 @@ describe('Seamless Terra cloud panorama', () => {
     expect([width, height]).toEqual([original.width, original.height]);
     expect(shaped.geometry.index.count).toBe(old.geometry.index.count);
     let brighter = 0, stronger = 0, weaker = 0, preserved = 0;
+    let mistChanges = 0, transparentChanges = 0, excessAlpha = 0;
     for (let y = 0; y < height; y++) {
       const v = y / (height - 1);
       const left = y * width * 4, right = left + (width - 1) * 4;
@@ -112,16 +113,21 @@ describe('Seamless Terra cloud panorama', () => {
         const i = (y * width + x) * 4;
         const alpha = original.data[i + 3], next = revised.data[i + 3];
         if (v <= 0.57) {
-          expect(revised.data.slice(i, i + 4)).toEqual(original.data.slice(i, i + 4));
+          for (let channel = 0; channel < 4; channel++) {
+            if (revised.data[i + channel] !== original.data[i + channel]) mistChanges++;
+          }
           preserved++;
         }
-        if (alpha === 0) expect(next).toBe(0);
-        expect(next).toBeLessThanOrEqual(235);
+        if (alpha === 0 && next !== 0) transparentChanges++;
+        if (next > 235) excessAlpha++;
         if (v > 0.64 && alpha >= 48 && revised.data[i] > original.data[i] + 6) brighter++;
         if (next > alpha + 4) stronger++;
         if (next < alpha - 4) weaker++;
       }
     }
+    expect(mistChanges).toBe(0);
+    expect(transparentChanges).toBe(0);
+    expect(excessAlpha).toBe(0);
     expect(preserved).toBeGreaterThan(width * height * 0.5);
     expect(brighter).toBeGreaterThan(width);
     expect(stronger).toBeGreaterThan(width);
@@ -133,9 +139,10 @@ describe('Seamless Terra cloud panorama', () => {
       scenery: [], content: [],
     } });
     const actual = scene.getObjectByName('chronicles-sky-cloud-panorama');
-    expect(actual.material.map.image.data).toEqual(revised.data);
+    // Native buffer equality avoids deep-comparing ~393k individual values.
+    expect(Buffer.compare(Buffer.from(actual.material.map.image.data), Buffer.from(revised.data))).toBe(0);
     const generic = createSwordhavenSkyDome(new THREE.Vector3(0, 1, 0), coarse);
-    expect(generic.getObjectByName(actual.name).material.map.image.data).toEqual(original.data);
+    expect(Buffer.compare(Buffer.from(generic.getObjectByName(actual.name).material.map.image.data), Buffer.from(original.data))).toBe(0);
   });
 
   it('stays centred on a moving camera without rotating with player yaw', () => {
