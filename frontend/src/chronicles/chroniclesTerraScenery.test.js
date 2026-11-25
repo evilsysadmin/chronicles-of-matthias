@@ -27,6 +27,47 @@ describe('Terra scenery', () => {
     expect(chroniclesTerraSceneryBiomes().sort()).toEqual(['ash', 'coast', 'hills', 'marsh', 'plains', 'snow']);
   });
 
+  it.each([false, true])('uses a brighter directional bark atlas only on C3 broadleaf trunks (coarse=%s)', coarsePointer => {
+    const bark = chroniclesPixelTexture('woodlandbark');
+    const original = chroniclesPixelTexture('bark');
+    expect(bark).toBe(chroniclesPixelTexture('woodlandbark'));
+    expect(bark).not.toBe(original);
+    expect(bark.userData.chroniclesPixelArt).toEqual({ kind: 'woodlandbark', size: 64, palette: 6 });
+    expect(bark.image.data.length).toBe(64 * 64 * 4);
+    expect(bark.wrapS).toBe(THREE.RepeatWrapping);
+    expect(bark.wrapT).toBe(THREE.RepeatWrapping);
+    const average = texture => {
+      const p = texture.image.data;
+      let sum = 0;
+      for (let i = 0; i < p.length; i += 4) sum += (p[i] + p[i + 1] + p[i + 2]) / 3;
+      return sum / (p.length / 4);
+    };
+    expect(average(bark)).toBeGreaterThan(average(original) + 15);
+    const p = bark.image.data, colors = new Set();
+    let dx = 0, dy = 0;
+    for (let y = 0; y < 64; y++) {
+      for (let x = 0; x < 64; x++) {
+        const i = 4 * (y * 64 + x);
+        expect(p[i + 3]).toBe(255);
+        colors.add(p.slice(i, i + 3).join(','));
+        dx += Math.abs(p[i] - p[4 * (y * 64 + (x + 1) % 64)]);
+        dy += Math.abs(p[i] - p[4 * (((y + 1) % 64) * 64 + x)]);
+      }
+    }
+    expect(colors.size).toBeGreaterThanOrEqual(4);
+    expect(dx).toBeGreaterThan(dy * 1.3);
+    const map = chroniclesMapById('banner-road-first-book');
+    const options = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome, coarsePointer };
+    const woodland = buildTerraScenery({ ...options, mapId: map.id });
+    const generic = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    const trunk = woodland.getObjectByName('chronicles-terra-broadleafTrunk');
+    const other = generic.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(trunk.material.map.userData.chroniclesPixelArt.kind).toBe('woodlandbark');
+    expect(other.material.map.userData.chroniclesPixelArt.kind).toBe('bark');
+    expect(trunk.material.map.repeat.toArray()).toEqual([2, 3]);
+    expect(trunk.material.emissive.getHex()).toBe(0);
+  });
+
   it('uses muted, varied Banner Road meadow soil without changing its texture budget', () => {
     const meadow = chroniclesPixelTexture('meadow');
     const again = chroniclesPixelTexture('meadow');
