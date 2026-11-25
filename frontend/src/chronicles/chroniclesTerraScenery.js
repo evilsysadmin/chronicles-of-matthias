@@ -1246,7 +1246,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer, woodland }), lit(0xffffff, { map: texture('bark', 2, 3) })],
+    broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer, woodland }), lit(0xffffff, { map: texture(woodland ? 'woodlandbark' : 'bark', 2, 3) })],
     crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer, woodland }),
       lit(0xe6efdc, {
         map: texture(woodland ? 'woodlandleaves' : 'leaves', 3, 3),
