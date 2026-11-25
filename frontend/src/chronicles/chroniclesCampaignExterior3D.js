@@ -778,6 +778,23 @@ export function chroniclesBannerMeadowRootDistance(grid, x, y) {
   return distance;
 }
 
+// Extra occlusion in overlapping woodland margins, not under isolated
+// roots or in open clearings. Baked once into existing terrain vertices.
+export function chroniclesBannerWoodlandDensityShade(grid, x, y, distance) {
+  const smooth = THREE.MathUtils.smoothstep;
+  const fringe = smooth(distance, 0.6, 1.2) * (1 - smooth(distance, 1.2, 2.8));
+  if (!fringe) return 0;
+  let cover = 0;
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      const gx = Math.round(x) + dx, gy = Math.round(y) + dy;
+      if (grid[gy]?.[gx] !== '#') continue;
+      cover += 1 - smooth(Math.hypot(gx - x, gy - y), 0.6, 2.8);
+    }
+  }
+  return 0.055 * fringe * smooth(cover, 1, 4);
+}
+
 // Raise only the non-playable outer scenery ring. A two-cell flat
 // buffer keeps interpolation between terrain vertices away from traversal.
 export function chroniclesBannerHorizonRise(x, y, width, height) {
@@ -1083,7 +1100,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const x = THREE.MathUtils.clamp(rawX, 0, width - 1);
       const y = THREE.MathUtils.clamp(rawY, 0, height - 1);
       const distance = chroniclesBannerMeadowRootDistance(grid, x, y);
-      const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(distance, 0.6, 2.8));
+      const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(distance, 0.6, 2.8))
+        + (width === 21 && height === 15
+          ? chroniclesBannerWoodlandDensityShade(grid, x, y, distance) : 0);
       // Warm the open clearings relative to the cooler forest floor.
       // Preserve the original red-channel shadow field and neutral roots.
       const dryness = width === 21 && height === 15
