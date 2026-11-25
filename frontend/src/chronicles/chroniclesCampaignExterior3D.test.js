@@ -9,7 +9,7 @@ import terraC4 from './maps/terra-c4.json';
 import terraE2 from './maps/terra-e2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
-import { chroniclesBannerRoadBend } from './chroniclesRoadsideShoulders.js';
+import { chroniclesBannerRoadBend, chroniclesBannerRoadWidthScale } from './chroniclesRoadsideShoulders.js';
 import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 
 const demo = {
@@ -916,6 +916,41 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
   });
 
+  it('widens and narrows the cart track smoothly within its original walkable cells', () => {
+    const width = chroniclesBannerRoadWidthScale;
+    for (const phase of [0, 1.4]) {
+      let min = 1, max = 1;
+      for (let along = -42; along <= 42; along += 0.125) {
+        const scale = width(along, phase);
+        expect(scale).toBeGreaterThanOrEqual(0.8799999);
+        expect(scale).toBeLessThanOrEqual(1.1200001);
+        if (Math.abs(along) <= 2) expect(scale).toBe(1);
+        min = Math.min(min, scale);
+        max = Math.max(max, scale);
+        const bend = chroniclesBannerRoadBend(along, phase);
+        // Both visible edges stay strictly inside the original 4m road cell.
+        expect(Math.abs(bend) + 1.32 * scale).toBeLessThan(2);
+      }
+      expect(min).toBeLessThan(0.92);
+      expect(max).toBeGreaterThan(1.08);
+      for (let left = -42; left < 42; left += 4) {
+        const right = left + 4;
+        expect(width(left + 1, phase)).toBeCloseTo(width(left, phase) * 0.75 + width(right, phase) * 0.25, 8);
+        expect(width(right - 0.0001, phase)).toBeCloseTo(width(right + 0.0001, phase), 4);
+        // At every existing tile edge, verge, tread and ruts use the
+        // same affine transverse transform rather than independent widths.
+        const transform = (transverse, along) =>
+          transverse * width(along, phase) + chroniclesBannerRoadBend(along, phase);
+        expect(transform(1.32, right) - transform(-1.32, right))
+          .toBeCloseTo(2.64 * width(right, phase), 8);
+        expect(transform(1.34, right) - transform(1.32, right))
+          .toBeCloseTo(0.02 * width(right, phase), 8);
+        expect(transform(0.66, right) - transform(0, right))
+          .toBeCloseTo(0.66 * width(right, phase), 8);
+      }
+    }
+  });
+
   it('bends the visual road continuously between existing tile corners with a flat crossing', () => {
     const bend = chroniclesBannerRoadBend;
     for (const phase of [0, 1.4]) {
@@ -951,8 +986,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     };
     for (const mesh of [road, shoulder]) {
       expect(mesh.isInstancedMesh).toBe(true);
-      expect(mesh.material.customProgramCacheKey()).toContain('chronicles-c3-bend-v101');
+      expect(mesh.material.customProgramCacheKey()).toContain('chronicles-c3-bend-width-v102');
       expect(shader(mesh.material).vertexShader).toContain('chroniclesBendKnot');
+      expect(shader(mesh.material).vertexShader).toContain('chroniclesWidthScale');
+      expect(shader(mesh.material).vertexShader).toContain('chroniclesBendWorld.x * (chroniclesWidthScale(chroniclesBendWorld.z, 0.0) - 1.0)');
       expect(shader(mesh.material).vertexShader).toContain('transformed.x += dot(chroniclesBendDelta, bx)');
     }
     expect(shader(road.material).fragmentShader).toContain('chroniclesCartWear(vChroniclesRoadPosition)');
@@ -970,8 +1007,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = build(bannerRoadFirstBook), other = build(terraC4);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
-    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-v87:chronicles-c3-bend-v101');
-    expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-v101');
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-v87:chronicles-c3-bend-width-v102');
+    expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-width-v102');
     const shader = {
       vertexShader: THREE.ShaderLib.standard.vertexShader,
       fragmentShader: THREE.ShaderLib.standard.fragmentShader,
