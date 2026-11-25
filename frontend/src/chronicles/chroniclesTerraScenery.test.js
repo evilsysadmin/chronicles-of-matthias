@@ -1358,6 +1358,39 @@ describe('Terra scenery', () => {
     g.dispose();
   });
 
+  it.each([false, true])('adds tiny coherent fungi colonies to existing fallen wood without another mesh (coarse=%s)', coarsePointer => {
+    const old = chroniclesFallenWoodGeometry({ coarsePointer });
+    const fungi = chroniclesFallenWoodGeometry({ coarsePointer, fungi: true });
+    const repeat = chroniclesFallenWoodGeometry({ coarsePointer, fungi: true });
+    const p = fungi.getAttribute('position'), original = old.getAttribute('position');
+    const c = fungi.getAttribute('color');
+    const extra = coarsePointer ? 12 : 42;
+    expect((p.count - original.count) / 3).toBe(extra);
+    expect(p.array.slice(0, original.array.length)).toEqual(original.array);
+    expect(p.array).toEqual(repeat.getAttribute('position').array);
+    expect(c.array).toEqual(repeat.getAttribute('color').array);
+    const shades = new Set();
+    for (let i = original.count; i < p.count; i++) {
+      expect(p.getY(i)).toBeGreaterThan(0);
+      expect(p.getY(i)).toBeLessThan(0.21);
+      expect(p.getX(i)).toBeGreaterThan(-0.57);
+      expect(p.getX(i)).toBeLessThan(-0.07);
+      expect(p.getZ(i)).toBeGreaterThan(0.14);
+      expect(p.getZ(i)).toBeLessThan(0.35);
+      shades.add([c.getX(i), c.getY(i), c.getZ(i)].join(','));
+    }
+    expect(shades.size).toBe(3);
+    const map = chroniclesMapById('banner-road-first-book');
+    const group = buildTerraScenery({ grid: map.grid, center: { x: 10, y: 7 },
+      biome: map.biome, mapId: map.id, coarsePointer });
+    const log = group.getObjectByName('chronicles-terra-fallenWood');
+    expect(log.geometry.getAttribute('position').array).toEqual(p.array);
+    expect(log.isInstancedMesh).toBe(true);
+    expect(group.children.filter(m => /fungi|mushroom/.test(m.name))).toHaveLength(0);
+    expect(log.castShadow).toBe(false);
+    [old, fungi, repeat].forEach(g => g.dispose());
+  });
+
   it('models low bark, end-grain and moss in one bounded desktop/mobile geometry', () => {
     const desktop = chroniclesFallenWoodGeometry();
     const mobile = chroniclesFallenWoodGeometry({ coarsePointer: true });
