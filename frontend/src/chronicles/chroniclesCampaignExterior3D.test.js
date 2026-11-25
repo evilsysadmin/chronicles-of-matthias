@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerMeadowRootDistance, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerMeadowRootDistance, chroniclesBannerWoodlandDensityShade, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -531,6 +531,24 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(original.material.map.image.height).toBe(panorama.material.map.image.height);
   });
 
+  it('deepens overlapping woodland margins without darkening isolated roots or clearings', () => {
+    const shade = chroniclesBannerWoodlandDensityShade;
+    const isolated = ['.....', '..#..', '.....', '.....', '.....'];
+    const grove = ['.###.', '.###.', '.....', '.....', '.....'];
+    expect(shade(isolated, 2, 2, 1)).toBe(0);
+    expect(shade(grove, 2, 2, 1)).toBeGreaterThan(0.015);
+    expect(shade(grove, 2, 1, 0)).toBe(0);
+    expect(shade(grove, 2, 4, 3)).toBe(0);
+    for (let x = 0; x <= 4; x += 0.1) {
+      for (let y = 0; y <= 4; y += 0.1) {
+        const distance = chroniclesBannerMeadowRootDistance(grove, x, y);
+        const value = shade(grove, x, y, distance);
+        expect(value).toBeGreaterThanOrEqual(0);
+        expect(value).toBeLessThanOrEqual(0.055);
+      }
+    }
+  });
+
   it('shades the real C3 woodland margin continuously on one terrain mesh', () => {
     const map = bannerRoadFirstBook;
     const grid = map.grid;
@@ -575,7 +593,16 @@ describe('Chronicles file-authored exterior renderer', () => {
         if (tile === '#') nearest = Math.min(nearest, Math.hypot(gx - x, gy - y));
       }));
       const red = color.getX(i);
-      const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(nearest, 0.6, 2.8));
+      const smooth = THREE.MathUtils.smoothstep;
+      let cover = 0;
+      grid.forEach((row, gy) => [...row].forEach((tile, gx) => {
+        if (tile === '#') cover += 1 - smooth(Math.hypot(gx - x, gy - y), 0.6, 2.8);
+      }));
+      const densityShade = 0.055 * smooth(nearest, 0.6, 1.2)
+        * (1 - smooth(nearest, 1.2, 2.8)) * smooth(cover, 1, 4);
+      const shade = 0.25 * (1 - smooth(nearest, 0.6, 2.8)) + densityShade;
+      expect(chroniclesBannerWoodlandDensityShade(grid, x, y, nearest))
+        .toBeCloseTo(densityShade, 8);
       const dry = chroniclesBannerMeadowDryness(x, y, nearest);
       const fresh = chroniclesBannerMeadowFreshness(x, y, nearest);
       expect(red).toBeCloseTo(1 - shade - fresh * 0.095, 6);
