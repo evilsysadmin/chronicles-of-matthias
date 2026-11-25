@@ -1183,7 +1183,7 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false, woo
  * geometry and one instanced draw batch across the authored Banner Road.
  * Low to the ground, static and decoration-only; never a new collider.
  */
-export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
+export function chroniclesFallenWoodGeometry({ coarsePointer = false, fungi = false } = {}) {
   const positions = [];
   const colors = [];
   const bark = ['#63513d', '#755e44', '#897455', '#4e4438']
@@ -1243,6 +1243,35 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
     triangle(surface(side, u, v), surface(side, u + 0.16, v),
       surface(side, u + 0.07, side === 0 ? 0.66 : 0.34),
       shade, shade.clone().multiplyScalar(0.85), moss[(i + 1) % moss.length]);
+  }
+  if (fungi) {
+    // A tiny cluster of woodland fungi at the rotten log's lower flank.
+    // Stems and caps share the log's opaque, double-sided material.
+    const stem = new THREE.Color('#c3b798');
+    const cap = new THREE.Color('#b48a52');
+    const shade = new THREE.Color('#8a603c');
+    const clusters = coarsePointer
+      ? [[-0.35, 0.24, 0.16, 0.095]]
+      : [[-0.35, 0.24, 0.16, 0.095], [-0.15, 0.26, 0.115, 0.072],
+        [-0.48, 0.27, 0.09, 0.058]];
+    for (const [x, z, h, r] of clusters) {
+      const base = [x, 0.012, z];
+      const top = [x, h, z];
+      // Two crossed, tapering triangles keep the stem visible from any yaw.
+      triangle([x - 0.018, base[1], z], [x + 0.018, base[1], z], top, stem);
+      triangle([x, base[1], z - 0.018], [x, base[1], z + 0.018], top, stem);
+      const sides = coarsePointer ? 5 : 6;
+      const rim = Array.from({ length: sides }, (_, i) => {
+        const angle = i * Math.PI * 2 / sides;
+        return [x + r * Math.cos(angle), h - r * 0.12, z + r * Math.sin(angle)];
+      });
+      const apex = [x + 0.008, h + r * 0.48, z];
+      for (let i = 0; i < sides; i++) {
+        const next = (i + 1) % sides;
+        triangle(rim[i], apex, rim[next], shade, cap, shade);
+        triangle(rim[next], top, rim[i], shade, stem, shade);
+      }
+    }
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -1307,7 +1336,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
-    fallenWood: () => [chroniclesFallenWoodGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    fallenWood: () => [chroniclesFallenWoodGeometry({ coarsePointer, fungi: woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     // A different low rosette only for B2 walkable foothills. Retains the
