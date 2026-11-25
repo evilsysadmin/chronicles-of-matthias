@@ -1853,8 +1853,19 @@ function buildForestCanopy(blocked, center, { coarsePointer = false, organic = f
   blocked.forEach(({ x, y }) => {
     const [wx, wz] = gridToWorld(x, y, center);
     for (let k = 0; k < perCell; k += 1) {
-      const ox = (cellNoise(x, y, k) - 0.5) * (perCell > 1 ? 2.2 : 0.8);
-      const oz = (cellNoise(y, x, k + 3) - 0.5) * (perCell > 1 ? 2.2 : 0.8);
+      // Slow world-space drift groups neighboring roots into groves.
+      // Paired desktop trees occupy opposite sides of the same cluster;
+      // mobile retains the exact primary root rather than reshuffling it.
+      // All roots remain well inside their original blocked cell.
+      const angle = cellNoise(x, y, 182) * Math.PI * 2;
+      const side = k === 0 ? 1 : -1;
+      const separation = 0.52 + 0.22 * cellNoise(x, y, 183);
+      const groveX = 0.40 * Math.sin(x * 0.53 + y * 0.31);
+      const groveZ = 0.40 * Math.cos(y * 0.49 - x * 0.27);
+      const ox = organic ? groveX + side * Math.cos(angle) * separation
+        : (cellNoise(x, y, k) - 0.5) * (perCell > 1 ? 2.2 : 0.8);
+      const oz = organic ? groveZ + side * Math.sin(angle) * separation
+        : (cellNoise(y, x, k + 3) - 0.5) * (perCell > 1 ? 2.2 : 0.8);
       const scale = 0.85 + cellNoise(x, y, k + 7) * 0.5;
       const yaw = cellNoise(x, y, k + 11) * Math.PI * 2;
       dummy.rotation.set(0, yaw, 0);

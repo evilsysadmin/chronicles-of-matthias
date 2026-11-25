@@ -2146,8 +2146,9 @@ describe('Chronicles file-authored exterior renderer', () => {
         expect(a.elements).toEqual(b.elements);
         a.decompose(pos, q, scale);
         old.getMatrixAt(i, b);
-        expect(a.elements[12]).toBe(b.elements[12]);
-        expect(a.elements[14]).toBe(b.elements[14]);
+        // Root redistribution is visual only: preserve the original cell.
+        expect(Math.round(a.elements[12] / 4)).toBe(Math.round(b.elements[12] / 4));
+        expect(Math.round(a.elements[14] / 4)).toBe(Math.round(b.elements[14] / 4));
         ratios.add(Math.round(scale.x / scale.y * 100));
       }
       expect(ratios.size).toBeGreaterThan(1);
@@ -2159,6 +2160,46 @@ describe('Chronicles file-authored exterior renderer', () => {
         expect([...p.array].every(Number.isFinite)).toBe(true);
         const rim = [...p.array].filter((_, i) => i % 3 === 1);
         expect(new Set(rim.map(y => Math.round(y * 100))).size).toBeGreaterThan(4);
+      }
+    }
+  });
+
+  it('keeps Rookwood paired roots separated and mobile trees in the same groves', () => {
+    const grid = rookwood.grid;
+    const center = { x: 10, y: 7 };
+    const build = coarsePointer => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, { coarsePointer, scenePlan: {
+        mapId: rookwood.id, biome: 'forest', regionKind: 'wilderness', center,
+        width: grid[0].length, height: grid.length, grid, content: [],
+      } });
+      return scene.getObjectByName('chronicles-campaign-forest');
+    };
+    const desktop = build(false), mobile = build(true);
+    const a = new THREE.Matrix4(), b = new THREE.Matrix4(), m = new THREE.Matrix4();
+    const trunks = desktop.children[0];
+    expect(trunks.count).toBe(mobile.children[0].count * 2);
+    for (let i = 0; i < mobile.children[0].count; i++) {
+      trunks.getMatrixAt(2 * i, a);
+      trunks.getMatrixAt(2 * i + 1, b);
+      mobile.children[0].getMatrixAt(i, m);
+      expect(a.elements).toEqual(m.elements);
+      const x = Math.round(a.elements[12] / 4), y = Math.round(a.elements[14] / 4);
+      expect(Math.round(b.elements[12] / 4)).toBe(x);
+      expect(Math.round(b.elements[14] / 4)).toBe(y);
+      const gx = x + center.x, gy = y + center.y;
+      if (grid[gy]?.[gx] !== undefined) expect(grid[gy][gx]).toBe('#');
+      const gap = Math.hypot(a.elements[12] - b.elements[12], a.elements[14] - b.elements[14]);
+      expect(gap).toBeGreaterThanOrEqual(1.04 - 1e-5);
+      expect(gap).toBeLessThanOrEqual(1.48 + 1e-5);
+      for (const pose of [a, b]) {
+        expect(Math.abs(pose.elements[12] - x * 4)).toBeLessThan(1.141);
+        expect(Math.abs(pose.elements[14] - y * 4)).toBeLessThan(1.141);
+      }
+      for (const crowns of desktop.children.slice(1)) {
+        crowns.getMatrixAt(2 * i, m);
+        expect(m.elements[12]).toBe(a.elements[12]);
+        expect(m.elements[14]).toBe(a.elements[14]);
       }
     }
   });
