@@ -2281,6 +2281,23 @@ function addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer) {
   });
 }
 
+// Rookwood has a dedicated canopy renderer, so dress its actual blocked
+// margins independently of the generic biome tree recipes.
+function addRookwoodFallenWood(p, grid, x, y, wx, wz, coarsePointer) {
+  const edges = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
+  if (!edges.length || noise(x, y, 1663) >= (coarsePointer ? 0.13 : 0.24)) return;
+  const [dx, dy] = edges[Math.floor(noise(x, y, 1665) * edges.length)];
+  const size = 1.12 + 0.28 * noise(x, y, 1667);
+  const drift = (noise(x, y, 1669) - 0.5) * 0.32;
+  // A log along the woodland edge leaves the adjacent walking lane clear.
+  p.add('fallenWood', [wx + dx * 0.86 - dy * drift, 0.012,
+    wz + dy * 0.86 + dx * drift], {
+    yaw: (dx ? Math.PI / 2 : 0) + (noise(x, y, 1671) - 0.5) * 0.48,
+    scale: [size, 0.87 + 0.18 * noise(x, y, 1673), size],
+  });
+}
+
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
     // Two short grass clusters in the same walkable cell give the field
@@ -2555,6 +2572,10 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         continue;
       }
       if (tile === '#') {
+        if (inside && dressBlocked && biome === 'forest'
+            && mapId === 'rookwood-first-book' && !clear.has(x + ',' + y)) {
+          addRookwoodFallenWood(p, grid, x, y, wx, wz, coarsePointer);
+        }
         if (!dress || (!dressBlocked && inside)) continue;
         // Mobile keeps the far ring sparse; the playable edge is always full.
         if (!inside && coarsePointer && noise(x, y, 99) < 0.45) continue;
