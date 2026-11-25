@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -559,7 +559,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(mobile.geometry.getAttribute('color').array).toEqual(color.array);
     expect(mobile.geometry.getAttribute('position').array).toEqual(pos.array);
     expect(full.position.y).toBeCloseTo(-0.19);
-    let darkest = 1, brightest = 0, warmest = 0, neutral = 0;
+    let darkest = 1, brightest = 0, warmest = 0, freshest = 0, neutral = 0;
     for (let i = 0; i < pos.count; i += 1) {
       const rawX = pos.getX(i) / 4 + plan.center.x;
       const rawY = pos.getZ(i) / 4 + plan.center.y;
@@ -574,25 +574,27 @@ describe('Chronicles file-authored exterior renderer', () => {
         if (tile === '#') nearest = Math.min(nearest, Math.hypot(gx - x, gy - y));
       }));
       const red = color.getX(i);
-      expect(red).toBeGreaterThanOrEqual(0.75);
+      const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(nearest, 0.6, 2.8));
+      const dry = chroniclesBannerMeadowDryness(x, y, nearest);
+      const fresh = chroniclesBannerMeadowFreshness(x, y, nearest);
+      expect(red).toBeCloseTo(1 - shade - fresh * 0.095, 6);
       expect(red).toBeLessThanOrEqual(1);
       if (nearest < 0.6) expect(red).toBeCloseTo(0.75);
-      if (nearest >= 2.8) expect(red).toBeCloseTo(1);
-      const shade = 1 - red;
-      const dry = chroniclesBannerMeadowDryness(x, y, nearest);
-      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07, 6);
+      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07 - fresh * 0.025, 6);
       expect(color.getZ(i)).toBeCloseTo(1 - shade * 0.65 - dry * 0.18, 6);
       if (nearest <= 1) {
         expect(dry).toBe(0);
         neutral++;
       }
       warmest = Math.max(warmest, dry);
+      freshest = Math.max(freshest, fresh);
       darkest = Math.min(darkest, red);
       brightest = Math.max(brightest, red);
     }
     expect(darkest).toBeLessThan(0.78);
     expect(brightest).toBeGreaterThan(0.98);
     expect(warmest).toBeGreaterThan(0.70);
+    expect(freshest).toBeGreaterThan(0.4);
     expect(neutral).toBeGreaterThan(0);
     full.geometry.computeBoundingBox();
     other.geometry.computeBoundingBox();
@@ -693,6 +695,23 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(chroniclesBannerHorizonRise(10, 7, 21, 15)).toBe(0);
     expect(chroniclesBannerHorizonRise(-1.5, 7, 21, 15)).toBe(0);
     expect(chroniclesBannerHorizonRise(-3.5, 7, 21, 15)).toBeGreaterThan(0.49);
+  });
+
+  it('creates localized cool meadow communities without overriding dry clearings or root shadows', () => {
+    const fresh = chroniclesBannerMeadowFreshness;
+    expect(fresh(4.5, 2.8, 2.8)).toBeGreaterThan(0.95);
+    expect(fresh(15.7, 11.4, 2.8)).toBeGreaterThan(0.95);
+    expect(fresh(5.2, 10.2, 2.8)).toBe(0);
+    expect(fresh(15.4, 2.1, 2.8)).toBe(0);
+    expect(fresh(4.5, 2.8, 0.8)).toBe(0);
+    expect(fresh(4.5, 2.8, 1.5)).toBeCloseTo(0.5, 2);
+    for (let y = 0; y < 15; y++) {
+      for (let x = 0; x < 21; x++) {
+        const value = fresh(x, y, 2.8);
+        expect(value).toBeGreaterThanOrEqual(0);
+        expect(value + chroniclesBannerMeadowDryness(x, y, 2.8)).toBeLessThanOrEqual(1 + 1e-9);
+      }
+    }
   });
 
   it('keeps dry meadow pigments localized and away from shaded forest roots', () => {
