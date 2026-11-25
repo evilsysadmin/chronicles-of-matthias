@@ -321,8 +321,8 @@ try {
       assert.ok(Number(result.crownCount) > 10);
       assert.ok(Number(result.bushCount) > 10);
       // Layered woodland still renders as one instanced crown batch:
-      // five 80-triangle lobes on desktop, three 20-triangle lobes on touch.
-      assert.equal(Number(result.canopyTriangles), width === 1280 ? 480 : 80);
+      // Six 80-triangle lobes on desktop, four 36-triangle lobes on touch.
+      assert.equal(Number(result.canopyTriangles), width === 1280 ? 480 : 144);
       assert.ok(Number(result.canopyTints) > 2,
         'Banner Road needs visibly varied broadleaf foliage');
       assert.ok(Number(result.roadCount) > 20);
