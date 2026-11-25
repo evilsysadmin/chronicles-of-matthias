@@ -60,7 +60,9 @@ const RAMPS = Object.freeze({
   leaves: [0x1f3a19, 0x2f5223, 0x416b2d, 0x58843a, 0x75a04a].map(hex),
   // C3 broadleaf albedo: lift near-black gaps and temper saturated greens.
   // Same clump field and five-level pixel-art ramp, not emissive lighting.
-  woodlandleaves: [0x344b28, 0x456038, 0x587542, 0x708b50, 0x8ca363].map(hex),
+  // v110: real v109 framebuffer shows almost black near foliage.
+  // Lift the shadow and middle pigments, keeping muted yellow-green tips.
+  woodlandleaves: [0x405b32, 0x547044, 0x698751, 0x809b60, 0x98ac72].map(hex),
   // Terra grounds: same meadow noise as grass, without blades or flowers.
   snow: [0x8f9cb0, 0xb6c2d2, 0xd2dbe6, 0xe6edf4, 0xf6f9fc].map(hex),
   sand: [0x9c8458, 0xbea477, 0xd6c091, 0xe8d6aa, 0xf4e8c6].map(hex),
