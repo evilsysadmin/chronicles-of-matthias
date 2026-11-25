@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createChroniclesSkyCloudPanorama } from './chroniclesSkyCloudPanorama.js';
+import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
+import bannerRoad from './maps/banner-road-first-book.json';
 import { addSwordhavenClouds, createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
 import { createChroniclesExteriorDaylight, chroniclesExteriorDaylightProfile } from './chroniclesExteriorDaylight.js';
 import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
@@ -92,6 +94,55 @@ describe('Seamless Terra cloud panorama', () => {
     cloud.geometry.dispose();
     texture.dispose();
     cloud.material.dispose();
+  });
+
+  it.each([false, true])('sculpts only Banner Road cloud bodies with the same periodic atlas and geometry (coarse=%s)', coarse => {
+    const old = createChroniclesSkyCloudPanorama(coarse);
+    const shaped = createChroniclesSkyCloudPanorama(coarse, { woodland: true });
+    const original = old.material.map.image, revised = shaped.material.map.image;
+    const { width, height } = revised;
+    expect([width, height]).toEqual([original.width, original.height]);
+    expect(shaped.geometry.index.count).toBe(old.geometry.index.count);
+    let brighter = 0, stronger = 0, weaker = 0, preserved = 0;
+    let mistChanges = 0, transparentChanges = 0, excessAlpha = 0;
+    for (let y = 0; y < height; y++) {
+      const v = y / (height - 1);
+      const left = y * width * 4, right = left + (width - 1) * 4;
+      expect(revised.data.slice(left, left + 4)).toEqual(revised.data.slice(right, right + 4));
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const alpha = original.data[i + 3], next = revised.data[i + 3];
+        if (v <= 0.57) {
+          for (let channel = 0; channel < 4; channel++) {
+            if (revised.data[i + channel] !== original.data[i + channel]) mistChanges++;
+          }
+          preserved++;
+        }
+        if (alpha === 0 && next !== 0) transparentChanges++;
+        if (next > 235) excessAlpha++;
+        if (v > 0.64 && alpha >= 48 && revised.data[i] > original.data[i] + 6) brighter++;
+        if (next > alpha + 4) stronger++;
+        if (next < alpha - 4) weaker++;
+      }
+    }
+    expect(mistChanges).toBe(0);
+    expect(transparentChanges).toBe(0);
+    expect(excessAlpha).toBe(0);
+    expect(preserved).toBeGreaterThan(width * height * 0.5);
+    expect(brighter).toBeGreaterThan(width);
+    expect(stronger).toBeGreaterThan(width);
+    expect(weaker).toBeGreaterThan(width);
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, { coarsePointer: coarse, scenePlan: {
+      mapId: bannerRoad.id, regionKind: bannerRoad.regionKind, biome: bannerRoad.biome,
+      grid: bannerRoad.grid, center: { x: 10, y: 7 }, landscape: bannerRoad.landscape,
+      scenery: [], content: [],
+    } });
+    const actual = scene.getObjectByName('chronicles-sky-cloud-panorama');
+    // Native buffer equality avoids deep-comparing ~393k individual values.
+    expect(Buffer.compare(Buffer.from(actual.material.map.image.data), Buffer.from(revised.data))).toBe(0);
+    const generic = createSwordhavenSkyDome(new THREE.Vector3(0, 1, 0), coarse);
+    expect(Buffer.compare(Buffer.from(generic.getObjectByName(actual.name).material.map.image.data), Buffer.from(original.data))).toBe(0);
   });
 
   it('stays centred on a moving camera without rotating with player yaw', () => {

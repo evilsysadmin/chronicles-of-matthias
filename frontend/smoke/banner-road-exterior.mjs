@@ -135,8 +135,13 @@ try {
         'Banner Road must create a bounded set of real cloud sprites, not just a distant panorama');
       assert.ok(Number(state.cloudBankOpacity) > 0.53,
         'Real Banner Road clear-day cloud sprites must be visibly lit');
-      assert.ok(Number(state.cloudBankPixelDifference) > 0.6,
-        'Real upper-sky framebuffer must change when nearby cloud banks are hidden');
+      console.log('CHRONICLES_C3_CLOUD_BANK_EVIDENCE width=' + width
+        + ' changed=' + state.cloudBankChangedPixels + ' fraction=' + state.cloudBankChangedFraction
+        + ' contrast=' + state.cloudBankPixelDifference);
+      assert.ok(Number(state.cloudBankChangedFraction) > 0.005
+        && Number(state.cloudBankPixelDifference) > 5,
+        'Real nearby cloud banks must contribute meaningful contrast to >0.5% of the upper-sky region: '
+          + JSON.stringify(state));
       assert.ok(Number(state.skyCloudSampleMinute) > 0,
         'Capture a deterministic clear-day period rather than a random overcast seed');
       assert.equal(Number(state.groundAtlasSize), 128);

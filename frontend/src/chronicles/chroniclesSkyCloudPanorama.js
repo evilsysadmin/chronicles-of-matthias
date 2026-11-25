@@ -29,7 +29,7 @@ function longitudeNoise(u, v, frequency, verticalFrequency) {
   return THREE.MathUtils.lerp(a, b, sy);
 }
 
-export function createChroniclesSkyCloudPanorama(coarsePointer = false) {
+export function createChroniclesSkyCloudPanorama(coarsePointer = false, { woodland = false } = {}) {
   const width = coarsePointer ? 256 : 512;
   const height = coarsePointer ? 96 : 192;
   const rgba = new Uint8Array(width * height * 4);
@@ -83,6 +83,25 @@ export function createChroniclesSkyCloudPanorama(coarsePointer = false) {
       rgba[index + 1] = shade;
       rgba[index + 2] = Math.min(255, shade + 13);
       rgba[index + 3] = Math.round(coverage * 255);
+      if (woodland) {
+        // Keep the same periodic cloud field, but reveal individual cumulus
+        // lobes. Protect the low atmospheric veil and avoid solid grey bands.
+        const body = smooth(0.57, 0.64, v);
+        const core = smooth(0.16, 0.58, coverage);
+        const sculpted = coverage * (0.72 + 0.62 * core);
+        const alpha = THREE.MathUtils.lerp(coverage, Math.min(0.92, sculpted), body);
+        // Brighter tops, cooler bases; the existing weather-aware material
+        // still tints and attenuates the entire atlas throughout the day.
+        const crest = crown * (0.45 + 0.55 * billow);
+        const base = underside * (0.45 + 0.55 * density);
+        const red = rgba[index] + body * (29 * crest - 6 * base);
+        const green = rgba[index + 1] + body * (27 * crest - 3 * base);
+        const blue = rgba[index + 2] + body * (23 * crest + 5 * base);
+        rgba[index] = Math.round(THREE.MathUtils.clamp(red, 0, 255));
+        rgba[index + 1] = Math.round(THREE.MathUtils.clamp(green, 0, 255));
+        rgba[index + 2] = Math.round(THREE.MathUtils.clamp(blue, 0, 255));
+        rgba[index + 3] = Math.round(alpha * 255);
+      }
     }
   }
 

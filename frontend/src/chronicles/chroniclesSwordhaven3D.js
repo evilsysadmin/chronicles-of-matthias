@@ -113,7 +113,7 @@ export function swordhavenSurfaceTexture(kind) {
 
 // The dome moves with the camera but never rotates with it: the sun stays in
 // the same compass direction and the horizon remains stable while walking.
-export function createSwordhavenSkyDome(sunDirection, coarsePointer = false) {
+export function createSwordhavenSkyDome(sunDirection, coarsePointer = false, options = {}) {
   const geometry = new THREE.SphereGeometry(62, 64, 32);
   const coords = geometry.getAttribute('position');
   const colors = [];
@@ -139,7 +139,7 @@ export function createSwordhavenSkyDome(sunDirection, coarsePointer = false) {
   sky.frustumCulled = false;
   // Camera-relative cloud shelves provide 360° coverage without parallax
   // artifacts; existing near sprite banks remain a separate depth cue.
-  sky.add(createChroniclesSkyCloudPanorama(coarsePointer));
+  sky.add(createChroniclesSkyCloudPanorama(coarsePointer, options));
   const solarFacing = new THREE.Quaternion().setFromUnitVectors(
     new THREE.Vector3(0, 0, 1), sunDirection,
   );
