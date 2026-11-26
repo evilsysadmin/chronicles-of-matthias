@@ -1518,6 +1518,37 @@ export function chroniclesMarshReedGeometry() {
   return geometry;
 }
 
+// Weathered columnar basalt: irregular hexagonal crowns and subtly
+// oxidized upper faces, retaining the original six-sided prism budget.
+// The same deformation is applied to duplicated side/cap vertices.
+export function chroniclesVolcanicBasaltGeometry() {
+  const geometry = new THREE.CylinderGeometry(0.42, 0.48, 1, 6);
+  const position = geometry.getAttribute('position');
+  const colors = [];
+  const base = new THREE.Color('#989393');
+  const crown = new THREE.Color('#e2d4c6');
+  const tint = new THREE.Color();
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const t = y + 0.5;
+    const radius = Math.hypot(x, z);
+    const angle = Math.atan2(z, x);
+    const radial = 0.94 + 0.055 * Math.sin(angle * 2 + 0.4)
+      + 0.025 * Math.cos(angle * 3 - 0.3);
+    const erosion = 0.075 + 0.09 * (x / 0.48) + 0.04 * (z / 0.48)
+      + 0.035 * radius * Math.cos(angle * 3 + 0.4);
+    position.setXYZ(i, x * radial, y - t * Math.max(0, erosion), z * radial);
+    tint.copy(base).lerp(crown, t);
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1537,7 +1568,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesSnowRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer, vertexColors: true })],
     crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
-    basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
+    basalt: () => [chroniclesVolcanicBasaltGeometry(), lit(0x8a7c74, { map: texture('rock'), flatShading: true, vertexColors: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
     broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer, woodland }), lit(0xffffff, { map: texture(woodland ? 'woodlandbark' : 'bark', 2, 3) })],
