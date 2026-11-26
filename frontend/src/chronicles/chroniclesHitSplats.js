@@ -5,23 +5,43 @@ import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 // the victim's maximum lost in that one blow, MM3 style.
 export const CHRONICLES_SPLAT_MS = 1400;
 
+// A missing/corrupt snapshot value is not a death or a hit. Numeric
+// strings remain valid for legacy saves; never coerce booleans or arrays.
+function finiteHp(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const hp = Number(value);
+  return Number.isFinite(hp) ? Math.max(0, hp) : null;
+}
+
+function damageBetween(before, after) {
+  const from = finiteHp(before), to = finiteHp(after);
+  return from === null || to === null ? 0 : Math.max(0, from - to);
+}
+
 function share(amount, max) {
-  const ceiling = Math.max(1, Number(max) || 1);
+  const ceiling = Math.max(1, finiteHp(max) ?? 1);
   return Math.max(0, Math.min(1, amount / ceiling));
 }
 
 export function chroniclesHitImpacts(previous, next) {
   if (!previous || !next || previous.mapId !== next.mapId) return [];
+  // A fresh expedition on the same map is not a continuation of a fight.
+  if (previous.runSeed != null && next.runSeed != null && previous.runSeed !== next.runSeed) return [];
   const impacts = [];
-  for (const member of next.party || []) {
-    const before = (previous.party || []).find((entry) => entry.id === member.id);
-    const lost = Math.max(0, Number(before?.hp || 0) - Math.max(0, Number(member.hp || 0)));
+  const priorParty = Array.isArray(previous.party) ? previous.party : [];
+  const seen = new Set();
+  for (const member of Array.isArray(next.party) ? next.party : []) {
+    if (!member?.id || seen.has(member.id)) continue;
+    seen.add(member.id);
+    const before = priorParty.find((entry) => entry?.id === member.id);
+    const lost = damageBetween(before?.hp, member.hp);
     if (lost > 0) impacts.push({ kind: 'party', id: member.id, amount: lost, share: share(lost, member.maxHp) });
   }
   const map = chroniclesMapForState(next);
   for (const enemy of map?.enemies || []) {
-    if (!enemy?.hpKey || previous[enemy.hpKey] === undefined) continue;
-    const lost = Math.max(0, Number(previous[enemy.hpKey] || 0) - Math.max(0, Number(next[enemy.hpKey] || 0)));
+    if (!enemy?.hpKey) continue;
+    const lost = damageBetween(previous[enemy.hpKey], next[enemy.hpKey]);
     if (lost > 0) impacts.push({ kind: 'enemy', id: enemy.id, amount: lost, share: share(lost, enemy.maxHp) });
   }
   return impacts;
