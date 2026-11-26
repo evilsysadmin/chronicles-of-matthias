@@ -147,11 +147,17 @@ func copyDoc(d bson.D) bson.D {
 	return deepCopy(d).(bson.D)
 }
 
-func orDoc(v any) bson.D {
-	if d, ok := v.(bson.D); ok && pyval.Truthy(d) {
-		return copyDoc(d)
+// readDoc returns a document for read-only comparison. Callers that expose
+// or modify the result must use orDoc instead.
+func readDoc(v any) bson.D {
+	if d, ok := v.(bson.D); ok && len(d) > 0 {
+		return d
 	}
 	return bson.D{}
+}
+
+func orDoc(v any) bson.D {
+	return copyDoc(readDoc(v))
 }
 
 func orList(v any) bson.A {
@@ -269,9 +275,9 @@ func terminalReplayMatches(row bson.D, c Checkpoint) bool {
 	return get(row, "currentMapId") == c.MapID &&
 		intEq(intOr(row, "contentVersion", 0), c.ContentVersion) &&
 		get(row, "manifestRevision") == c.ManifestRevision &&
-		pydoc.Equal(orDoc(get(row, "worldFlags")), c.WorldFlags) &&
-		pydoc.Equal(orDoc(get(row, "inventory")), c.Inventory) &&
-		pydoc.Equal(orDoc(get(row, "quests")), c.Quests) &&
+		pydoc.Equal(readDoc(get(row, "worldFlags")), c.WorldFlags) &&
+		pydoc.Equal(readDoc(get(row, "inventory")), c.Inventory) &&
+		pydoc.Equal(readDoc(get(row, "quests")), c.Quests) &&
 		sameSet(get(row, "consumedContentIds"), c.ConsumedContentIDs) &&
 		sameSet(get(row, "claimedRewards"), c.ClaimedRewards)
 }
