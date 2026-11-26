@@ -1428,6 +1428,32 @@ export function chroniclesMarshDeadTrunkGeometry() {
   return geometry;
 }
 
+// Marsh reeds taper into narrow, wind-bent blades instead of uniform rods.
+// Keep the original four-sided topology, stem roots and UV seam. Coast
+// reeds retain their original geometry and material.
+export function chroniclesMarshReedGeometry() {
+  const geometry = new THREE.CylinderGeometry(0.035, 0.05, 1, 4);
+  const position = geometry.getAttribute('position');
+  const colors = [];
+  const root = new THREE.Color('#9da895');
+  const tip = new THREE.Color('#fff3d4');
+  const tint = new THREE.Color();
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const t = y + 0.5;
+    position.setXYZ(i, x * (1 - 0.70 * t) + 0.09 * t,
+      y, z * (1 - 0.35 * t) - 0.04 * t);
+    tint.copy(root).lerp(tip, t);
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1468,7 +1494,9 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     pine: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
-    reed: () => [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
+    reed: () => biome === 'marsh'
+      ? [chroniclesMarshReedGeometry(), lit(0xb2a65e, { vertexColors: true })]
+      : [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     // One batched, opaque water surface per marsh. More rounded on desktop,
     // original 14-gon on touch devices; never casts an implausible shadow.
     pool: () => [new THREE.CylinderGeometry(1, 1, 0.06, coarsePointer ? 14 : 24),
