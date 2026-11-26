@@ -49,7 +49,10 @@ func TestOpenExtraPreservesCandidateOrderAndRNG(t *testing.T) {
 			a, b := newRNG(seed), newRNG(seed)
 			original, count := carveMaze(recipe, a)
 			actual, actualCount := carveMaze(recipe, b)
-			target := (recipe.Width-2)*(recipe.Height-2)
+			capacity := (recipe.Width - 2) * (recipe.Height - 2)
+			// Include partial openings; a fully open grid alone cannot detect
+			// a change in selection order.
+			target := count + int(seed)%(capacity-count+1)
 			want, wantErr := openExtraReference(original, count, target, a)
 			got, gotErr := openExtra(actual, actualCount, target, b)
 			if wantErr != nil || gotErr != nil || got != want ||
