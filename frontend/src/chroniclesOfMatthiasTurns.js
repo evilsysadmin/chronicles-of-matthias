@@ -526,7 +526,19 @@ export function chroniclesChooseEnemyStep(state, enemy) {
   const movement = chroniclesUsesMM3Combat(state)
     && authoredMovement === 'knight-chase' && enemy.visualType !== 'scavenger-knight'
     ? 'cardinal-chase' : authoredMovement;
-  if (movement === 'hold') return null;
+  if (movement === 'hold') {
+    // A stationary ranged creature may be explicitly engaged by an opening
+    // shot or restored initiative. With the MM3 camera locked, it must not
+    // wait indefinitely without a legal firing lane. Keep its authored
+    // exploration and Tactics behavior; do not override chess-piece rules.
+    const engagedCaster = chroniclesUsesMM3Combat(state)
+      && state.phase === 'combat'
+      && enemy.visualType === 'ember-wisp'
+      && chroniclesEnemyAttackReach(enemy) > 1
+      && state.initiative?.order?.some(actor => actor?.kind === 'enemy' && actor.id === enemy.id);
+    return engagedCaster && !chroniclesEnemyCanAttackParty(state, enemy, from)
+      ? chooseCardinalStep(state, enemy, from) : null;
+  }
   if (usesEnemyAwareness(enemy) && !visiblePartyPosition(state, enemy, from)) {
     const memory = lastKnownPartyPosition(state, enemy, from);
     if (memory && movement === 'cardinal-chase') return chooseStepTowardSighting(state, enemy, from, memory);
