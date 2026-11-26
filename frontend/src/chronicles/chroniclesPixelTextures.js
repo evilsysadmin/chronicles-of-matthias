@@ -249,10 +249,22 @@ function sample(kind, x, y, size) {
     const sediment = valueNoise(x, y, size, 11, 89) - 0.5;
     return 0.57 + bank * 0.32 + ripple + sediment * 0.12 + grain * 0.06;
   }
-  if (kind === 'snow' || kind === 'ashland') {
+  if (kind === 'ashland') {
+    // Broad weathered lava plates, muted mineral seams and sparse warm
+    // cinders. All large fields are periodic; keep the existing palette,
+    // tiny atlas and static material rather than adding an emissive layer.
+    const plates = valueNoise(x, y, size, 4, 91) - 0.5;
+    const mineral = valueNoise(x, y, size, 13, 93) - 0.5;
+    const fracture = valueNoise(x, y, size, 7, 95);
+    const fissure = 1 - Math.min(1, Math.abs(fracture - 0.5) / 0.085);
+    const cinder = hash(x, y, 19);
+    if (cinder > 0.997 && plates < 0.08) return { color: 0xd8641e };
+    return 0.54 + plates * 0.48 + mineral * 0.22
+      - fissure * fissure * 0.29 + grain * 0.09;
+  }
+  if (kind === 'snow') {
     const drift = valueNoise(x, y, size, 4, 5) - 0.5;
     const ripple = valueNoise(x, y, size, 9, 6) - 0.5;
-    if (kind === 'ashland' && hash(x, y, 19) > 0.997) return { color: 0xd8641e };
     return 0.55 + drift * 0.5 + ripple * 0.3 + grain * 0.14;
   }
   if (kind === 'masonry' || kind === 'roof' || kind === 'cobble') {
