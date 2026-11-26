@@ -106,7 +106,7 @@ describe('Terra v62 authored ruin no longer masquerades as a giant rock needle',
           expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(0.4);
         }
       }
-      // v61 mountain crag geometry remains untouched, even in E2/B2.
+      // Authored ruins must not substitute or alter the shared crag geometry.
       for (const id of ['terra-e2', 'terra-b2']) {
         const map = chroniclesMapById(id);
         const original = chroniclesMountainCragGeometry({ coarsePointer });
@@ -116,7 +116,9 @@ describe('Terra v62 authored ruin no longer masquerades as a giant rock needle',
         }).getObjectByName('chronicles-terra-crag');
         expect([...live.geometry.getAttribute('position').array])
           .toEqual([...original.getAttribute('position').array]);
-        expect(live.geometry.index.count / 3).toBe(coarsePointer ? 30 : 84);
+        expect([...live.geometry.index.array]).toEqual([...original.index.array]);
+        expect(live.geometry.index.count / 3).toBe(coarsePointer ? 33 : 94);
+        expect(live.geometry.index.count / 3).toBeLessThanOrEqual(coarsePointer ? 40 : 100);
         original.dispose();
       }
     }
