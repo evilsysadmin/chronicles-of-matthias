@@ -49,6 +49,39 @@ describe('MM3 overworld patrols after several exploration steps', () => {
     expect(expired.enemyAwareness?.[deserter.id]).toBeUndefined();
   });
 
+  it('expires MM3 combat memory on actual initiative rounds, even with a fixed legacy counter', () => {
+    const state = {
+      ...createChroniclesState(map.id, null, { rules: 'mm3' }),
+      x: 11, y: 7, phase: 'combat', turnPhase: 'enemy', round: 99,
+      initiative: { round: 4, cursor: 0, order: [
+        { kind: 'enemy', id: deserter.id }, { kind: 'party', id: 'matthias' },
+      ] },
+    };
+    const spotted = chroniclesRememberEnemySight(state, deserter);
+    expect(spotted.enemyAwareness?.[deserter.id]).toMatchObject({
+      x: 11, y: 7, tick: 4, phase: 'combat', mapId: map.id,
+    });
+    const hidden = { ...spotted, x: 1, y: 1 };
+    const atRound = round => ({ ...hidden, initiative: { ...hidden.initiative, round } });
+    expect(chroniclesRememberEnemySight(atRound(6), deserter).enemyAwareness?.[deserter.id])
+      .toEqual(spotted.enemyAwareness[deserter.id]);
+    expect(chroniclesRememberEnemySight(atRound(7), deserter).enemyAwareness?.[deserter.id])
+      .toBeUndefined();
+    expect(chroniclesRememberEnemySight(atRound(3), deserter).enemyAwareness?.[deserter.id])
+      .toBeUndefined();
+    expect(hidden.round).toBe(99);
+    expect(spotted.enemyAwareness[deserter.id].tick).toBe(4);
+  });
+
+  it('keeps the collective combat memory clock outside individual MM3 initiative', () => {
+    const state = { ...createChroniclesState(map.id), x: 11, y: 7,
+      phase: 'combat', turnPhase: 'enemy', round: 8 };
+    const spotted = chroniclesRememberEnemySight(state, deserter);
+    expect(spotted.enemyAwareness?.[deserter.id]?.tick).toBe(8);
+    expect(chroniclesRememberEnemySight({ ...spotted, x: 1, y: 1, round: 11 }, deserter)
+      .enemyAwareness?.[deserter.id]).toBeUndefined();
+  });
+
   it('discards corrupt saved sightings rather than chasing impossible coordinates', () => {
     const hidden = {
       ...createChroniclesState(map.id),

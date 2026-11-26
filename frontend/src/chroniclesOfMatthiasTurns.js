@@ -369,9 +369,16 @@ function awarenessPhase(state) {
 }
 
 function awarenessTick(state) {
-  return awarenessPhase(state) === 'explore'
-    ? Math.floor(Math.max(0, Number(state.explorationEnemySteps || 0)) / 3)
-    : Math.max(0, Number(state.round || 0));
+  if (awarenessPhase(state) === 'explore') {
+    return Math.floor(Math.max(0, Number(state.explorationEnemySteps || 0)) / 3);
+  }
+  // Individual MM3 turns advance initiative.round, not the legacy
+  // collective enemy-phase counter. Otherwise a lost sighting can live
+  // forever while the company fights out of view.
+  const round = chroniclesUsesMM3Combat(state) && state.initiative?.order?.length
+    ? state.initiative.round : state.round;
+  const tick = Number(round ?? 0);
+  return Number.isSafeInteger(tick) && tick >= 0 ? tick : 0;
 }
 
 // Discrete grid ray: walls and solid diagonal corners stop sight. Creatures
