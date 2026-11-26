@@ -814,7 +814,8 @@ export function chroniclesPreviewEnemyTurn(state) {
     if (!events.length) return { enemyId: enemy.id, kind: 'hold', from };
 
     const move = events.find((event) => event.type === 'move') || null;
-    const attack = events.find((event) => event.type === 'attack') || null;
+    const attacks = events.filter((event) => event.type === 'attack');
+    const attack = attacks[0] || null;
     if (attack) {
       return {
         enemyId: enemy.id,
@@ -825,6 +826,18 @@ export function chroniclesPreviewEnemyTurn(state) {
         damage: attack.damage,
         hpLost: attack.fromHp - attack.toHp,
         lethal: attack.toHp === 0,
+        // Preserve the legacy first-strike fields for existing renderers,
+        // but expose the entire committed sequence for multiattack foes.
+        ...(attacks.length > 1 ? {
+          strikes: attacks.map(event => ({
+            targetId: event.targetId,
+            attackName: event.attackName,
+            damage: event.damage,
+            hpLost: event.fromHp - event.toHp,
+            lethal: event.toHp === 0,
+            missed: Boolean(event.missed),
+          })),
+        } : {}),
       };
     }
 
@@ -841,9 +854,9 @@ export function chroniclesPreviewEnemyTurn(state) {
   });
   const attackedMemberIds = [
     ...new Set(
-      intents
-        .filter((intent) => intent.kind === 'attack' || intent.kind === 'move-attack')
-        .map((intent) => intent.targetId),
+      (resolved.enemyTurnEvents || [])
+        .filter(event => event.type === 'attack')
+        .map(event => event.targetId),
     ),
   ];
   return {

@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {chroniclesActiveEnemies,createChroniclesState} from '../chroniclesOfMatthias.js';
-import {chroniclesResolveEnemyActor,chroniclesResolveEnemyTurn} from '../chroniclesOfMatthiasTurns.js';
+import {chroniclesResolveEnemyActor,chroniclesResolveEnemyTurn,chroniclesPreviewEnemyTurn} from '../chroniclesOfMatthiasTurns.js';
 
 const SPIDER='crypt-spider';
 function setup(distance=1){
@@ -84,5 +84,39 @@ describe('MM3 multiattack spider: one turn, separate strikes',()=>{
   const before=createChroniclesState('swordhaven-sewers',null,{rules:'mm3'});
   const goblin=chroniclesActiveEnemies(before).find(e=>e.id==='sewers-goblin-west');
   expect(goblin.attacks).toBeUndefined();
+ });
+});
+
+describe('Enemy intent preview includes complete multiattack receipts', () => {
+ it('matches both actual strikes without mutating state or replacing legacy fields',()=>{
+  const before=setup();
+  const snapshot=JSON.stringify(before);
+  const actual=chroniclesResolveEnemyTurn(before).enemyTurnEvents;
+  expect(actual).toHaveLength(2);
+  const preview=chroniclesPreviewEnemyTurn(before);
+  const intent=preview.intents.find(e=>e.enemyId===SPIDER);
+  expect(intent).toMatchObject({kind:'attack',targetId:actual[0].targetId,damage:actual[0].damage,hpLost:actual[0].fromHp-actual[0].toHp});
+  expect(intent.strikes).toEqual(actual.map(event=>({
+   targetId:event.targetId,attackName:event.attackName,damage:event.damage,
+   hpLost:event.fromHp-event.toHp,lethal:event.toHp===0,missed:Boolean(event.missed),
+  })));
+  expect(preview.attackedMemberIds).toEqual([...new Set(actual.map(event=>event.targetId))]);
+  expect(JSON.stringify(before)).toBe(snapshot);
+ });
+ it('includes a second victim after the first target falls',()=>{
+  const base=setup();
+  const encounter={...base,party:base.party.map(hero=>({...hero,hp:1}))};
+  let found=false;
+  for(let seed=0;seed<100;seed++){
+   const before={...encounter,runSeed:'preview-spider-'+seed};
+   const actual=chroniclesResolveEnemyTurn(before).enemyTurnEvents.filter(e=>e.type==='attack');
+   if(actual.length!==2||actual[0].toHp!==0||actual[0].targetId===actual[1].targetId)continue;
+   const preview=chroniclesPreviewEnemyTurn(before);
+   expect(preview.attackedMemberIds).toEqual(actual.map(e=>e.targetId));
+   expect(preview.intents[0].strikes.map(e=>e.targetId)).toEqual(actual.map(e=>e.targetId));
+   found=true;
+   break;
+  }
+  expect(found).toBe(true);
  });
 });
