@@ -3027,6 +3027,27 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       });
       mesh.instanceColor.needsUpdate = true;
     }
+    // Snowy groves share a continuous frost field across both foliage tiers.
+    // Farther decorative rings converge toward a cool, muted tint while
+    // nearby needles keep more variation. No new geometry or draw batches.
+    if (biome === 'snow' && (part === 'pine' || part === 'pineSnow')) {
+      const snow = part === 'pineSnow';
+      const pale = new THREE.Color(snow ? '#ffffff' : '#e3ebe4');
+      const dark = new THREE.Color(snow ? '#dce7ef' : '#b5c7c0');
+      const distant = new THREE.Color(snow ? '#e5edf4' : '#ccd9dc');
+      const tint = new THREE.Color();
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const frost = 0.5 + 0.5 * Math.sin(x * 0.41 + y * 0.29)
+          * Math.cos(y * 0.37 - x * 0.23);
+        const ring = Math.max(0, -x, x - width + 1, -y, y - grid.length + 1);
+        const depth = ring >= 3 ? 0.55 : ring === 2 ? 0.30 : 0;
+        mesh.setColorAt(index, tint.copy(dark).lerp(pale, frost).lerp(distant, depth));
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     // Native highlands get quiet stone/lichen tonality per real rock, not
     // identical chess-pawn grey boulders. Same single instanced batch and
     // deterministic transforms; authored heath B2 retains its own palette.
