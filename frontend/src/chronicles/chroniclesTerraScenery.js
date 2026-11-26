@@ -1337,6 +1337,31 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false, fungi = fa
   return geometry;
 }
 
+// Wind-shaped snow conifers: retain the existing cone topology and batch,
+// but break its ruler-straight skirt and perfectly vertical summit. Apply
+// identical position-based displacement to the side and cap seam vertices.
+export function chroniclesSnowPineGeometry({ coarsePointer = false } = {}) {
+  const geometry = new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12);
+  const positions = geometry.getAttribute('position');
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+    if (y > 0.49) {
+      positions.setXYZ(i, 0.12, y, -0.045);
+    } else if (x * x + z * z > 0.5) {
+      const angle = Math.atan2(z, x);
+      const scallop = 0.90 + 0.07 * Math.cos(3 * angle + 0.35)
+        + 0.03 * Math.sin(5 * angle - 0.20);
+      const lift = 0.035 * (1 + Math.cos(3 * angle + 0.65));
+      positions.setXYZ(i, x * scallop, y + lift, z * scallop);
+    }
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1374,8 +1399,8 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
         ? chroniclesLayeredShrubGeometry({ coarsePointer, woodland })
         : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
       lit(woodland ? 0xffffff : 0xcbdcbd, { map: texture(woodland ? 'woodlandleaves' : 'leaves', 2, 2), flatShading: coarsePointer })],
-    pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
-    pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
+    pine: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
+    pineSnow: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
     reed: () => [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     // One batched, opaque water surface per marsh. More rounded on desktop,
