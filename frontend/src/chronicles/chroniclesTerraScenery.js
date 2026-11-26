@@ -13,6 +13,34 @@ import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt, chroniclesFoothillTi
 // ever stands on '#' cells, and walkable clutter is kept below knee height.
 // Everything is instanced (one draw call per part) and deterministic.
 
+// Shallow silt-colored margins surrounding darker bog water. Retain
+// the original cylinder topology and its maximum radius, but break the
+// perfectly circular outline with a smooth, deterministic shoreline.
+export function chroniclesMarshPoolGeometry({ coarsePointer = false } = {}) {
+  const geometry = new THREE.CylinderGeometry(1, 1, 0.06, coarsePointer ? 14 : 24);
+  const position = geometry.getAttribute('position');
+  const deep = new THREE.Color('#829a9b');
+  const silt = new THREE.Color('#ded9b6');
+  const tint = new THREE.Color();
+  const colors = [];
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const radius = Math.hypot(x, z);
+    const angle = Math.atan2(z, x);
+    const shore = 0.92 + 0.05 * Math.cos(3 * angle + 0.6)
+      + 0.03 * Math.sin(5 * angle - 0.2);
+    position.setXYZ(i, x * shore, y, z * shore);
+    tint.copy(deep).lerp(silt, Math.min(1, radius));
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 const CELL = 4;
 export const TERRA_SCENERY_MARGIN = 3;
 
@@ -1499,8 +1527,8 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       : [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     // One batched, opaque water surface per marsh. More rounded on desktop,
     // original 14-gon on touch devices; never casts an implausible shadow.
-    pool: () => [new THREE.CylinderGeometry(1, 1, 0.06, coarsePointer ? 14 : 24),
-      lit(0xffffff, { map: texture('bogwater'), roughness: 0.28, metalness: 0.06 })],
+    pool: () => [chroniclesMarshPoolGeometry({ coarsePointer }),
+      lit(0xffffff, { map: texture('bogwater'), roughness: 0.28, metalness: 0.06, vertexColors: true })],
     dune: () => [new THREE.SphereGeometry(1, 10, 6), lit(0xffffff, { map: texture('sand', 2, 2) })],
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
