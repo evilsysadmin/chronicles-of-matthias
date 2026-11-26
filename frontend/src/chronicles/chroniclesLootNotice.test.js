@@ -76,3 +76,39 @@ describe('Chronicles visible loot receipts', () => {
       .toBe('Encuentras: Llave oxidada · 2 × Poción · Gema azul · +1 más');
   });
 });
+
+describe('MM3 gear pickup ownership receipts', () => {
+  const party = [{ id: 'a', name: 'Alicia' }, { id: 'b', name: 'Bruno' }];
+  const state = { combatRules: 'mm3', party, inventory: {}, bagOwners: {} };
+  const sword = { id: 'bronze-sword', name: 'Espada de bronce', quantity: 1 };
+  it('names only the proven recipient of new gear and never assigns pooled gold', () => {
+    const after = { ...state, inventory: { 'bronze-sword': sword, 'crown-gold': { quantity: 3 } },
+      bagOwners: { b: { 'bronze-sword': 1 } } };
+    const original = JSON.stringify(after);
+    const receipt = chroniclesLootNotice(state, after, 'interact');
+    expect(receipt.text).toBe('Encuentras: Espada de bronce (mochila de Bruno) · 3 monedas de oro');
+    expect(receipt.entries[0].owner).toEqual({ memberId: 'b', name: 'Bruno' });
+    expect(receipt.entries[1]).not.toHaveProperty('owner');
+    expect(JSON.stringify(after)).toBe(original);
+  });
+  it('uses the canonical inferred bag for ownerless loot, not an assumed first hero', () => {
+    const before = { ...state, inventory: { potion: { quantity: 1 } }, bagOwners: { a: { potion: 1 } } };
+    const after = { ...before, inventory: { ...before.inventory, 'bronze-sword': sword } };
+    expect(chroniclesLootNotice(before, after, 'attack').entries[0].owner)
+      .toEqual({ memberId: 'b', name: 'Bruno' });
+  });
+  it('omits an ambiguous recipient for split or reallocated gear', () => {
+    const two = { ...sword, quantity: 2 };
+    const split = { ...state, inventory: { 'bronze-sword': two }, bagOwners: { a: { 'bronze-sword': 1 }, b: { 'bronze-sword': 1 } } };
+    expect(chroniclesLootNotice(state, split, 'interact').entries[0]).not.toHaveProperty('owner');
+    const before = { ...state, inventory: { 'bronze-sword': sword }, bagOwners: { a: { 'bronze-sword': 1 } } };
+    const after = { ...state, inventory: { 'bronze-sword': two }, bagOwners: { b: { 'bronze-sword': 2 } } };
+    expect(chroniclesLootNotice(before, after, 'attack').entries[0]).not.toHaveProperty('owner');
+    expect(chroniclesLootNotice(state, { ...split, combatRules: 'tactics' }, 'interact').entries[0]).not.toHaveProperty('owner');
+  });
+  it('does not fabricate loot from coerced malformed quantities', () => {
+    for (const quantity of [true, [1], 1.5, Infinity, 10000, '']) {
+      expect(chroniclesLootNotice(state, { ...state, inventory: { 'bronze-sword': { ...sword, quantity } } }, 'interact')).toBeNull();
+    }
+  });
+});
