@@ -104,3 +104,27 @@ describe('MM3 effective protection preview', () => {
     expect(chroniclesDefenseSwapPreview({ ...base, combatRules: 'tactics' }, 'matthias', 'iron-shield')).toBeNull();
   });
 });
+
+describe('Weapon swap cross-mode effects', () => {
+  it('reports the real loss of missile accuracy when a two-handed weapon stows the shield', () => {
+    const state = company();
+    const original = JSON.stringify(state);
+    const preview = chroniclesGearSwapPreview(state, 'matthias', 'iron-staff');
+    const before = chroniclesPartyAttackStats(state, 'matthias', 'missile');
+    const hypothetical = { ...state, equipment: { ...state.equipment,
+      matthias: { weapon: 'iron-staff', missile: 'wooden-bow' } } };
+    const after = chroniclesPartyAttackStats(hypothetical, 'matthias', 'missile');
+    expect(preview.otherMode).toBe('missile');
+    expect(after.toHit).toBeLessThan(before.toHit);
+    expect(preview.otherStats).toContainEqual({ key: 'toHit', label: 'Acierto',
+      before: before.toHit, after: after.toHit, delta: after.toHit - before.toHit });
+    expect(JSON.stringify(state)).toBe(original);
+  });
+  it('does not invent cross-mode effects for an ordinary missile swap or an empty missile slot', () => {
+    const state = company();
+    expect(chroniclesGearSwapPreview(state, 'matthias', 'bronze-sling').otherStats).toEqual([]);
+    const unarmed = { ...state, equipment: { ...state.equipment,
+      matthias: { weapon: 'bronze-sword', shield: 'iron-shield' } } };
+    expect(chroniclesGearSwapPreview(unarmed, 'matthias', 'iron-staff').otherStats).toEqual([]);
+  });
+});
