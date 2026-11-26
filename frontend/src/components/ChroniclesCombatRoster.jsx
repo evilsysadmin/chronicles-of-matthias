@@ -50,24 +50,35 @@ function ThreatCue({ bearing }) {
 
 // Reflect the active hero's actual A/S target, never merely a front-facing
 // bystander. Side/rear engaged enemies can be attacked without rotating.
-export function chroniclesRosterActionTarget(state) {
-  if (state?.combatRules !== 'mm3' || !state?.initiative) return null;
+export function chroniclesRosterActionTargets(state) {
+  if (state?.combatRules !== 'mm3' || !state?.initiative) return [];
   const actor = chroniclesCurrentInitiativeActor(state.initiative);
-  if (!chroniclesMM3TurnActionReady(state, actor?.id)) return null;
-  const mode = chroniclesAttackMode(state, actor.id);
-  const target = mode === 'missile'
-    ? chroniclesCombatMissileTarget(state, chroniclesPartyAttackStats(state, actor.id, 'missile').reach)
-    : chroniclesCombatMeleeTarget(state);
-  return target ? { id: target.enemy.id, mode } : null;
+  if (!chroniclesMM3TurnActionReady(state, actor?.id)) return [];
+  const melee = chroniclesCombatMeleeTarget(state);
+  const reach = chroniclesPartyAttackStats(state, actor.id, 'missile').reach;
+  // A hero without a ranged weapon has reach zero. Do not query the
+  // targeting fallback or announce a shot for an unarmed missile slot.
+  const missile = reach > 0 ? chroniclesCombatMissileTarget(state, reach) : null;
+  return [
+    ...(melee ? [{ id: melee.enemy.id, mode: 'melee' }] : []),
+    ...(missile ? [{ id: missile.enemy.id, mode: 'missile' }] : []),
+  ];
 }
 
-function EnemyList({ foes, state, targetId, targetMode, bearingById }) {
+export function chroniclesRosterActionTarget(state) {
+  const targets = chroniclesRosterActionTargets(state);
+  if (!targets.length) return null;
+  const actor = chroniclesCurrentInitiativeActor(state.initiative);
+  return targets.find(target => target.mode === chroniclesAttackMode(state, actor.id)) || null;
+}
+
+function EnemyList({ foes, state, targetId, actionTargets, bearingById }) {
   return (
     <ol aria-label="Enemigos en combate">
       {foes.map((enemy) => {
         const hp = Number(state[enemy.hpKey] || 0);
         const bearing = bearingById.get(enemy.id);
-        const actionable = enemy.id === targetId ? targetMode : null;
+        const modes = actionTargets.filter(target => target.id === enemy.id).map(target => target.mode);
         return (
           <li key={enemy.id}
             data-band={chroniclesHealthBand(hp, enemy.maxHp)}
@@ -76,10 +87,10 @@ function EnemyList({ foes, state, targetId, targetMode, bearingById }) {
             title={`${enemy.name}: ${hp}/${enemy.maxHp} PV${bearing ? ` · ${BEARING_LABEL[bearing].full}` : ''}`}>
             {enemy.name}
             <ThreatCue bearing={bearing} />
-            {actionable && <small className="chronicles-combat-roster__bearing"
-              data-chronicles-target-mode={actionable} role="note">
-              {actionable === 'melee' ? '⚔ A · AL ALCANCE' : '➶ S · A TIRO'}
-            </small>}
+            {modes.map(mode => <small key={mode} className="chronicles-combat-roster__bearing"
+              data-chronicles-target-mode={mode} role="note">
+              {mode === 'melee' ? '⚔ A · AL ALCANCE' : '➶ S · A TIRO'}
+            </small>)}
           </li>
         );
       })}
@@ -96,7 +107,8 @@ export default function ChroniclesCombatRoster({ state }) {
       && (!engaged.size || engaged.has(enemy.id)));
   if (!foes.length) return null;
 
-  const actionTarget = chroniclesRosterActionTarget(state);
+  const actionTargets = chroniclesRosterActionTargets(state);
+  const actionTarget = actionTargets[0];
   const targetId = state.combatRules === 'mm3' ? actionTarget?.id
     : chroniclesEnemyTargetAhead(state, 3)?.enemy?.id;
   const count = `Combate · ${foes.length} ${foes.length === 1 ? 'enemigo' : 'enemigos'}`;
@@ -112,7 +124,7 @@ export default function ChroniclesCombatRoster({ state }) {
           <strong>{count}</strong>
           <ThreatCue bearing={warning} />
         </header>
-        <EnemyList foes={foes} state={state} targetId={targetId} targetMode={actionTarget?.mode} bearingById={bearingById} />
+        <EnemyList foes={foes} state={state} targetId={targetId} actionTargets={actionTargets} bearingById={bearingById} />
       </div>
       <details className="chronicles-combat-roster__compact">
         <summary>
@@ -122,7 +134,7 @@ export default function ChroniclesCombatRoster({ state }) {
           </span>
           <span className="chronicles-combat-roster__chevron" aria-hidden="true">▾</span>
         </summary>
-        <EnemyList foes={foes} state={state} targetId={targetId} targetMode={actionTarget?.mode} bearingById={bearingById} />
+        <EnemyList foes={foes} state={state} targetId={targetId} actionTargets={actionTargets} bearingById={bearingById} />
       </details>
     </section>
   );
