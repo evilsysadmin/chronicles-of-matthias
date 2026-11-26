@@ -268,15 +268,18 @@ export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
     const vertices = [];
     const uvs = [];
     const indices = [];
-    const rings = [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.05, 1]];
+    // Broad, weathered summits rather than needle-like truncated cones.
+    const rings = [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.18, 1]];
     rings.forEach(([radius, rise], ringIndex) => {
       for (let i = 0; i < sides; i += 1) {
         const angle = i * Math.PI * 2 / sides + 0.31 * peakIndex;
         const rough = 1 + 0.115 * Math.sin(i * 2.9 + ringIndex * 1.8 + peakIndex);
         const shift = rise * (peakIndex === 0 ? -0.10 : 0.13);
+        const summitTilt = ringIndex === rings.length - 1
+          ? 0.045 * Math.sin(angle + peakIndex * 1.7) : 0;
         vertices.push(
           peak.x + (Math.cos(angle) * radius * rough + shift) * peak.width,
-          peak.height * (rise + (ringIndex > 0 && ringIndex < 3
+          peak.height * (rise + summitTilt + (ringIndex > 0 && ringIndex < 3
             ? 0.065 * Math.sin(i * 2.2 + peakIndex) : 0)),
           peak.z + Math.sin(angle) * radius * rough * peak.width,
         );
@@ -292,6 +295,12 @@ export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
         }
       }
     });
+    // Close the exposed summit with an upward-wound fan. Reuse existing
+    // vertices; 94 desktop / 33 mobile triangles stay under 100 / 40.
+    const summit = (rings.length - 1) * sides;
+    for (let i = 1; i < sides - 1; i++) {
+      indices.push(summit, summit + i + 1, summit + i);
+    }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
