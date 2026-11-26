@@ -59,3 +59,33 @@ func TestGeneratorAndEncoderAgreeOnRecipeValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestVerbNormalizationPreservesLegacyCommaAndErrorSemantics(t *testing.T) {
+	base := Recipe{Theme: "crypt", Width: 15, Height: 11, Enemies: 3, Difficulty: 2, Seed: 17}
+	for _, tc := range []struct {
+		input []string
+		want  string
+		err   string
+	}{
+		{input: nil, err: "verbs must contain at least one entry"},
+		{input: []string{"", " , "}, err: "verbs must contain at least one entry"},
+		{input: []string{" HUNT, ", ",lever", " KEYs "}, want: "hunt,lever,keys"},
+		{input: []string{"unknown", "hunt", "HUNT"}, err: "verbs must be unique"},
+		{input: []string{"unknown", "hunt", "lever", "keys", "patrol"}, err: "verbs supports at most 4 entries"},
+		{input: []string{"hunt", "unknown"}, err: "unsupported verb: unknown"},
+		{input: []string{"hunt", "lever", "keys", "patrol"}, want: "hunt,lever,keys,patrol"},
+	} {
+		recipe := base
+		recipe.Verbs = tc.input
+		got, err := Validate(recipe)
+		if tc.err != "" {
+			if err == nil || err.Error() != tc.err {
+				t.Fatalf("verbs %q: got %v; want %q", tc.input, err, tc.err)
+			}
+			continue
+		}
+		if err != nil || strings.Join(got.Verbs, ",") != tc.want {
+			t.Fatalf("verbs %q: got %v, %v; want %s", tc.input, got.Verbs, err, tc.want)
+		}
+	}
+}
