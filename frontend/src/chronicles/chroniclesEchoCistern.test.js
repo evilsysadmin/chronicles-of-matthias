@@ -139,7 +139,7 @@ describe('Chronicles Echo Cistern', () => {
     expect(chroniclesInventoryEntries(state).map((item) => item.id)).not.toContain('bellwright-oil');
     expect(chroniclesQuestEntries(state).find((quest) => quest.id === 'drain-echo-cistern')).toMatchObject({
       status: 'active',
-      objective: 'Activa la compuerta restante y derrota al Custodio de la Cisterna.',
+      objective: 'Activa las compuertas que falten, derrota al Custodio y recupera el sello del desagüe.',
     });
   });
 
@@ -230,4 +230,47 @@ describe('Chronicles Echo Cistern', () => {
     );
   });
 
+});
+
+describe('Independent Cistern sluice routes', () => {
+  const objective = 'Activa las compuertas que falten, derrota al Custodio y recupera el sello del desagüe.';
+  it.each(['east', 'west'])('keeps the objective valid when %s is opened first', first => {
+    let state = chroniclesMapTransitionState(createChroniclesState(), 'echo-cistern');
+    state = chroniclesTacticsUse(state, 'cistern-inscription');
+    state = { ...state, westSiltHoundHp: 0, eastDrainSpiderHp: 0 };
+    const open = (current, side) => chroniclesTacticsUse({
+      ...current, x: side === 'west' ? 3 : 9, y: 5,
+    }, side + '-sluice-wheel');
+    const check = (current, side) => {
+      const quest = chroniclesQuestEntries(current).find(entry => entry.id === 'drain-echo-cistern');
+      expect(quest.objective).toBe(objective);
+      expect(quest.description).toContain(side === 'west' ? 'oeste' : 'este');
+    };
+    const one = open(state, first);
+    expect(one.westSluiceSet).toBe(first === 'west');
+    expect(one.eastSluiceSet).toBe(first === 'east');
+    check(one, first);
+    const other = first === 'west' ? 'east' : 'west';
+    const both = open(one, other);
+    expect(both.westSluiceSet && both.eastSluiceSet).toBe(true);
+    check(both, other);
+    const claimed = chroniclesTacticsUse({
+      ...both, cisternWardenHp: 0, x: 6, y: 8,
+    }, 'echo-drain-seal');
+    expect(claimed.echoSealClaimed).toBe(true);
+    expect(chroniclesQuestEntries(claimed).find(entry => entry.id === 'drain-echo-cistern').objective)
+      .toBe('Lleva el Sello del Desagüe hasta la salida superior.');
+  });
+  it('does not offer or spend the optional oil when the normal west wheel is already free', () => {
+    const base = chroniclesMapTransitionState(createChroniclesState(), 'echo-cistern');
+    const before = chroniclesApplyContentEffects({
+      ...base, westSiltHoundHp: 0, x: 3, y: 5,
+    }, [{ type: 'grant-item', itemId: 'bellwright-oil', quantity: 1 }]);
+    expect(chroniclesTacticsInteractions(before).map(entry => entry.id)).toContain('west-sluice-wheel');
+    expect(chroniclesTacticsInteractions(before).map(entry => entry.id)).not.toContain('west-sluice-oil');
+    expect(chroniclesTacticsUse(before, 'west-sluice-oil').inventory).toEqual(before.inventory);
+    const opened = chroniclesTacticsUse(before, 'west-sluice-wheel');
+    expect(opened.westSluiceSet).toBe(true);
+    expect(opened.inventory['bellwright-oil'].quantity).toBe(1);
+  });
 });

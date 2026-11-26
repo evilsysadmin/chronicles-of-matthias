@@ -286,8 +286,8 @@
             "type": "advance-quest",
             "questId": "drain-echo-cistern",
             "title": "Drenar la Cisterna",
-            "description": "Una compuerta ya desvía el caudal de la cisterna.",
-            "objective": "Activa ambas compuertas y derrota al Custodio de la Cisterna.",
+            "description": "La compuerta oeste desvía el caudal de la cisterna.",
+            "objective": "Activa las compuertas que falten, derrota al Custodio y recupera el sello del desagüe.",
             "order": 90
           }
         ],
@@ -312,6 +312,10 @@
           "quantity": 1
         },
         {
+          "key": "westSiltHoundHp",
+          "gte": 1
+        },
+        {
           "key": "westSluiceSet",
           "equals": false
         }
@@ -333,7 +337,7 @@
             "questId": "drain-echo-cistern",
             "title": "Drenar la Cisterna",
             "description": "El Aceite de Campanero ha abierto una compuerta sin necesidad de limpiar su guardián.",
-            "objective": "Activa la compuerta restante y derrota al Custodio de la Cisterna.",
+            "objective": "Activa las compuertas que falten, derrota al Custodio y recupera el sello del desagüe.",
             "order": 90
           }
         ],
@@ -374,8 +378,8 @@
             "type": "advance-quest",
             "questId": "drain-echo-cistern",
             "title": "Drenar la Cisterna",
-            "description": "Las dos compuertas ya están activadas.",
-            "objective": "Derrota al Custodio de la Cisterna y reclama el sello del desagüe.",
+            "description": "La compuerta este desvía el caudal de la cisterna.",
+            "objective": "Activa las compuertas que falten, derrota al Custodio y recupera el sello del desagüe.",
             "order": 90
           }
         ],
@@ -383,7 +387,7 @@
         "journal": {
           "id": "east-sluice-opened",
           "title": "Compuerta este",
-          "body": "La segunda compuerta desvía el caudal y deja expuesto el mecanismo central.",
+          "body": "La compuerta oriental queda abierta; el mecanismo central requiere también la occidental.",
           "sigil": "E"
         }
       }
