@@ -78,15 +78,22 @@ function EnemyList({ foes, state, targetId, actionTargets, bearingById }) {
       {foes.map((enemy) => {
         const hp = Number(state[enemy.hpKey] || 0);
         const bearing = bearingById.get(enemy.id);
+        // Authored strike budget, not a prediction of rolls or damage.
+        const strikes = Array.isArray(enemy.attacks) ? enemy.attacks.slice(0, 3) : [];
+        const multi = strikes.length > 1 ? `Hasta ${strikes.length} golpes por acción: ${strikes.join(' · ')}` : '';
         const modes = actionTargets.filter(target => target.id === enemy.id).map(target => target.mode);
         return (
           <li key={enemy.id}
             data-band={chroniclesHealthBand(hp, enemy.maxHp)}
             data-target={enemy.id === targetId ? 'true' : undefined}
             data-threat-bearing={bearing || undefined}
-            title={`${enemy.name}: ${hp}/${enemy.maxHp} PV${bearing ? ` · ${BEARING_LABEL[bearing].full}` : ''}`}>
+            title={`${enemy.name}: ${hp}/${enemy.maxHp} PV${bearing ? ` · ${BEARING_LABEL[bearing].full}` : ''}${multi ? ` · ${multi}` : ''}`}>
             {enemy.name}
             <ThreatCue bearing={bearing} />
+            {multi && <small className="chronicles-combat-roster__bearing"
+              data-chronicles-multiattack={strikes.length} role="note" aria-label={multi} title={multi}>
+              ×{strikes.length} GOLPES
+            </small>}
             {modes.map(mode => <small key={mode} className="chronicles-combat-roster__bearing"
               data-chronicles-target-mode={mode} role="note">
               {mode === 'melee' ? '⚔ A · AL ALCANCE' : '➶ S · A TIRO'}
@@ -101,10 +108,10 @@ function EnemyList({ foes, state, targetId, actionTargets, bearingById }) {
 export default function ChroniclesCombatRoster({ state }) {
   if (!state?.initiative) return null;
   const engaged = new Set((state.initiative.order || [])
-    .filter(actor => actor.kind === 'enemy').map(actor => actor.id));
+    .filter(actor => actor?.kind === 'enemy').map(actor => actor.id));
   const foes = chroniclesActiveEnemies(state)
     .filter(enemy => Number(state[enemy.hpKey] || 0) > 0
-      && (!engaged.size || engaged.has(enemy.id)));
+      && engaged.has(enemy.id));
   if (!foes.length) return null;
 
   const actionTargets = chroniclesRosterActionTargets(state);
