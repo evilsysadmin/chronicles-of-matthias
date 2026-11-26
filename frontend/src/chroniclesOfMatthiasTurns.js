@@ -637,6 +637,28 @@ function turnSummary(state, events) {
   return state.message;
 }
 
+// Individual MM3 turns can identify the actual creature and victims.
+// Use the committed event deltas, not nominal damage (overkill can differ).
+// The collective legacy turn keeps its existing aggregate narrative.
+function individualEnemySummary(state, enemy, events, withdrew) {
+  if (partyDefeated(state)) return turnSummary(state, events);
+  const name = enemy.name.charAt(0).toUpperCase() + enemy.name.slice(1);
+  const attacks = events.filter(event => event.type === 'attack');
+  if (attacks.length) {
+    const details = attacks.map(event => {
+      const victim = state.party.find(member => member.id === event.targetId)?.name || 'la compañía';
+      const action = event.attackName || 'Ataque';
+      const lost = Math.max(0, event.fromHp - event.toHp);
+      return `${action} a ${victim}: ${event.missed ? 'falla' : lost > 0 ? `−${lost} PV` : 'sin daño'}${event.fromHp > 0 && event.toHp === 0 ? ' (cae)' : ''}`;
+    });
+    return `${name} · ${details.join(' · ')}.`;
+  }
+  if (events.some(event => event.type === 'move')) {
+    return `${name} ${withdrew ? 'retrocede' : 'se mueve'}; no ataca este turno.`;
+  }
+  return `${name} no puede actuar este turno.`;
+}
+
 // Paralizar: a held enemy spends its action shaking the spell off.
 function paralysedTurns(state, enemy) {
   return Math.max(0, Math.floor(Number(state?.enemyStatus?.[enemy.id]?.paralyzed) || 0));
@@ -682,7 +704,9 @@ export function chroniclesResolveEnemyActor(state, enemyId) {
     phase: defeated ? 'defeated' : next.phase,
     turnPhase: defeated ? 'party' : next.turnPhase,
     enemyTurnEvents: [...events],
-    message: turnSummary(next, events),
+    message: chroniclesUsesMM3Combat(next) && next.initiative
+      ? individualEnemySummary(next, enemy, events, Boolean(disengageStep))
+      : turnSummary(next, events),
   };
 }
 

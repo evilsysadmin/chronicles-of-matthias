@@ -27,14 +27,46 @@ describe('MM3 multiattack spider: one turn, separate strikes',()=>{
   expect(after.initiative).toEqual(before.initiative);
   expect(after.party.reduce((n,m)=>n+m.hp,0)).toBeLessThanOrEqual(
    before.party.reduce((n,m)=>n+m.hp,0));
-  for(const event of after.enemyTurnEvents)
+  expect(after.message).toContain(creature.name.charAt(0).toUpperCase()+creature.name.slice(1));
+  for(const event of after.enemyTurnEvents){
    expect(event.fromHp-event.toHp).toBe(Math.min(event.fromHp,event.damage));
+   const victim=before.party.find(hero=>hero.id===event.targetId);
+   const lost=event.fromHp-event.toHp;
+   const result=event.missed?'falla':lost>0?`−${lost} PV`:'sin daño';
+   expect(after.message).toContain(`${event.attackName} a ${victim.name}: ${result}`);
+  }
  });
  it('approaches one tile without a free bite or zarpazo',()=>{
   const before=setup(2);
   const after=chroniclesResolveEnemyActor(before,SPIDER);
   expect(after.enemyTurnEvents.map(e=>e.type)).toEqual(['move']);
   expect(after.party).toEqual(before.party);
+  expect(after.message).toContain('se mueve; no ataca este turno.');
+ });
+ it('reports exact committed damage rather than nominal overkill',()=>{
+  const base=createChroniclesState('menagerie-of-ash',null,{rules:'mm3'});
+  const foes=chroniclesActiveEnemies(base);
+  const hound=foes.find(enemy=>enemy.id==='bone-hound');
+  expect(hound.retaliation).toBe(2);
+  const encounter={...base,x:1,y:2,direction:0,phase:'combat',turnPhase:'enemy',
+   ...Object.fromEntries(foes.filter(enemy=>enemy.id!==hound.id).map(enemy=>[enemy.hpKey,0])),
+   enemyPositions:{[hound.id]:{x:1,y:1}},
+   initiative:{round:1,cursor:0,order:[{kind:'enemy',id:hound.id},{kind:'party',id:'matthias'}]},
+   party:base.party.map(hero=>({...hero,hp:1}))};
+  let found=false;
+  // The actual roll is keyed by runSeed/turns, not initiative.round.
+  for(let seed=0;seed<100;seed++){
+   const before={...encounter,runSeed:'hound-overkill-'+seed};
+   const after=chroniclesResolveEnemyActor(before,hound.id);
+   const overkill=after.enemyTurnEvents.find(e=>e.type==='attack'&&e.fromHp===1&&e.damage===2&&e.toHp===0);
+   if(!overkill)continue;
+   const victim=before.party.find(hero=>hero.id===overkill.targetId);
+   expect(after.message).toContain(`Ataque a ${victim.name}: −1 PV (cae)`);
+   expect(after.message).not.toContain('−2 PV');
+   found=true;
+   break;
+  }
+  expect(found).toBe(true);
  });
  it('paralysis cancels the full attack sequence',()=>{
   const before=setup();
