@@ -73,9 +73,9 @@ func get(d bson.D, key string) any {
 }
 
 func strings(items []string) bson.A {
-	out := bson.A{}
-	for _, s := range items {
-		out = append(out, s)
+	out := make(bson.A, len(items))
+	for i, s := range items {
+		out[i] = s
 	}
 	return out
 }
@@ -254,7 +254,10 @@ func stringSet(v any) map[string]int {
 
 func sameSet(stored any, given []string) bool {
 	a := stringSet(stored)
-	b := stringSet(strings(given))
+	b := make(map[string]int, len(given))
+	for _, s := range given {
+		b[s]++
+	}
 	if len(a) != len(b) {
 		return false
 	}
