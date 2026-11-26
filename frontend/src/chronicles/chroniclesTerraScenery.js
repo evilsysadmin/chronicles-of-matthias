@@ -13,6 +13,33 @@ import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt, chroniclesFoothillTi
 // ever stands on '#' cells, and walkable clutter is kept below knee height.
 // Everything is instanced (one draw call per part) and deterministic.
 
+// Coastal dunes have an asymmetric windward slope and a displaced crest.
+// Reuse the original sphere topology and UVs; keep the footprint inside
+// its original axis-aligned envelope. Pigments distinguish sheltered
+// damp sand at the base from exposed pale sand on the ridge.
+export function chroniclesCoastalDuneGeometry() {
+  const geometry = new THREE.SphereGeometry(1, 10, 6);
+  const position = geometry.getAttribute('position');
+  const damp = new THREE.Color('#c3b49b');
+  const sunlit = new THREE.Color('#ffffff');
+  const tint = new THREE.Color();
+  const colors = [];
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const crest = Math.max(0, y);
+    position.setXYZ(i, x * (0.87 + 0.06 * Math.cos(z * 3.2)) + 0.16 * crest * crest,
+      y, z * (0.91 + 0.06 * Math.sin(x * 3.8 + 0.4)));
+    tint.copy(damp).lerp(sunlit, THREE.MathUtils.smoothstep(y, -0.1, 0.85));
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 const CELL = 4;
 export const TERRA_SCENERY_MARGIN = 3;
 
@@ -1501,7 +1528,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     // original 14-gon on touch devices; never casts an implausible shadow.
     pool: () => [new THREE.CylinderGeometry(1, 1, 0.06, coarsePointer ? 14 : 24),
       lit(0xffffff, { map: texture('bogwater'), roughness: 0.28, metalness: 0.06 })],
-    dune: () => [new THREE.SphereGeometry(1, 10, 6), lit(0xffffff, { map: texture('sand', 2, 2) })],
+    dune: () => [chroniclesCoastalDuneGeometry(), lit(0xffffff, { map: texture('sand', 2, 2), vertexColors: true })],
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
