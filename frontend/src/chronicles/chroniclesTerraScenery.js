@@ -2990,12 +2990,20 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     if (naturalHighlands && (part === 'boulder' || part === 'crag')) {
       const shades = ['#ffffff', '#e5e9e2', '#d9e2d8', '#f0e6da', '#e4e6d7']
         .map(hex => new THREE.Color(hex));
+      // Quiet, cooler and less contrasting pigments on distant decorative rings.
+      // The near ridge and all authored map cells keep their exact old tint.
+      const haze = new THREE.Color('#e1e7ed');
+      const tint = new THREE.Color();
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7),
           part === 'boulder' ? 375 : 377);
-        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
-          Math.floor(seed * shades.length))]);
+        const base = shades[Math.min(shades.length - 1, Math.floor(seed * shades.length))];
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const ring = Math.max(0, -x, x - width + 1, -y, y - grid.length + 1);
+        const strength = ring >= 3 ? 0.50 : ring === 2 ? 0.25 : 0;
+        mesh.setColorAt(index, tint.copy(base).lerp(haze, strength));
       });
       mesh.instanceColor.needsUpdate = true;
     }
