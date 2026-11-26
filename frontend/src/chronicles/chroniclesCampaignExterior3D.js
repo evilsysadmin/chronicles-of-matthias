@@ -1444,7 +1444,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       }
     }
     scene.add(buildForestCanopy([...blocked, ...outskirts], sceneCenter, {
-      coarsePointer, organic: scenePlan.mapId === 'rookwood-first-book',
+      coarsePointer, organic: scenePlan.mapId === 'rookwood-first-book', grid,
     }));
   } else if (wilds) {
     // Blocked cells become scenery; collision is still the grid alone.
@@ -1850,11 +1850,34 @@ export function chroniclesRookwoodCrownGeometry(radius, height, phase = 0) {
   return geometry;
 }
 
-function buildForestCanopy(blocked, center, { coarsePointer = false, organic = false } = {}) {
+// A handful of veteran pines are visual waypoints, not a fourth tree
+// species or a new obstacle. Choose only interior blocked roots visible
+// from a path and keep them separated so their silhouettes stay distinct.
+function rookwoodAncientRoots(grid) {
+  const candidates = [];
+  for (let y = 1; y < grid.length - 1; y++) {
+    for (let x = 1; x < grid[y].length - 1; x++) {
+      if (grid[y][x] !== '#' || ![[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .some(([dx, dy]) => grid[y + dy]?.[x + dx] === '.')) continue;
+      candidates.push({ x, y, score: cellNoise(x, y, 190) });
+    }
+  }
+  candidates.sort((a, b) => b.score - a.score);
+  const selected = [];
+  for (const cell of candidates) {
+    if (selected.some(other => Math.hypot(other.x - cell.x, other.y - cell.y) < 4)) continue;
+    selected.push(cell);
+    if (selected.length === 4) break;
+  }
+  return new Set(selected.map(({ x, y }) => x + ',' + y));
+}
+
+function buildForestCanopy(blocked, center, { coarsePointer = false, organic = false, grid = [] } = {}) {
   const group = new THREE.Group();
   group.name = 'chronicles-campaign-forest';
   const perCell = coarsePointer ? 1 : 2;
   const count = blocked.length * perCell;
+  const ancientRoots = organic ? rookwoodAncientRoots(grid) : new Set();
   const bark = chroniclesPixelTexture('bark');
   bark.repeat.set(2, 3); // ≈16 texels per metre around a trunk
   const trunks = new THREE.InstancedMesh(
@@ -1897,21 +1920,24 @@ function buildForestCanopy(blocked, center, { coarsePointer = false, organic = f
       // Narrow spires, heavy mature crowns and younger trees share all
       // three batches. The footprint never exceeds the old crown radius.
       const age = organic ? cellNoise(x, y, k + 169) : 0.5;
-      const profile = !organic ? [1, 1, 1, 1] : age < 0.34
-        ? [0.70, 1, 0.72, 0.82] : age < 0.72
-          ? [1, 0.92, 0.92, 1] : [0.82, 0.69, 0.80, 0.74];
+      const ancient = k === 0 && ancientRoots.has(x + ',' + y);
+      const profile = !organic ? [1, 1, 1, 1] : ancient
+        ? [0.94, 1.25, 0.87, 1.40] : age < 0.34
+          ? [0.70, 1, 0.72, 0.82] : age < 0.72
+            ? [1, 0.92, 0.92, 1] : [0.82, 0.69, 0.80, 0.74];
       const [width, height, upperWidth, trunkWidth] = profile;
-      const rise = scale * height;
-      dummy.scale.set(scale * trunkWidth, rise, scale * trunkWidth);
+      const treeScale = ancient ? Math.max(scale, 1.12) : scale;
+      const rise = treeScale * height;
+      dummy.scale.set(treeScale * trunkWidth, rise, treeScale * trunkWidth);
       dummy.position.set(wx + ox, 1.6 * rise, wz + oz);
       dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
-      dummy.scale.set(scale * width, rise, scale * width);
+      dummy.scale.set(treeScale * width, rise, treeScale * width);
       dummy.position.set(wx + ox, 4.1 * rise, wz + oz);
       dummy.updateMatrix();
       lower.setMatrixAt(index, dummy.matrix);
-      dummy.scale.set(scale * upperWidth, rise, scale * upperWidth);
-      dummy.rotation.y = yaw + (organic ? 0.46 : 0);
+      dummy.scale.set(treeScale * upperWidth, rise, treeScale * upperWidth);
+      dummy.rotation.y = yaw + (ancient ? 0.78 : organic ? 0.46 : 0);
       dummy.position.set(wx + ox, 5.7 * rise, wz + oz);
       dummy.updateMatrix();
       upper.setMatrixAt(index, dummy.matrix);
