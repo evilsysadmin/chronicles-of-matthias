@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
 
 import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesEnemyAttackTarget } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyAttackTarget, chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesStartInitiativeCombat } from '../chronicles/chroniclesInitiative.js';
 import ChroniclesCombatRoster, { chroniclesHealthBand, chroniclesThreatBearing, chroniclesRosterActionTarget, chroniclesRosterActionTargets } from './ChroniclesCombatRoster.jsx';
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
@@ -240,5 +240,32 @@ describe('Authored creature attack budget in the combat roster', () => {
         ...base, initiative: { round: 1, cursor: 0, order },
       }} />)).toBe('');
     }
+  });
+});
+
+describe('Combat roster paralysis status', () => {
+  it('shows the real remaining skipped enemy actions and suppresses rear danger until release', () => {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const archer = chroniclesActiveEnemies(base).find(enemy => enemy.id === 'banner-road-east-scout');
+    const fight = chroniclesStartInitiativeCombat({
+      ...base, x: 10, y: 3, direction: 0,
+      enemyPositions: { [archer.id]: { x: 10, y: 5 } },
+    }, [archer], { forceEnemyIds: [archer.id], random: () => 0 });
+    expect(chroniclesThreatBearing(fight, archer)).toBe('rear');
+    const held = { ...fight, enemyStatus: { [archer.id]: { paralyzed: 2 } } };
+    const markup = state => renderToStaticMarkup(<ChroniclesCombatRoster state={state} />);
+    expect(chroniclesThreatBearing(held, archer)).toBeNull();
+    expect(markup(held)).not.toContain('data-threat-cue=');
+    expect((markup(held).match(/data-chronicles-paralyzed="2"/g) || []).length).toBe(2);
+    const first = chroniclesResolveEnemyActor(held, archer.id);
+    expect(first.enemyTurnEvents).toEqual([{ type: 'paralyzed', enemyId: archer.id, left: 1 }]);
+    expect(markup(first)).toContain('data-chronicles-paralyzed="1"');
+    expect(markup(first)).not.toContain('data-threat-cue=');
+    const released = chroniclesResolveEnemyActor(first, archer.id);
+    expect(released.enemyTurnEvents).toEqual([{ type: 'paralyzed', enemyId: archer.id, left: 0 }]);
+    expect(released.party).toEqual(held.party);
+    expect(markup(released)).not.toContain('data-chronicles-paralyzed=');
+    expect(chroniclesThreatBearing(released, archer)).toBe('rear');
+    expect(markup(released)).toContain('data-threat-cue="rear"');
   });
 });

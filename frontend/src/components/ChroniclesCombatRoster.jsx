@@ -4,7 +4,7 @@ import {
   chroniclesAttackMode, chroniclesPartyAttackStats, chroniclesMM3TurnActionReady,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesCurrentInitiativeActor } from '../chronicles/chroniclesInitiative.js';
-import { chroniclesEnemyAttackTarget, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyAttackTarget, chroniclesRuntimeEnemyPosition, chroniclesEnemyParalysedTurns } from '../chroniclesOfMatthiasTurns.js';
 
 // A directional warning is earned only by a living, engaged opponent that
 // can actually attack the party from its current valid map cell (respecting
@@ -12,7 +12,8 @@ import { chroniclesEnemyAttackTarget, chroniclesRuntimeEnemyPosition } from '../
 export function chroniclesThreatBearing(state, enemy) {
   if (state?.combatRules !== 'mm3' || !state?.initiative
     || !state.initiative.order?.some(actor => actor.kind === 'enemy' && actor.id === enemy?.id)
-    || !(Number(state?.[enemy?.hpKey]) > 0)) return null;
+    || !(Number(state?.[enemy?.hpKey]) > 0)
+    || chroniclesEnemyParalysedTurns(state, enemy) > 0) return null;
   const facing = CHRONICLES_DIRECTIONS[state.direction];
   const position = chroniclesRuntimeEnemyPosition(state, enemy);
   if (!facing || !Number.isSafeInteger(position?.x) || !Number.isSafeInteger(position?.y)
@@ -78,6 +79,8 @@ function EnemyList({ foes, state, targetId, actionTargets, bearingById }) {
       {foes.map((enemy) => {
         const hp = Number(state[enemy.hpKey] || 0);
         const bearing = bearingById.get(enemy.id);
+        const held = chroniclesEnemyParalysedTurns(state, enemy);
+        const status = held > 0 ? `Paralizado: ${held} ${held === 1 ? 'acción enemiga pendiente' : 'acciones enemigas pendientes'} sin actuar` : '';
         // Authored strike budget, not a prediction of rolls or damage.
         const strikes = Array.isArray(enemy.attacks) ? enemy.attacks.slice(0, 3) : [];
         const multi = strikes.length > 1 ? `Hasta ${strikes.length} golpes por acción: ${strikes.join(' · ')}` : '';
@@ -87,9 +90,13 @@ function EnemyList({ foes, state, targetId, actionTargets, bearingById }) {
             data-band={chroniclesHealthBand(hp, enemy.maxHp)}
             data-target={enemy.id === targetId ? 'true' : undefined}
             data-threat-bearing={bearing || undefined}
-            title={`${enemy.name}: ${hp}/${enemy.maxHp} PV${bearing ? ` · ${BEARING_LABEL[bearing].full}` : ''}${multi ? ` · ${multi}` : ''}`}>
+            title={`${enemy.name}: ${hp}/${enemy.maxHp} PV${bearing ? ` · ${BEARING_LABEL[bearing].full}` : ''}${multi ? ` · ${multi}` : ''}${status ? ` · ${status}` : ''}`}>
             {enemy.name}
             <ThreatCue bearing={bearing} />
+            {status && <small className="chronicles-combat-roster__bearing"
+              data-chronicles-paralyzed={held} role="note" aria-label={status} title={status}>
+              PARALIZADO · {held}
+            </small>}
             {multi && <small className="chronicles-combat-roster__bearing"
               data-chronicles-multiattack={strikes.length} role="note" aria-label={multi} title={multi}>
               ×{strikes.length} GOLPES
