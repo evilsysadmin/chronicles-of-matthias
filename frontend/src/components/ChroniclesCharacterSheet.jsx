@@ -54,6 +54,7 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesInventoryShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearSwapPreview, chroniclesDefenseSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
+import { chroniclesTransferGearRecipients, chroniclesTransferGearHint, chroniclesTransferRecipientLabel } from '../chronicles/chroniclesTransferRecipients.js';
 import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
 import { chroniclesBackpackMoveSelection } from '../chronicles/chroniclesBackpackFilters.js';
 import {
@@ -275,6 +276,11 @@ export default function ChroniclesCharacterSheet({
   };
   const directTransferMode = !tacticsMode && activeFolio === 'equipment'
     && Boolean(transferSelection) && canChangeEquipment;
+  const transferRecipients = directTransferMode
+    ? chroniclesTransferGearRecipients(state, member.id, detailEquipment?.id) : [];
+  const transferGearHint = chroniclesTransferGearHint(transferRecipients);
+  const transferAdvice = heroId => chroniclesTransferRecipientLabel(
+    transferRecipients.find(row => row.memberId === heroId)?.status);
   const handlePartyKey = (event) => {
     const hero = chroniclesPartyHotkeyMember(event, state.party);
     if (!hero) return false;
@@ -530,6 +536,7 @@ export default function ChroniclesCharacterSheet({
                 <small className="chronicles-character-sheet__transfer-hint" role="status">
                   {transferSelection.name} seleccionado · T y luego 1–4, o toca un retrato para entregar uno.
                   Vuelve a pulsar el objeto para cancelar.
+                  {transferGearHint && <> {transferGearHint}</>}
                 </small>
               )}
               {!tacticsMode && <small className="chronicles-character-sheet__shortcuts">E equipar · U quitar · T entregar · D tirar · I información</small>}
@@ -957,10 +964,11 @@ export default function ChroniclesCharacterSheet({
               <button type="button" key={hero.id}
                 disabled={!onSelectMember && !(directTransferMode && hero.id !== member.id)}
                 aria-label={directTransferMode && hero.id !== member.id
-                  ? `Entregar 1 ${transferSelection.name} a ${hero.name} (tecla ${slot})`
+                  ? `Entregar 1 ${transferSelection.name} a ${hero.name} (tecla ${slot})${transferAdvice(hero.id) ? ` · ${transferAdvice(hero.id)}` : ''}`
                   : `Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
                 aria-pressed={hero.id === member.id}
                 data-transfer-target={directTransferMode && hero.id !== member.id ? 'true' : undefined}
+                title={directTransferMode ? transferAdvice(hero.id) || undefined : undefined}
                 data-hotkey={slot}
                 onClick={() => {
                   if (directTransferMode && hero.id !== member.id) giveSelectedItemTo(hero.id);
