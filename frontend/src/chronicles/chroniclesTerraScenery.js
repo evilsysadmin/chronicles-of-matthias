@@ -1362,6 +1362,27 @@ export function chroniclesSnowPineGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+// Wind-packed snowdrifts: deform the existing low sphere into an asymmetric
+// crest with a gently sloping windward flank. The visible footprint and
+// height stay bounded; no new geometry topology, texture or render batch.
+export function chroniclesSnowdriftGeometry() {
+  const geometry = new THREE.SphereGeometry(0.5, 8, 4);
+  const positions = geometry.getAttribute('position');
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+    const crest = Math.max(0, y * 2);
+    const taper = 0.90 + 0.08 * Math.cos(z * 5.0 + x * 2.0);
+    positions.setXYZ(i, x * taper + 0.14 * crest * crest,
+      y > 0 ? y * (0.88 + 0.12 * crest) : y,
+      z * (0.86 + 0.10 * Math.sin(x * 5.0 + 0.8)));
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1422,7 +1443,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     // A different low rosette only for B2 walkable foothills. Retains the
     // original authored blocked-verge heather *geometry and matrices*.
     heatherGroundcover: () => [chroniclesBrezalGroundcoverGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
-    snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
+    snowMound: () => [chroniclesSnowdriftGeometry(), lit(0xf4f8fc, { map: texture('snow') })],
     ember: () => [new THREE.BoxGeometry(0.12, 0.06, 0.12), lit(0xff7a2a, { emissive: 0xff5a10, emissiveIntensity: 1.2 })],
     // Camps.
     tent: () => [new THREE.ConeGeometry(1.7, 2.6, 4, 1, true), lit(0xc9b894, { side: THREE.DoubleSide, flatShading: true })],
