@@ -409,3 +409,24 @@ func encodeSorted(b *strings.Builder, value any, itemSep, keySep string) error {
 	}
 	return nil
 }
+
+// DeepCopy recursively copies ordered BSON documents and arrays. Other
+// values retain the existing scalar semantics, including typed nil slices
+// being normalized to non-nil empty BSON containers.
+func DeepCopy(v any) any {
+	switch x := v.(type) {
+	case bson.D:
+		out := make(bson.D, len(x))
+		for i, e := range x {
+			out[i] = bson.E{Key: e.Key, Value: DeepCopy(e.Value)}
+		}
+		return out
+	case bson.A:
+		out := make(bson.A, len(x))
+		for i, item := range x {
+			out[i] = DeepCopy(item)
+		}
+		return out
+	}
+	return v
+}

@@ -64,23 +64,7 @@ func has(d bson.D, key string) bool {
 }
 
 // deepCopy is copy.deepcopy for document values.
-func deepCopy(v any) any {
-	switch x := v.(type) {
-	case bson.D:
-		out := make(bson.D, len(x))
-		for i, e := range x {
-			out[i] = bson.E{Key: e.Key, Value: deepCopy(e.Value)}
-		}
-		return out
-	case bson.A:
-		out := make(bson.A, len(x))
-		for i, item := range x {
-			out[i] = deepCopy(item)
-		}
-		return out
-	}
-	return v
-}
+func deepCopy(v any) any { return pydoc.DeepCopy(v) }
 
 func copyDoc(d bson.D) bson.D { return deepCopy(d).(bson.D) }
 
