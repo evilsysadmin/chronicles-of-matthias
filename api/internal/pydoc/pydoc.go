@@ -181,19 +181,6 @@ func Set(doc bson.D, key string, value any) bson.D {
 	return append(doc, bson.E{Key: key, Value: value})
 }
 
-// Delete mirrors dict.pop(key, None).
-func Delete(doc bson.D, key string) bson.D {
-	for i := range doc {
-		if doc[i].Key == key {
-			return append(doc[:i:i], doc[i+1:]...)
-		}
-	}
-	return doc
-}
-
-// Copy is a shallow copy (dict(doc)).
-func Copy(doc bson.D) bson.D { return append(bson.D(nil), doc...) }
-
 // numeric reports a Python number (bool counts: True == 1).
 func numeric(value any) (*big.Float, bool) {
 	switch v := value.(type) {
