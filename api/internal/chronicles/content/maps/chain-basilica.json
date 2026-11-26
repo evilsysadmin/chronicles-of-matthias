@@ -208,7 +208,7 @@
             "type": "grant-item",
             "itemId": "incense-ember",
             "name": "Brasa de Incensario",
-            "description": "Una brasa aromática de la basílica. Trofeo opcional, todavía caliente y probablemente blasfemo.",
+            "description": "Una brasa aromática de la basílica. Las marcas del incensario coinciden con el mecanismo de cadenas del coro; quizá pueda atascarlo.",
             "quantity": 1
           }
         ]
@@ -311,6 +311,30 @@
           "title": "Tres eslabones para una campana",
           "body": "El altar central sólo responde a tres Eslabones Litúrgicos cuando el Prelado de las Cadenas ha caído.",
           "sigil": "XV"
+        }
+      }
+    },
+    {
+      "id": "basilica-incense-jam",
+      "kind": "lore",
+      "x": 7,
+      "y": 3,
+      "label": "Gastar Brasa de Incensario para bloquear las cadenas",
+      "when": [
+        { "itemId": "incense-ember", "quantity": 1 },
+        { "key": "basilicaChainPlateSpent", "equals": false }
+      ],
+      "action": {
+        "effects": [
+          { "type": "consume-item", "itemId": "incense-ember", "quantity": 1 },
+          { "type": "set", "key": "basilicaChainPlateSpent", "value": true }
+        ],
+        "message": "La brasa se funde en la ranura del mecanismo. Las cadenas quedan inmóviles. Matthias declara oficialmente suspendida la liturgia de los golpes.",
+        "journal": {
+          "id": "basilica-incense-jammed-chains",
+          "title": "Una liturgia menos",
+          "body": "La compañía sacrifica la Brasa de Incensario para bloquear la placa de cadenas del coro antes de activarla.",
+          "sigil": "III"
         }
       }
     },
