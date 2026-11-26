@@ -142,7 +142,7 @@ export default function ChroniclesAutomap({
   // for directional hints: an undiscovered target must not expose the map.
   const viewport = useMemo(() => chroniclesAutomapFullViewport(map), [map]);
   const exploredViewport = useMemo(() => automapViewport(revealed, state), [revealed, state]);
-  const markers = useMemo(() => chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition), [map, revealed]);
+  const markers = useMemo(() => chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition, state), [map, revealed, state]);
   const targetOverPoi = chroniclesRouteTargetOverlapsPoi(target, markers);
   const targetOverParty = Boolean(target && target.x === state?.x && target.y === state?.y);
   const targetCornerBadge = targetOverPoi || targetOverParty;
@@ -280,7 +280,7 @@ export default function ChroniclesAutomap({
           <span><i className="is-exit" aria-hidden="true">↗</i> salida · ↓ mazmorra</span>
           <span className="chronicles-automap__legend-guild"><i aria-hidden="true">G</i> gremio</span>
           <span>F forja · A armaduras · P posada · C comercio · T templo · H ayuntamiento</span>
-          <span><i className="is-target" aria-hidden="true">★</i> rumbo al objetivo{target && routeLabel && <> · salida: <b className="chronicles-automap__route-label" title={routeLabel}>{routeLabel}</b></>} · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
+          <span><i className="is-target" aria-hidden="true">★</i> rumbo al objetivo{target && routeLabel && <> · salida: <b className="chronicles-automap__route-label" title={routeLabel}>{routeLabel}</b></>} · ◆ tesoro disponible · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
         </footer>
       </section>
     </div>
