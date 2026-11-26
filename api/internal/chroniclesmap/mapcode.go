@@ -77,10 +77,6 @@ func normalizeTheme(raw string) (string, error) {
 	return theme, nil
 }
 
-func normalizeVerbs(raw string) ([]string, error) {
-	return normalizeVerbParts([]string{raw})
-}
-
 // Normalize comma-delimited parts directly, without joining the input slice
 // only to split it again. Embedded commas retain the legacy interpretation.
 func normalizeVerbParts(raw []string) ([]string, error) {
