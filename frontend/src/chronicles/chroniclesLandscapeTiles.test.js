@@ -78,6 +78,37 @@ describe('reusable highland landscape tiles', () => {
     mobile.dispose();
   });
 
+  it.each([true, false])('closes weathered summits with upward faces and valid planar UVs (coarse=%s)', coarsePointer => {
+    const geo = chroniclesMountainCragGeometry({ coarsePointer });
+    const sides = coarsePointer ? 5 : 7;
+    const peaks = coarsePointer ? 1 : 2;
+    const position = geo.getAttribute('position');
+    const uv = geo.getAttribute('uv');
+    const index = geo.index.array;
+    const facesPerPeak = sides * 6 + sides - 2;
+    expect(index.length / 3).toBe(peaks * facesPerPeak);
+    expect(position.count).toBe(peaks * sides * 5);
+    const v = i => new THREE.Vector3().fromBufferAttribute(position, i);
+    for (let peak = 0; peak < peaks; peak++) {
+      const base = peak * sides * 5;
+      const rim = base + 3 * sides, cap = base + 4 * sides;
+      for (let i = 0; i < sides; i++) {
+        expect(v(rim + i).distanceTo(v(cap + i))).toBe(0);
+      }
+      expect(v(cap).distanceTo(v(cap + 2))).toBeGreaterThan(0.12);
+      const firstFace = (peak * facesPerPeak + sides * 6) * 3;
+      for (let i = 0; i < sides - 2; i++) {
+        const [a, b, c] = index.slice(firstFace + i * 3, firstFace + i * 3 + 3);
+        expect([a, b, c].every(n => n >= cap && n < cap + sides)).toBe(true);
+        expect(v(b).sub(v(a)).cross(v(c).sub(v(a))).y).toBeGreaterThan(0);
+        const area = (uv.getX(b) - uv.getX(a)) * (uv.getY(c) - uv.getY(a))
+          - (uv.getY(b) - uv.getY(a)) * (uv.getX(c) - uv.getX(a));
+        expect(Math.abs(area)).toBeGreaterThan(0.001);
+      }
+    }
+    geo.dispose();
+  });
+
   it('renders only solid cells with batched mountain, rock and vegetation parts', () => {
     const map = chroniclesMapById('terra-e2');
     const center = { x: 10, y: 7 };
