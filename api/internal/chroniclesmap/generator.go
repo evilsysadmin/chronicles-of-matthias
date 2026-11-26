@@ -316,10 +316,7 @@ func GenerateRecipe(recipe Recipe) (Layout, error) {
 	if err != nil {
 		return Layout{}, err
 	}
-	mapCode, err := Encode(recipe)
-	if err != nil {
-		return Layout{}, err
-	}
+	mapCode := encodeValidated(recipe)
 
 	rng := newRNG(generatorSeed(mapCode))
 	grid, walkableCount := carveMaze(recipe, rng)
