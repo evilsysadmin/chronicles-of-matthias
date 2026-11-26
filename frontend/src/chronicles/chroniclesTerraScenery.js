@@ -41,6 +41,33 @@ export function chroniclesMarshPoolGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+// Coastal dunes have an asymmetric windward slope and a displaced crest.
+// Reuse the original sphere topology and UVs; keep the footprint inside
+// its original axis-aligned envelope. Pigments distinguish sheltered
+// damp sand at the base from exposed pale sand on the ridge.
+export function chroniclesCoastalDuneGeometry() {
+  const geometry = new THREE.SphereGeometry(1, 10, 6);
+  const position = geometry.getAttribute('position');
+  const damp = new THREE.Color('#c3b49b');
+  const sunlit = new THREE.Color('#ffffff');
+  const tint = new THREE.Color();
+  const colors = [];
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const crest = Math.max(0, y);
+    position.setXYZ(i, x * (0.87 + 0.06 * Math.cos(z * 3.2)) + 0.16 * crest * crest,
+      y, z * (0.91 + 0.06 * Math.sin(x * 3.8 + 0.4)));
+    tint.copy(damp).lerp(sunlit, THREE.MathUtils.smoothstep(y, -0.1, 0.85));
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 const CELL = 4;
 export const TERRA_SCENERY_MARGIN = 3;
 
@@ -1440,16 +1467,25 @@ export function chroniclesSnowRockGeometry({ coarsePointer = false } = {}) {
 export function chroniclesMarshDeadTrunkGeometry() {
   const geometry = new THREE.CylinderGeometry(0.14, 0.26, 1, 6);
   const position = geometry.getAttribute('position');
+  // Damp, moss-stained roots grade into exposed weathered wood.
+  // All duplicate seam vertices share the same position-based pigment.
+  const wet = new THREE.Color('#758477');
+  const dry = new THREE.Color('#e7dfd0');
+  const tint = new THREE.Color();
+  const colors = [];
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
     const t = y + 0.5;
     const angle = Math.atan2(z, x);
+    tint.copy(wet).lerp(dry, THREE.MathUtils.smoothstep(t, 0, 1));
+    colors.push(tint.r, tint.g, tint.b);
     const radial = 1 + 0.09 * Math.cos(angle * 2 + t * 0.8)
       + 0.06 * Math.sin(angle * 3 - t * 1.1);
     position.setXYZ(i, x * radial + 0.075 * t, y,
       z * radial - 0.045 * t);
   }
   position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
@@ -1521,7 +1557,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       lit(woodland ? 0xffffff : 0xcbdcbd, { map: texture(woodland ? 'woodlandleaves' : 'leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
-    deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
+    deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3), vertexColors: true })],
     reed: () => biome === 'marsh'
       ? [chroniclesMarshReedGeometry(), lit(0xb2a65e, { vertexColors: true })]
       : [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
@@ -1529,7 +1565,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     // original 14-gon on touch devices; never casts an implausible shadow.
     pool: () => [chroniclesMarshPoolGeometry({ coarsePointer }),
       lit(0xffffff, { map: texture('bogwater'), roughness: 0.28, metalness: 0.06, vertexColors: true })],
-    dune: () => [new THREE.SphereGeometry(1, 10, 6), lit(0xffffff, { map: texture('sand', 2, 2) })],
+    dune: () => [chroniclesCoastalDuneGeometry(), lit(0xffffff, { map: texture('sand', 2, 2), vertexColors: true })],
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer, woodland }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
@@ -2924,6 +2960,26 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     // restrained sage/ochre range, derived only from immutable world
     // transforms: same positions, silhouette, batching, materials and
     // deterministic palette after F5. No new draw calls or vegetation.
+    // Saturated near-water scrub grades into muted distant marsh foliage.
+    // A continuous seeded world field keeps adjacent bushes coherent,
+    // with no new materials, texture samples or instanced draw batches.
+    if (biome === 'marsh' && part === 'bush') {
+      const wet = new THREE.Color('#94b1a0');
+      const dry = new THREE.Color('#e2dfb9');
+      const haze = new THREE.Color('#b9c5c0');
+      const tint = new THREE.Color();
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const wetness = 0.5 + 0.5 * Math.sin(x * 0.35 + y * 0.28)
+          * Math.cos(y * 0.43 - x * 0.19);
+        const ring = Math.max(0, -x, x - width + 1, -y, y - grid.length + 1);
+        const depth = ring >= 3 ? 0.55 : ring === 2 ? 0.30 : 0;
+        mesh.setColorAt(index, tint.copy(dry).lerp(wet, wetness).lerp(haze, depth));
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     if (brezalBackdrop && part === 'bush') {
       const shades = ['#b9bda1', '#adb79b', '#c5b9a0', '#a4b39a', '#c5c2ab']
         .map(hex => new THREE.Color(hex));

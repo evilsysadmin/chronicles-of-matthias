@@ -35,6 +35,32 @@ describe('Terra marsh weathered deadwood', () => {
     [base, trunk, again].forEach(g => g.dispose());
   });
 
+  it('grades damp roots into dry exposed wood without color seams', () => {
+    const trunk = chroniclesMarshDeadTrunkGeometry();
+    const repeat = chroniclesMarshDeadTrunkGeometry();
+    const positions = trunk.getAttribute('position');
+    const colors = trunk.getAttribute('color');
+    const wet = new THREE.Color('#758477');
+    const dry = new THREE.Color('#e7dfd0');
+    expect(colors.count).toBe(positions.count);
+    expect([...colors.array]).toEqual([...repeat.getAttribute('color').array]);
+    let roots = 0, tips = 0;
+    for (let i = 0; i < positions.count; i++) {
+      const y = positions.getY(i);
+      const expected = y < 0 ? wet : dry;
+      const actual = new THREE.Color().fromBufferAttribute(colors, i);
+      for (const channel of ['r', 'g', 'b']) {
+        expect(actual[channel]).toBeCloseTo(expected[channel], 5);
+      }
+      if (y < 0) roots++; else tips++;
+    }
+    expect(roots).toBeGreaterThan(0);
+    expect(tips).toBeGreaterThan(0);
+    expect(wet.r).toBeLessThan(dry.r);
+    trunk.dispose();
+    repeat.dispose();
+  });
+
   it.each([true, false])('keeps D5 deadwood in a single deterministic batch (coarse=%s)', coarsePointer => {
     const map = chroniclesMapById('terra-d5');
     const args = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome,
@@ -44,10 +70,13 @@ describe('Terra marsh weathered deadwood', () => {
     const mesh = scene.getObjectByName('chronicles-terra-deadTrunk');
     expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
     expect(mesh.count).toBeGreaterThan(0);
+    expect(mesh.material.vertexColors).toBe(true);
     expect(scene.children.filter(m => m.name === mesh.name)).toHaveLength(1);
     const expected = chroniclesMarshDeadTrunkGeometry();
     expect([...mesh.geometry.getAttribute('position').array])
       .toEqual([...expected.getAttribute('position').array]);
+    expect([...mesh.geometry.getAttribute('color').array])
+      .toEqual([...expected.getAttribute('color').array]);
     expect([...mesh.instanceMatrix.array])
       .toEqual([...repeat.getObjectByName(mesh.name).instanceMatrix.array]);
     expected.dispose();
