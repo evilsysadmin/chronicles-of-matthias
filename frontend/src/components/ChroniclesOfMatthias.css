@@ -1508,6 +1508,13 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.chronicles-initiative-rail li.is-round-start {
+  border-inline-start: 3px solid #dfbd82;
+}
+.chronicles-initiative-rail__round-marker {
+  color: #e0bf93;
+  font: 700 .75rem/1.2 system-ui, sans-serif;
+}
 .chronicles-initiative-rail li small {
   color: #dfc6a2;
   font: 650 .7rem/1.2 system-ui, sans-serif;
