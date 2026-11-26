@@ -797,6 +797,10 @@ export function chroniclesPreviewEnemyTurn(state) {
       };
     }
 
+    // Paralysis consumes a turn without either an attack or a move.
+    // Keep the existing hold intent contract for renderers; never read
+    // coordinates from a nonexistent movement event.
+    if (!move) return { enemyId: enemy.id, kind: 'hold', from };
     return {
       enemyId: enemy.id,
       kind: 'move',
