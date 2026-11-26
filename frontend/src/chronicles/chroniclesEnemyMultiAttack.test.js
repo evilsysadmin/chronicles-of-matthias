@@ -44,20 +44,28 @@ describe('MM3 multiattack spider: one turn, separate strikes',()=>{
   expect(after.message).toContain('se mueve; no ataca este turno.');
  });
  it('reports exact committed damage rather than nominal overkill',()=>{
+  const base=createChroniclesState('menagerie-of-ash',null,{rules:'mm3'});
+  const foes=chroniclesActiveEnemies(base);
+  const hound=foes.find(enemy=>enemy.id==='bone-hound');
+  expect(hound.retaliation).toBe(2);
+  const encounter={...base,x:1,y:2,direction:0,phase:'combat',turnPhase:'enemy',
+   ...Object.fromEntries(foes.filter(enemy=>enemy.id!==hound.id).map(enemy=>[enemy.hpKey,0])),
+   enemyPositions:{[hound.id]:{x:1,y:1}},
+   initiative:{round:1,cursor:0,order:[{kind:'enemy',id:hound.id},{kind:'party',id:'matthias'}]},
+   party:base.party.map(hero=>({...hero,hp:1}))};
   let found=false;
-  for(let round=1;round<=24;round++){
-   const base=setup();
-   const before={...base,round,initiative:{...base.initiative,round},
-    party:base.party.map(hero=>({...hero,hp:hero.id==='matthias'?1:hero.hp}))};
-   const after=chroniclesResolveEnemyActor(before,SPIDER);
-   const overkill=after.enemyTurnEvents.find(e=>e.type==='attack'&&e.fromHp>0&&e.damage>e.fromHp&&e.toHp===0);
+  // The actual roll is keyed by runSeed/turns, not initiative.round.
+  for(let seed=0;seed<100;seed++){
+   const before={...encounter,runSeed:'hound-overkill-'+seed};
+   const after=chroniclesResolveEnemyActor(before,hound.id);
+   const overkill=after.enemyTurnEvents.find(e=>e.type==='attack'&&e.fromHp===1&&e.damage===2&&e.toHp===0);
    if(!overkill)continue;
    const victim=before.party.find(hero=>hero.id===overkill.targetId);
-   expect(after.message).toContain(`${overkill.attackName} a ${victim.name}: −${overkill.fromHp} PV (cae)`);
+   expect(after.message).toContain(`Ataque a ${victim.name}: −1 PV (cae)`);
+   expect(after.message).not.toContain('−2 PV');
    found=true;
    break;
   }
-  // Authored spider rolls and damage are deterministic across rounds.
   expect(found).toBe(true);
  });
  it('paralysis cancels the full attack sequence',()=>{
