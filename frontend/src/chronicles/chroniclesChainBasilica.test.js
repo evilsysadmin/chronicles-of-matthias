@@ -179,7 +179,11 @@ describe('Chronicles Chain Basilica', () => {
       // The mandatory Prelate now pursues a firing lane when engaged;
       // the optional southern specter deliberately retains its old policy.
       if (enemy.id === 'basilica-south-specter') {
-        expect(enemy.ai).toEqual({ movement: 'hold', attackReach: 3, requiresLineOfSight: true });
+        expect(enemy.ai).toEqual({
+          movement: 'hold', attackReach: 3, requiresLineOfSight: true,
+          disengageRange: undefined, engageRange: undefined,
+          engagedMovement: undefined, patrolRoute: [],
+        });
       } else {
         expect(enemy.ai).toEqual(original.find(foe => foe.id === [
           'choir-hound', 'nave-spider',
