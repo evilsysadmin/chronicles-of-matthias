@@ -1789,6 +1789,11 @@ const DRESS = {
     // All real blocked border/verge roots retain their earlier transforms.
     const saddle = naturalHighlands && tileRecipe.family === 'backdrop'
       ? chroniclesHighlandBackdropSaddle({ grid, x, y, ringDepth }) : 1;
+    // Preserve the shared saddle and footprint, but let the farther rings
+    // recede vertically instead of filling every opening in the near ridge.
+    // The first ring and all authored cells retain their original heights.
+    const horizonDepth = naturalHighlands && tileRecipe.family === 'backdrop'
+      ? (ringDepth === 3 ? 0.78 : ringDepth === 2 ? 0.90 : 1) : 1;
     const ridgeFoot = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.68 : 0.50);
     const ridgeRise = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.58 : 0.36);
     // V64: B2's only overgrown layer was the three rings OUTSIDE the
@@ -1800,7 +1805,7 @@ const DRESS = {
     boulders(p, wx, wz, x, y, {
       count: tileRecipe.boulderCount,
       size: tileRecipe.boulderSize * ridgeFoot * saddle * heathRelief * heathVerge,
-      height: 1.05 * ridgeRise,
+      height: 1.05 * ridgeRise * horizonDepth,
     });
     if (noise(x, y, 4) < tileRecipe.cragChance) {
       // Depth shifts stay well within the originally blocked 4m cell.
@@ -1814,7 +1819,7 @@ const DRESS = {
         tilt: stagger * (noise(x, y, 902) - 0.5) * 0.13,
         roll: stagger * (noise(x, y, 903) - 0.5) * 0.12,
         scale: [(0.90 + noise(x, y, 9) * 0.20) * (1 + (ridge - 1) * 0.14),
-          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle * heathRelief,
+          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle * heathRelief * horizonDepth,
           (0.87 + noise(x, y, 10) * 0.25) * (1 + (ridge - 1) * 0.11)],
       });
     }
