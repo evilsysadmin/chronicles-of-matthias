@@ -2147,8 +2147,8 @@ describe('Chronicles file-authored exterior renderer', () => {
         a.decompose(pos, q, scale);
         old.getMatrixAt(i, b);
         // Root redistribution is visual only: preserve the original cell.
-        expect(Math.round(a.elements[12] / 4)).toBe(Math.round(b.elements[12] / 4));
-        expect(Math.round(a.elements[14] / 4)).toBe(Math.round(b.elements[14] / 4));
+        expect(Math.round(a.elements[12] / 4) + center.x).toBe(Math.round(b.elements[12] / 4) + center.x);
+        expect(Math.round(a.elements[14] / 4) + center.y).toBe(Math.round(b.elements[14] / 4) + center.y);
         ratios.add(Math.round(scale.x / scale.y * 100));
       }
       expect(ratios.size).toBeGreaterThan(1);
@@ -2185,8 +2185,8 @@ describe('Chronicles file-authored exterior renderer', () => {
       mobile.children[0].getMatrixAt(i, m);
       expect(a.elements).toEqual(m.elements);
       const x = Math.round(a.elements[12] / 4), y = Math.round(a.elements[14] / 4);
-      expect(Math.round(b.elements[12] / 4)).toBe(x);
-      expect(Math.round(b.elements[14] / 4)).toBe(y);
+      expect(Math.round(b.elements[12] / 4) + center.x).toBe(x + center.x);
+      expect(Math.round(b.elements[14] / 4) + center.y).toBe(y + center.y);
       const gx = x + center.x, gy = y + center.y;
       if (grid[gy]?.[gx] !== undefined) expect(grid[gy][gx]).toBe('#');
       const gap = Math.hypot(a.elements[12] - b.elements[12], a.elements[14] - b.elements[14]);
