@@ -172,9 +172,13 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     if (i % 2 === 1) {
       // Low upright leaf tips interrupt the ruler-straight grass silhouette.
       const leaf = palette[(i + 2) % grass.length];
-      add([x - 0.065, 0.005, depth * 0.62],
-        [x + 0.065, 0.005, depth * 0.62],
-        [x + lean, 0.16 + hash(i, 19, 607) * 0.075, depth * 0.82], leaf);
+      // Broader leaves and slender grass tips share the same triangle.
+      // Alternate their rake so the silhouette is not a row of cloned spikes.
+      const halfWidth = i % 4 === 1 ? 0.088 : 0.041;
+      const rake = i % 4 === 1 ? -0.058 : 0.072;
+      add([x - halfWidth, 0.005, depth * 0.62],
+        [x + halfWidth, 0.005, depth * 0.62],
+        [x + lean * 0.5 + rake, 0.16 + hash(i, 19, 607) * 0.075, depth * 0.82], leaf);
     }
   }
 
