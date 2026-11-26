@@ -295,9 +295,16 @@ export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
         }
       }
     });
-    // Close the exposed summit with an upward-wound fan. Reuse existing
-    // vertices; 94 desktop / 33 mobile triangles stay under 100 / 40.
-    const summit = (rings.length - 1) * sides;
+    // Close the exposed summit with an upward-wound fan. Duplicate only
+    // the summit ring for a proper planar UV island and a rocky edge normal.
+    // 94 desktop / 33 mobile triangles stay under 100 / 40.
+    const summit = rings.length * sides;
+    for (let i = 0; i < sides; i++) {
+      const source = ((rings.length - 1) * sides + i) * 3;
+      const x = vertices[source], y = vertices[source + 1], z = vertices[source + 2];
+      vertices.push(x, y, z);
+      uvs.push(0.5 + (x - peak.x) / peak.width, 0.5 + (z - peak.z) / peak.width);
+    }
     for (let i = 1; i < sides - 1; i++) {
       indices.push(summit, summit + i + 1, summit + i);
     }
