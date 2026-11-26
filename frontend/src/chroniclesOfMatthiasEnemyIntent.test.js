@@ -38,7 +38,7 @@ describe('Chronicles enemy intent preview', () => {
           const enemyEvents = events.filter((entry) => entry.enemyId === intent.enemyId);
           const move = enemyEvents.find((entry) => entry.type === 'move');
           const attack = enemyEvents.find((entry) => entry.type === 'attack');
-          if (!enemyEvents.length) {
+          if (!move && !attack) {
             expect(intent.kind).toBe('hold');
           } else if (move && attack) {
             expect(intent).toMatchObject({
@@ -60,6 +60,30 @@ describe('Chronicles enemy intent preview', () => {
     expect(checked).toBeGreaterThan(100);
   // Walks every standable cell of every shipped map: Terra adds dozens.
   }, 120_000);
+
+  it.each([1, 2])('previews a paralyzed creature holding its position (%s turns left)', remaining => {
+    const base = createChroniclesState();
+    const pawn = enemy('corrupted-pawn');
+    const state = {
+      ...base,
+      enemyStatus: { [pawn.id]: { paralyzed: remaining } },
+    };
+    const original = JSON.stringify(state);
+    const resolved = chroniclesResolveEnemyTurn(state);
+    const events = resolved.enemyTurnEvents.filter(event => event.enemyId === pawn.id);
+    expect(events).toEqual([{ type: 'paralyzed', enemyId: pawn.id, left: remaining - 1 }]);
+    const preview = chroniclesPreviewEnemyTurn(state);
+    expect(preview.intents.find(intent => intent.enemyId === pawn.id)).toEqual({
+      enemyId: pawn.id, kind: 'hold', from: { x: 3, y: 5 },
+    });
+    expect(JSON.stringify(state)).toBe(original);
+    expect(resolved.enemyStatus?.[pawn.id]?.paralyzed ?? 0).toBe(remaining - 1);
+    // Expiration itself is a spent turn, not an immediate attack or step.
+    if (remaining === 1) {
+      expect(chroniclesPreviewEnemyTurn(resolved).intents.find(intent => intent.enemyId === pawn.id))
+        .toMatchObject({ kind: 'move', from: { x: 3, y: 5 }, to: { x: 2, y: 5 } });
+    }
+  });
 
   it('does not mutate the state it previews', () => {
     const state = createChroniclesState();
