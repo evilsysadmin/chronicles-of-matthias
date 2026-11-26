@@ -38,7 +38,19 @@ export function chroniclesGearSwapPreview(state, memberId, itemId) {
     equipment: { ...(state.equipment || {}), [memberId]: equipment },
   };
   const after = chroniclesPartyAttackStats(hypothetical, memberId, item.slot === 'weapon' ? 'melee' : 'missile');
+  // Removing a shield can change the other attack mode even though its
+  // weapon is not replaced. Compare actual stats, including an empty slot.
+  const otherMode = item.slot === 'weapon' ? 'missile' : 'melee';
+  const otherBefore = chroniclesPartyAttackStats(state, memberId, otherMode);
+  const otherAfter = chroniclesPartyAttackStats(hypothetical, memberId, otherMode);
+  const otherStats = ['damage', 'toHit'].map(key => ({
+    key, label: key === 'damage' ? 'Daño' : 'Acierto',
+    before: otherBefore[key], after: otherAfter[key],
+    delta: otherAfter[key] - otherBefore[key],
+  })).filter(stat => stat.delta !== 0);
   return {
+    otherMode,
+    otherStats,
     slot: item.slot,
     currentName: chroniclesEquippedItem(state, memberId, item.slot)?.name || 'Sin equipar',
     proposedName: item.name,

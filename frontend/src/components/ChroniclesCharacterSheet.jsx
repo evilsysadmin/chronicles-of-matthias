@@ -629,7 +629,13 @@ export default function ChroniclesCharacterSheet({
                         </summary>
                         <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
-                        <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
+                        {weaponSwap.otherStats.length > 0 ? <>
+                          <small>También cambia el ataque {weaponSwap.otherMode === 'missile' ? 'a distancia (S)' : 'cuerpo a cuerpo (A)'}.</small>
+                          {weaponSwap.otherStats.map(stat => (
+                            <div key={stat.key}><span>{stat.label} ({weaponSwap.otherMode === 'missile' ? 'S' : 'A'})</span><strong>{stat.before} → {stat.after}</strong><em>{signed(stat.delta)}</em></div>
+                          ))}
+                        </> : <small>Las cifras del otro ataque no cambian.</small>}
+                        <small>Comparación informativa: nada se equipa hasta confirmar.</small>
                       </details>
                     ) : !selectedWornItem && defenseSwap ? (
                       <details className="chronicles-character-sheet__swap-preview" aria-label="Comparación de protección">
