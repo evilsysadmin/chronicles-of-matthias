@@ -109,3 +109,18 @@ export function chroniclesShopEquipmentComparisons(state, item) {
     };
   });
 }
+
+// Classify only the metrics actually displayed. No weighted score, price
+// ranking or claim that one hero ought to receive the item. Shield loss
+// remains a trade-off even if its defensive delta happens to be zero.
+export function chroniclesShopComparisonOutcome(comparison) {
+  if (!comparison?.eligible || comparison.alreadyEquipped) return null;
+  const stats = Array.isArray(comparison.stats) ? comparison.stats : [];
+  if (!stats.length || stats.some(stat => !Number.isFinite(stat?.delta))) return null;
+  const gains = stats.some(stat => stat.delta > 0);
+  const losses = stats.some(stat => stat.delta < 0);
+  if (comparison.displacedShield || (gains && losses)) return 'Ventajas y renuncias';
+  if (gains) return 'Mejora sin pérdidas visibles';
+  if (losses) return 'Empeora las cifras mostradas';
+  return null; // Existing "Sin cambios" line is sufficient.
+}

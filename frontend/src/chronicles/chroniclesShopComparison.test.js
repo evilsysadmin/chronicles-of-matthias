@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesPartyArmorClass, chroniclesPartyAttackStats, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { CHRONICLES_EQUIPMENT } from './chroniclesEquipment.js';
-import { chroniclesShopEquipmentComparisons } from './chroniclesShopComparison.js';
+import { chroniclesShopEquipmentComparisons, chroniclesShopComparisonOutcome } from './chroniclesShopComparison.js';
 
 const item = (id) => CHRONICLES_EQUIPMENT[id];
 const memberPreview = (state, id, next) =>
@@ -198,5 +198,33 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(memberPreview(fallen, 'matthias', 'brass-mace').eligible).toBe(false);
     expect(chroniclesShopEquipmentComparisons(null, item('brass-mace'))).toEqual([]);
     expect(chroniclesShopEquipmentComparisons(state, null)).toEqual([]);
+  });
+});
+
+describe('MM3 honest merchant comparison outcomes', () => {
+  const outcome = (deltas, extra = {}) => chroniclesShopComparisonOutcome({
+    eligible: true, stats: deltas.map(delta => ({ delta })), ...extra,
+  });
+  it('distinguishes pure visible gains, losses and tradeoffs without scoring them', () => {
+    expect(outcome([2, 0, 1])).toBe('Mejora sin pérdidas visibles');
+    expect(outcome([0, -1])).toBe('Empeora las cifras mostradas');
+    expect(outcome([1, -1])).toBe('Ventajas y renuncias');
+    expect(outcome([1, 0], { displacedShield: { name: 'Escudo' } })).toBe('Ventajas y renuncias');
+    expect(outcome([0, 0])).toBeNull();
+    expect(outcome([])).toBeNull();
+    expect(outcome([1], { eligible: false })).toBeNull();
+    expect(outcome([1], { alreadyEquipped: true })).toBeNull();
+    expect(outcome([1, NaN])).toBeNull();
+  });
+  it('recognizes a real armor tradeoff and a shield improvement from the canonical calculators', () => {
+    const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const state = { ...base, equipment: { matthias: {
+      weapon: 'brass-sword', armor: 'leather-padded', shield: 'wooden-shield',
+    } } };
+    expect(chroniclesShopComparisonOutcome(memberPreview(state, 'matthias', 'leather-leather')))
+      .toBe('Ventajas y renuncias');
+    expect(chroniclesShopComparisonOutcome(memberPreview(state, 'matthias', 'brass-shield')))
+      .toBe('Mejora sin pérdidas visibles');
+    expect(chroniclesShopComparisonOutcome(memberPreview(state, 'matthias', 'wooden-shield'))).toBeNull();
   });
 });

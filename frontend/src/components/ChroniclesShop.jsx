@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
-import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
+import { chroniclesShopEquipmentComparisons, chroniclesShopComparisonOutcome } from '../chronicles/chroniclesShopComparison.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import {
   chroniclesShopSellable,
@@ -35,6 +35,8 @@ export function ShopCompactGearPeek({ state, item, id }) {
             {hero.name}
             <small className={`chronicles-shop__gear-peek-eligibility${hero.eligible ? ' is-eligible' : ''}`}>
               {hero.eligible ? 'Puede equiparlo' : 'No puede equiparlo'}
+              {state?.combatRules === 'mm3' && chroniclesShopComparisonOutcome(hero)
+                && <> · {chroniclesShopComparisonOutcome(hero)}</>}
             </small>
           </span>
           <span className="chronicles-shop__gear-peek-values">
