@@ -123,6 +123,33 @@ describe('Terra v66 distinct B2 groundcover vs authored heather', () => {
     old.dispose();
   });
 
+  it('bakes root and petal depth into the same 56 triangles without seams', () => {
+    const ground = chroniclesBrezalGroundcoverGeometry();
+    const color = ground.getAttribute('color');
+    const rgb = i => [color.getX(i), color.getY(i), color.getZ(i)];
+    const luminance = i => rgb(i).reduce((sum, channel) => sum + channel, 0);
+    let cursor = 0;
+    for (let patch = 0; patch < 9; patch++) {
+      for (let leaf = 0; leaf < 2; leaf++) {
+        expect(luminance(cursor) / luminance(cursor + 2)).toBeCloseTo(0.70, 5);
+        expect(luminance(cursor + 1) / luminance(cursor + 2)).toBeCloseTo(0.90, 5);
+        expect(rgb(cursor)).toEqual(rgb(cursor + 3));
+        expect(rgb(cursor + 2)).toEqual(rgb(cursor + 4));
+        cursor += 6;
+      }
+      if (patch % 2 === 0) {
+        for (let petal = 0; petal < 4; petal++) {
+          expect(luminance(cursor) / luminance(cursor + 1)).toBeCloseTo(0.76, 5);
+          expect(luminance(cursor + 2) / luminance(cursor + 1)).toBeCloseTo(0.96, 5);
+          cursor += 3;
+        }
+      }
+    }
+    expect(cursor).toBe(168);
+    expect(color.count).toBe(cursor);
+    ground.dispose();
+  });
+
   it('does not affect E2 or C4, their instance batches, or collision grids', () => {
     for (const id of ['terra-e2', 'terra-c4']) {
       const other = chroniclesMapById(id);

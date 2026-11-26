@@ -360,9 +360,11 @@ export function chroniclesBrezalGroundcoverGeometry() {
     new THREE.Color('#667452'), new THREE.Color('#a09b76')];
   const blooms = [new THREE.Color('#a88fa9'),
     new THREE.Color('#c2a8bc'), new THREE.Color('#8c7899')];
-  const triangle = (a, b, c, color) => {
+  // Bake contact shade into the existing vertices: darker leaf roots,
+  // sunlit tips and recessed flower centres, without new geometry or lights.
+  const triangle = (a, b, c, color, shades) => {
     positions.push(...a, ...b, ...c);
-    for (let i = 0; i < 3; i += 1) colors.push(color.r, color.g, color.b);
+    for (const shade of shades) colors.push(color.r * shade, color.g * shade, color.b * shade);
   };
   for (let patch = 0; patch < 9; patch += 1) {
     const angle = patch * Math.PI * 2 / 9 + 0.28;
@@ -385,8 +387,8 @@ export function chroniclesBrezalGroundcoverGeometry() {
       const right = [cx + fx * reach * 0.45 + sx * spread, 0.046,
         cz + fz * reach * 0.45 + sz * spread];
       const color = foliage[(patch + leaf) % foliage.length];
-      triangle(root, left, tip, color);
-      triangle(root, tip, right, color);
+      triangle(root, left, tip, color, [0.70, 0.90, 1]);
+      triangle(root, tip, right, color, [0.70, 1, 0.90]);
     }
     // Five flattened flowers distributed between leaves, not one large
     // purple point above each green cone. Petals face mostly upward and
@@ -404,7 +406,7 @@ export function chroniclesBrezalGroundcoverGeometry() {
           [bx + dx * 0.052 + sideX * 0.036, h + 0.008,
             bz + dz * 0.052 + sideZ * 0.036],
           [bx + dx * 0.052 - sideX * 0.036, h + 0.008,
-            bz + dz * 0.052 - sideZ * 0.036], color);
+            bz + dz * 0.052 - sideZ * 0.036], color, [0.76, 1, 0.96]);
       }
     }
   }
