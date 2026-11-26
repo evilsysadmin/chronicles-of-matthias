@@ -85,3 +85,21 @@ describe('Chronicles Menagerie ember side quest', () => {
     expect(chroniclesQuestEntries(next)).toEqual([]);
   });
 });
+
+describe('Menagerie discovery in reverse order', () => {
+  it('reads the initial clue after the wisp falls without resetting the quest', () => {
+    const map = chroniclesMapById('menagerie-of-ash');
+    const wisp = map.enemies.find(enemy => enemy.id === 'ember-wisp');
+    const base = chroniclesMapTransitionState(createChroniclesState(), map.id);
+    const won = chroniclesApplyContentEffects({ ...base, [wisp.hpKey]: 0 }, wisp.onDefeat.effects);
+    expect(chroniclesActiveQuest(won)?.objective).toBe('Encuentra dónde encaja el Fragmento de Brasa.');
+    const read = chroniclesTacticsUse(won, 'ember-scorchmarks');
+    expect(read.emberClueRead).toBe(true);
+    expect(read.journal.at(-1)?.id).toBe('ember-scorchmarks-read');
+    expect(chroniclesActiveQuest(read)).toEqual(chroniclesActiveQuest(won));
+    expect(read.inventory['ember-shard'].quantity).toBe(1);
+    const opened = chroniclesTacticsUse({ ...read, x: 3, y: 1 }, 'ember-cache');
+    expect(opened.emberCacheOpened).toBe(true);
+    expect(chroniclesQuestEntries(opened).find(quest => quest.id === 'embers-under-stone')?.status).toBe('completed');
+  });
+});
