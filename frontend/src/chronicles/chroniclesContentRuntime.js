@@ -326,6 +326,9 @@ function updateQuest(state, effect, status) {
   if (!effect.questId) return state;
   const quests = questsFor(state);
   const current = quests[effect.questId] || {};
+  // A clue may be read after its objective has already advanced. Starting
+  // the same quest again must not reset the player's recorded progress.
+  if (effect.type === 'start-quest' && current.status === 'active') return state;
   if (current.status === 'completed' && status !== 'completed') return state;
   return {
     ...state,

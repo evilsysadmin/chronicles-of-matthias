@@ -354,3 +354,27 @@ describe('Chronicles expedition gold & exactly-once quest payout', () => {
     expect(chroniclesApplyContentEffects(nearCap, [{ type: 'grant-gold', amount: 20 }])).toBe(nearCap);
   });
 });
+
+describe('Quest discovery order', () => {
+  const intro = { type: 'start-quest', questId: 'example', title: 'Una pista', objective: 'Encuentra la llave', order: 10 };
+  const advance = { type: 'advance-quest', questId: 'example', description: 'Llave recuperada', objective: 'Abre la puerta' };
+  it('preserves progress when the introduction is read after an advance', () => {
+    const advanced = chroniclesApplyContentEffects({}, [advance]);
+    expect(chroniclesApplyContentEffects(advanced, [intro])).toBe(advanced);
+    const read = chroniclesApplyContentEffects(advanced, [
+      { type: 'set', key: 'clueRead', value: true }, intro,
+    ]);
+    expect(read.clueRead).toBe(true);
+    expect(read.quests).toEqual(advanced.quests);
+  });
+  it('starts missing quests, still advances them and cannot reopen completed quests', () => {
+    const started = chroniclesApplyContentEffects({}, [intro]);
+    expect(chroniclesActiveQuest(started).objective).toBe(intro.objective);
+    const advanced = chroniclesApplyContentEffects(started, [advance]);
+    expect(chroniclesActiveQuest(advanced).objective).toBe(advance.objective);
+    expect(chroniclesApplyContentEffects(advanced, [intro])).toBe(advanced);
+    const completed = chroniclesApplyContentEffects(advanced, [{ type: 'complete-quest', questId: intro.questId }]);
+    expect(chroniclesApplyContentEffects(completed, [intro, advance])).toBe(completed);
+    expect(chroniclesActiveQuest(completed)).toBeNull();
+  });
+});
