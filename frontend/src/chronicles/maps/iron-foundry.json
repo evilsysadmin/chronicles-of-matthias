@@ -134,7 +134,7 @@
       "retaliation": 1,
       "retaliationReach": 3,
       "activation": "always",
-      "ai": { "movement": "hold", "attackReach": 3, "requiresLineOfSight": true, "disengageRange": 1 }
+      "ai": { "movement": "hold", "attackReach": 3, "requiresLineOfSight": true, "disengageRange": 1, "engagedMovement": "cardinal-chase", "engageRange": 3 }
     },
     {
       "id": "scrap-goblin",
