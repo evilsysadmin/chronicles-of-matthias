@@ -158,27 +158,29 @@ func carveMaze(recipe Recipe, rng *xorshift32) ([][]byte, int) {
 
 	start := Point{X: 1, Y: 1}
 	grid[start.Y][start.X] = '.'
-	visited := map[Point]bool{start: true}
-	stack := []Point{start}
+	// Odd/odd maze cells become open only when visited. The grid itself
+	// therefore provides the visited state without a separate hash map.
+	stack := make([]Point, 1, ((recipe.Width-1)/2)*((recipe.Height-1)/2))
+	stack[0] = start
 	walkableCount := 1
 
+	type candidate struct {
+		x  int
+		y  int
+		dx int
+		dy int
+	}
+	candidates := make([]candidate, 0, len(mazeSteps))
 	for len(stack) > 0 {
 		current := stack[len(stack)-1]
-		type candidate struct {
-			x  int
-			y  int
-			dx int
-			dy int
-		}
-		candidates := make([]candidate, 0, len(mazeSteps))
+		candidates = candidates[:0]
 		for _, step := range mazeSteps {
 			nextX := current.X + step.X
 			nextY := current.Y + step.Y
 			if nextX < 1 || nextX >= recipe.Width-1 || nextY < 1 || nextY >= recipe.Height-1 {
 				continue
 			}
-			point := Point{X: nextX, Y: nextY}
-			if visited[point] {
+			if grid[nextY][nextX] != '#' {
 				continue
 			}
 			candidates = append(candidates, candidate{
@@ -195,7 +197,6 @@ func carveMaze(recipe Recipe, rng *xorshift32) ([][]byte, int) {
 		grid[current.Y+next.dy/2][current.X+next.dx/2] = '.'
 		grid[next.y][next.x] = '.'
 		point := Point{X: next.x, Y: next.y}
-		visited[point] = true
 		stack = append(stack, point)
 		walkableCount += 2
 	}
@@ -256,12 +257,13 @@ func openExtra(
 func distances(grid [][]byte, start Point) map[Point]int {
 	height := len(grid)
 	width := len(grid[0])
-	queue := []Point{start}
+	queue := make([]Point, 1, width*height)
+	queue[0] = start
 	result := map[Point]int{start: 0}
 
-	for len(queue) > 0 {
-		point := queue[0]
-		queue = queue[1:]
+	for head := 0; head < len(queue); head++ {
+		point := queue[head]
+		distance := result[point]
 		for _, direction := range cardinal {
 			next := Point{X: point.X + direction.X, Y: point.Y + direction.Y}
 			if next.X < 0 || next.X >= width || next.Y < 0 || next.Y >= height {
@@ -273,7 +275,7 @@ func distances(grid [][]byte, start Point) map[Point]int {
 			if _, exists := result[next]; exists {
 				continue
 			}
-			result[next] = result[point] + 1
+			result[next] = distance + 1
 			queue = append(queue, next)
 		}
 	}
