@@ -79,7 +79,8 @@
         "attackReach": 1,
         "engagedMovement": "knight-chase",
         "engageRange": 3
-      }
+      },
+      "attacks": ["Mordisco", "Zarpazo"]
     },
     {
       "id": "vault-wisp",
