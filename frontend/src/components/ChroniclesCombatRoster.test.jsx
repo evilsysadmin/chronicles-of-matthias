@@ -206,3 +206,39 @@ describe('MM3 explicit A and S target cues', () => {
     ]) expect(chroniclesRosterActionTargets(blocked)).toEqual([]);
   });
 });
+
+describe('Authored creature attack budget in the combat roster', () => {
+  it('identifies the real two-strike spider on desktop and mobile without revealing idle enemies', () => {
+    const base = createChroniclesState('menagerie-of-ash', null, { rules: 'mm3' });
+    const spider = chroniclesActiveEnemies(base).find(enemy => enemy.id === 'crypt-spider');
+    const hound = chroniclesActiveEnemies(base).find(enemy => enemy.id === 'bone-hound');
+    const fight = chroniclesStartInitiativeCombat({
+      ...base, x: 3, y: 4, direction: 0,
+      enemyPositions: { [spider.id]: { x: 3, y: 3 } },
+    }, [spider], { forceEnemyIds: [spider.id], random: () => 0 });
+    expect(fight.initiative.order.filter(actor => actor.kind === 'enemy').map(actor => actor.id)).toEqual([spider.id]);
+    const html = renderToStaticMarkup(<ChroniclesCombatRoster state={fight} />);
+    expect((html.match(/data-chronicles-multiattack="2"/g) || []).length).toBe(2);
+    expect(html).toContain('Hasta 2 golpes por acción: Mordisco · Zarpazo');
+    expect(html).toContain('×2 GOLPES');
+    expect(html).not.toContain(hound.name);
+    const onlyHound = { ...fight, initiative: { ...fight.initiative,
+      order: [{ kind: 'enemy', id: hound.id }], cursor: 0,
+    } };
+    const ordinary = renderToStaticMarkup(<ChroniclesCombatRoster state={onlyHound} />);
+    expect(ordinary).toContain(hound.name);
+    expect(ordinary).not.toContain('data-chronicles-multiattack=');
+    expect(renderToStaticMarkup(<ChroniclesCombatRoster state={{
+      ...fight, [spider.hpKey]: 0,
+    }} />)).toBe('');
+  });
+  it('never lists idle map monsters if an initiative contains no enemy actors', () => {
+    const base = createChroniclesState('menagerie-of-ash', null, { rules: 'mm3' });
+    expect(chroniclesActiveEnemies(base).length).toBeGreaterThan(0);
+    for (const order of [[], [{ kind: 'party', id: 'matthias' }]]) {
+      expect(renderToStaticMarkup(<ChroniclesCombatRoster state={{
+        ...base, initiative: { round: 1, cursor: 0, order },
+      }} />)).toBe('');
+    }
+  });
+});
