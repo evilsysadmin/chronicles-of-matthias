@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesTacticsUse } from '../chroniclesOfMatthiasTactics.js';
+import { chroniclesTacticsUse, chroniclesTacticsMove, chroniclesTacticsInteractions } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 import {
   chroniclesApplyContentEffects,
@@ -206,5 +206,45 @@ describe('Chronicles Chain Basilica', () => {
       expect(loaded[foe.hpKey], foe.id).toBe(0);
       expect(loaded.ironDeaconHp).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('Optional Basilica incense sacrifice', () => {
+  const id = 'basilica-incense-jam';
+  function atMechanism() {
+    const map = chroniclesMapById('chain-basilica');
+    const base = chroniclesMapTransitionState(createChroniclesState(), map.id);
+    const wisp = map.enemies.find(enemy => enemy.id === 'censer-wisp');
+    return { base: { ...base, x: 7, y: 3 }, wisp };
+  }
+  it('offers the sacrifice only with the trophy and prevents actual trap damage', () => {
+    const { base, wisp } = atMechanism();
+    expect(chroniclesTacticsInteractions(base).map(entry => entry.id)).not.toContain(id);
+    const before = chroniclesApplyContentEffects({ ...base, [wisp.hpKey]: 0 }, wisp.onDefeat.effects);
+    expect(chroniclesTacticsInteractions(before).map(entry => entry.id)).toContain(id);
+    const normal = chroniclesTacticsMove(before, { x: 8, y: 3 });
+    expect(normal.basilicaChainPlateSpent).toBe(true);
+    expect(normal.party.map(hero => hero.hp)).toEqual(before.party.map(hero => Math.max(0, hero.hp - 2)));
+    expect(normal.inventory['incense-ember'].quantity).toBe(1);
+    const jammed = chroniclesTacticsUse(before, id);
+    expect(jammed.basilicaChainPlateSpent).toBe(true);
+    expect(jammed.inventory['incense-ember']).toBeUndefined();
+    expect(jammed.quests).toEqual(before.quests);
+    const safe = chroniclesTacticsMove(jammed, { x: 8, y: 3 });
+    expect(safe.party.map(hero => hero.hp)).toEqual(before.party.map(hero => hero.hp));
+    const returned = chroniclesMapTransitionState(
+      chroniclesMapTransitionState(safe, 'hollow-bell-tower'), 'chain-basilica',
+    );
+    expect(returned.basilicaChainPlateSpent).toBe(true);
+    expect(returned.inventory['incense-ember']).toBeUndefined();
+  });
+  it('does not consume the trophy once the trap has already fired', () => {
+    const { base, wisp } = atMechanism();
+    const before = chroniclesApplyContentEffects(
+      { ...base, basilicaChainPlateSpent: true }, wisp.onDefeat.effects,
+    );
+    expect(chroniclesTacticsInteractions(before).map(entry => entry.id)).not.toContain(id);
+    const after = chroniclesTacticsUse(before, id);
+    expect(after.inventory).toEqual(before.inventory);
   });
 });
