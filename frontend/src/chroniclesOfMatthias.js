@@ -16,6 +16,7 @@ import {
   chroniclesContentDefinition,
   chroniclesContentInteractions,
   chroniclesContentVisible,
+  chroniclesGoldBalance,
   chroniclesQuestEntries,
   chroniclesPreferredObjectiveQuest,
   chroniclesRequirementFailure,
@@ -625,12 +626,23 @@ function rewardForDefeat(state, enemy) {
   const loot = chroniclesCommonLoot(state, enemy);
   if (!loot) return rewarded;
   const effects = [{ type: 'grant-gold', amount: loot.gold }];
-  if (loot.potion) {
+  // Common loot must respect the same stack ceiling as checkpoint storage.
+  const potionBefore = chroniclesConsumableCount(rewarded, 'healing-potion');
+  if (loot.potion && potionBefore < 9999) {
     effects.push({ type: 'grant-item', itemId: 'healing-potion', name: 'Poción de curación', description: 'Cura 15 PV a un héroe.', quantity: 1 });
   }
   const looted = chroniclesApplyContentEffects(rewarded, effects);
-  const found = loot.potion ? `${loot.gold} monedas y una poción de curación` : `${loot.gold} monedas`;
-  return { ...looted, message: `${looted.message || ''} Lleva encima ${found}.`.trim() };
+  const gold = Math.max(0, chroniclesGoldBalance(looted) - chroniclesGoldBalance(rewarded));
+  const potion = chroniclesConsumableCount(looted, 'healing-potion') > potionBefore;
+  const found = [gold > 0 ? `${gold} ${gold === 1 ? 'moneda' : 'monedas'}` : '',
+    potion ? 'una poción de curación' : ''].filter(Boolean).join(' y ');
+  const capped = gold < loot.gold || (loot.potion && !potion);
+  // A roll is not proof of receipt: grantGold can reject a full purse.
+  // Keep the defeat text even when none of the rolled loot fits.
+  return { ...looted, message: [looted.message,
+    found ? `Lleva encima ${found}.` : '',
+    capped ? 'Parte del botín no cabe en el inventario.' : '',
+  ].filter(Boolean).join(' ').trim() };
 }
 
 function journalForDefeat(state, attacker, enemy) {
