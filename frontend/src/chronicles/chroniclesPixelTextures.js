@@ -239,7 +239,17 @@ function sample(kind, x, y, size) {
     if (hash(x, y, 31) > 0.985) return { color: 0x7d8a52 };
     return 0.55 + mass * 0.7 + grain * 0.2;
   }
-  if (kind === 'snow' || kind === 'sand' || kind === 'ashland') {
+  if (kind === 'sand') {
+    // Broad wind-packed patches with low, wandering ripple crests.
+    // Integer wave counts and periodic noise keep the pattern tileable.
+    const bank = valueNoise(x, y, size, 4, 5) - 0.5;
+    const bend = valueNoise(x, y, size, 3, 87) - 0.5;
+    const phase = (x + 6 * y) * Math.PI * 2 / size + bend * 2.2;
+    const ripple = Math.sin(phase) * 0.13 + Math.sin(phase * 2) * 0.035;
+    const sediment = valueNoise(x, y, size, 11, 89) - 0.5;
+    return 0.57 + bank * 0.32 + ripple + sediment * 0.12 + grain * 0.06;
+  }
+  if (kind === 'snow' || kind === 'ashland') {
     const drift = valueNoise(x, y, size, 4, 5) - 0.5;
     const ripple = valueNoise(x, y, size, 9, 6) - 0.5;
     if (kind === 'ashland' && hash(x, y, 19) > 0.997) return { color: 0xd8641e };
