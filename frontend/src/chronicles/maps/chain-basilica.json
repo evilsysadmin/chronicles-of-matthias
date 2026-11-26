@@ -101,7 +101,9 @@
       "ai": {
         "movement": "hold",
         "attackReach": 3,
-        "requiresLineOfSight": true
+        "requiresLineOfSight": true,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
       }
     },
     {
