@@ -81,7 +81,13 @@
       "retaliation": 2,
       "retaliationReach": 2,
       "activation": "always",
-      "ai": { "movement": "hold", "attackReach": 2, "requiresLineOfSight": true }
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      }
     },
     {
       "id": "ink-hound",
