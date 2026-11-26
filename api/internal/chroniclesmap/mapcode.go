@@ -78,24 +78,34 @@ func normalizeTheme(raw string) (string, error) {
 }
 
 func normalizeVerbs(raw string) ([]string, error) {
-	var values []string
-	for _, part := range strings.Split(raw, ",") {
-		if v := pyval.Strip(part); v != "" {
-			values = append(values, strings.ToLower(v))
+	return normalizeVerbParts([]string{raw})
+}
+
+// Normalize comma-delimited parts directly, without joining the input slice
+// only to split it again. Embedded commas retain the legacy interpretation.
+func normalizeVerbParts(raw []string) ([]string, error) {
+	values := make([]string, 0, 4)
+	for _, entry := range raw {
+		for part := range strings.SplitSeq(entry, ",") {
+			if v := pyval.Strip(part); v != "" {
+				values = append(values, strings.ToLower(v))
+				if len(values) > 4 {
+					return nil, codeErr("verbs supports at most 4 entries")
+				}
+			}
 		}
 	}
 	if len(values) == 0 {
 		return nil, codeErr("verbs must contain at least one entry")
 	}
-	if len(values) > 4 {
-		return nil, codeErr("verbs supports at most 4 entries")
-	}
-	seen := map[string]bool{}
-	for _, v := range values {
-		if seen[v] {
-			return nil, codeErr("verbs must be unique")
+	// The list is capped at four entries, so a small pairwise comparison
+	// avoids allocating a hash map while retaining duplicate-error precedence.
+	for i, v := range values {
+		for _, previous := range values[:i] {
+			if v == previous {
+				return nil, codeErr("verbs must be unique")
+			}
 		}
-		seen[v] = true
 	}
 	for _, v := range values {
 		if !allowedVerbs[v] {
@@ -111,7 +121,7 @@ func Validate(recipe Recipe) (Recipe, error) {
 	if err != nil {
 		return Recipe{}, err
 	}
-	verbs, err := normalizeVerbs(strings.Join(recipe.Verbs, ","))
+	verbs, err := normalizeVerbParts(recipe.Verbs)
 	if err != nil {
 		return Recipe{}, err
 	}
@@ -155,7 +165,8 @@ func encodeValidated(recipe Recipe) string {
 		"difficulty": strconv.Itoa(recipe.Difficulty),
 		"seed":       strconv.Itoa(recipe.Seed),
 	}
-	parts := []string{MapCodePrefix}
+	parts := make([]string, 1, 1+len(fieldOrder))
+	parts[0] = MapCodePrefix
 	for _, key := range fieldOrder {
 		parts = append(parts, key+"="+fields[key])
 	}
