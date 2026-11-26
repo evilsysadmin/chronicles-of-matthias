@@ -3,7 +3,7 @@
 // Stages are matched in order. Missing or unrevealed places stay unknown.
 import questRegionHints from './campaign/quest-region-hints.json';
 import { chroniclesMapById, chroniclesMapForState } from './chroniclesMapCatalog.js';
-import { chroniclesQuestEntries, chroniclesRequirementsMet } from './chroniclesContentRuntime.js';
+import { chroniclesPreferredObjectiveQuest, chroniclesRequirementsMet } from './chroniclesContentRuntime.js';
 
 function stageMatches(stage, quest, state) {
   if (Array.isArray(stage.when) && !chroniclesRequirementsMet(state, stage.when)) return false;
@@ -64,11 +64,7 @@ export function chroniclesHudQuestDestination(state, objective) {
     || (map.regionKind === 'dungeon' && (map.exits || [])[0]?.requiresReturn === true);
   if (!campaignArea) return null;
 
-  const active = chroniclesQuestEntries(state, 'active').filter((quest) => quest.objective);
-  const localQuestIds = new Set((map.interactables || []).flatMap((entry) =>
-    (entry.when || []).map((rule) => rule?.questId).filter(Boolean)));
-  const followed = active.find((quest) => quest.id === state.trackedQuestId)
-    || active.find((quest) => localQuestIds.has(quest.id)) || active[0];
+  const followed = chroniclesPreferredObjectiveQuest(state, map);
   if (!followed || followed.objective !== objective) return null;
   const hint = chroniclesQuestRegionHint(followed, state);
   const context = chroniclesQuestRegionContext(hint, state);

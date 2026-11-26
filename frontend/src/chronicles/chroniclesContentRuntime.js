@@ -65,6 +65,17 @@ export function chroniclesActiveQuest(state) {
   return chroniclesQuestEntries(state, 'active')[0] || null;
 }
 
+// One read-only choice for the exploration objective, authored travel hint
+// and the journal's initial page. Explicit tracking wins; otherwise prefer
+// quest content on the actual map before chronological acceptance order.
+export function chroniclesPreferredObjectiveQuest(state, map = chroniclesMapForState(state)) {
+  const active = chroniclesQuestEntries(state, 'active').filter(quest => quest.objective);
+  const localQuestIds = new Set((map?.interactables || []).flatMap(entry =>
+    (entry.when || []).map(rule => rule?.questId).filter(Boolean)));
+  return active.find(quest => quest.id === state?.trackedQuestId)
+    || active.find(quest => localQuestIds.has(quest.id)) || active[0] || null;
+}
+
 // Numeric gates must never treat missing HP (null/undefined) or malformed
 // legacy values as zero: that would unlock a dungeon exit before its guardian
 // is defeated. Preserve finite numeric strings from older saved campaigns.
