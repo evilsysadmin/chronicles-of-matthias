@@ -166,6 +166,13 @@
             "description": "Una pieza negra y pesada rescatada de una cámara que oficialmente no existía.",
             "quantity": 1
           },
+          {
+            "type": "grant-item",
+            "itemId": "iron-shield",
+            "name": "Escudo de hierro",
+            "description": "Escudo · armadura +3, acierto +1. Sólo clases con escudo y una mano libre.",
+            "quantity": 1
+          },
           { "type": "heal-party", "amount": 1 },
           {
             "type": "complete-quest",
@@ -176,11 +183,11 @@
             "order": 40
           }
         ],
-        "message": "El relicario se abre. Dentro espera un ídolo de obsidiana, intacto y con la expresión mineral de quien lleva siglos juzgando intrusos.",
+        "message": "El relicario se abre. Junto al ídolo de obsidiana espera un escudo de hierro, protegido del hollín. Matthias se alegra de encontrar algo que sirva para detener golpes y no sólo para despertar maldiciones.",
         "journal": {
           "id": "ash-reliquary-opened",
           "title": "El ídolo que no figuraba en el inventario",
-          "body": "La compañía recupera un Ídolo de Obsidiana de la cámara secreta. Matthias lo registra como hallazgo arqueológico antes de que alguien diga robo.",
+          "body": "La compañía recupera un Ídolo de Obsidiana y un Escudo de hierro de la cámara secreta. Matthias registra el primero como hallazgo arqueológico y el segundo como inversión en supervivencia.",
           "sigil": "◆"
         }
       }
