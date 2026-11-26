@@ -2896,6 +2896,26 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     // restrained sage/ochre range, derived only from immutable world
     // transforms: same positions, silhouette, batching, materials and
     // deterministic palette after F5. No new draw calls or vegetation.
+    // Saturated near-water scrub grades into muted distant marsh foliage.
+    // A continuous seeded world field keeps adjacent bushes coherent,
+    // with no new materials, texture samples or instanced draw batches.
+    if (biome === 'marsh' && part === 'bush') {
+      const wet = new THREE.Color('#94b1a0');
+      const dry = new THREE.Color('#e2dfb9');
+      const haze = new THREE.Color('#b9c5c0');
+      const tint = new THREE.Color();
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const wetness = 0.5 + 0.5 * Math.sin(x * 0.35 + y * 0.28)
+          * Math.cos(y * 0.43 - x * 0.19);
+        const ring = Math.max(0, -x, x - width + 1, -y, y - grid.length + 1);
+        const depth = ring >= 3 ? 0.55 : ring === 2 ? 0.30 : 0;
+        mesh.setColorAt(index, tint.copy(dry).lerp(wet, wetness).lerp(haze, depth));
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     if (brezalBackdrop && part === 'bush') {
       const shades = ['#b9bda1', '#adb79b', '#c5b9a0', '#a4b39a', '#c5c2ab']
         .map(hex => new THREE.Color(hex));
