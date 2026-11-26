@@ -63,7 +63,7 @@ function inWindow(position, state, radiusX, radiusY = radiusX) {
 // Use the same authored, deduplicated, discovery-gated POIs as the full M map.
 // Only their presentation and responsive local viewport are different.
 function discoveredLocalMarkers(map, state, revealed, radiusX, radiusY) {
-  return chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition)
+  return chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition, state)
     .filter((marker) => inWindow(marker.position, state, radiusX, radiusY));
 }
 

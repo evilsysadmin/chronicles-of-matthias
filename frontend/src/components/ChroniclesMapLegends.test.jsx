@@ -165,3 +165,28 @@ describe('MM3 map symbol legends', () => {
     expect(full).toContain('★</i> rumbo al objetivo');
   });
 });
+
+describe('Discovered treasure opportunities on both maps', () => {
+  const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+  const render = (state, visitedCells) => [
+    renderToStaticMarkup(<ChroniclesAutomap open state={state} visitedCells={visitedCells} onClose={() => {}} />),
+    renderToStaticMarkup(<ChroniclesMinimap state={state} visitedCells={visitedCells} radius={7} />),
+  ];
+  it('removes a collected purse from both maps without changing explored terrain', () => {
+    const state = { ...base, x: 14, y: 1, sewersCoinsTaken: false };
+    const seen = ['15:1'];
+    for (const html of render(state, seen)) expect(html).toContain('data-chronicles-poi-id="sewers-dropped-purse"');
+    for (const html of render({ ...state, sewersCoinsTaken: true }, seen)) {
+      expect(html).not.toContain('data-chronicles-poi-id="sewers-dropped-purse"');
+      expect(html).not.toContain('data-chronicles-fog-cell="15:1"');
+    }
+    for (const html of render(state, [])) expect(html).not.toContain('data-chronicles-poi-id="sewers-dropped-purse"');
+  });
+  it('shows a discovered smuggler stash only when its authored visibility gate is satisfied', () => {
+    const state = { ...base, x: 8, y: 17, sewersSmugglerHp: 1, sewersStashOpened: false };
+    const seen = ['9:17'];
+    for (const html of render(state, seen)) expect(html).not.toContain('data-chronicles-poi-id="sewers-smuggler-stash"');
+    for (const html of render({ ...state, sewersSmugglerHp: 0 }, seen)) expect(html).toContain('data-chronicles-poi-id="sewers-smuggler-stash"');
+    for (const html of render({ ...state, sewersSmugglerHp: 0, sewersStashOpened: true }, seen)) expect(html).not.toContain('data-chronicles-poi-id="sewers-smuggler-stash"');
+  });
+});

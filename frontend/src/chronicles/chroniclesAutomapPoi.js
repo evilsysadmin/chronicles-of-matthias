@@ -1,4 +1,5 @@
 import { chroniclesAutomapCellKey } from './chroniclesAutomap.js';
+import { chroniclesContentVisible } from './chroniclesContentRuntime.js';
 
 // Authored content remains the single source of POI coordinates. Never show
 // unrevealed cells or claim that an unvisited destination has been found.
@@ -49,7 +50,7 @@ export function chroniclesRouteTargetOverlapsPoi(target, markers) {
     marker.position?.x === target.x && marker.position?.y === target.y);
 }
 
-export function chroniclesDiscoveredPois(map, revealed, positionFor) {
+export function chroniclesDiscoveredPois(map, revealed, positionFor, state = null) {
   if (!map || !revealed || typeof positionFor !== 'function') return [];
   const candidates = [
     ['exit', map.exits || []],
@@ -58,6 +59,10 @@ export function chroniclesDiscoveredPois(map, revealed, positionFor) {
   ];
   const tiles = new Map();
   candidates.forEach(([kind, entries]) => entries.forEach((entry) => {
+    // A treasure is a live opportunity, not a permanent landmark. Retain
+    // discovered exits and services, but respect the same visibility gates
+    // as actual pickup interactions for treasures.
+    if (kind === 'treasure' && state && !chroniclesContentVisible(state, entry)) return;
     const category = chroniclesPoiCategory(kind, entry);
     if (!category) return;
     const position = positionFor(map, entry);
