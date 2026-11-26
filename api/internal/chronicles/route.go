@@ -148,16 +148,24 @@ func RoutePlanForSeed(seed int64) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	ranked := append([]string(nil), p.MapIDs...)
-	keys := map[string][]byte{}
-	for _, id := range ranked {
-		keys[id] = digest(fmt.Sprintf("chronicles-route-v%d:%d:%s", p.Version, seed, id))
+	type rankedMap struct {
+		id  string
+		key [sha256.Size]byte
 	}
-	sort.SliceStable(ranked, func(i, j int) bool { return lessBytes(keys[ranked[i]], keys[ranked[j]]) })
+	ranked := make([]rankedMap, len(p.MapIDs))
+	for i, id := range p.MapIDs {
+		ranked[i] = rankedMap{id: id, key: sha256.Sum256([]byte(fmt.Sprintf("chronicles-route-v%d:%d:%s", p.Version, seed, id)))}
+	}
+	sort.SliceStable(ranked, func(i, j int) bool { return lessBytes(ranked[i].key[:], ranked[j].key[:]) })
 	d := digest(fmt.Sprintf("chronicles-route-length-v%d:%d", p.Version, seed))
 	span := uint32(p.MaxRouteLength - p.MinRouteLength + 1)
 	length := p.MinRouteLength + int64(binary.BigEndian.Uint32(d[:4])%span)
-	return append(ranked[:length-1:length-1], p.FinalMapID), nil
+	plan := make([]string, length)
+	for i := range plan[:length-1] {
+		plan[i] = ranked[i].id
+	}
+	plan[length-1] = p.FinalMapID
+	return plan, nil
 }
 
 // RouteSnapshot is a run's normalized route.
