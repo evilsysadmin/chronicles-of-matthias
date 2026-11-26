@@ -142,16 +142,6 @@ func digest(material string) []byte {
 	return sum[:]
 }
 
-// EntryMapForSeed mirrors chronicles_entry_map_for_seed.
-func EntryMapForSeed(seed int64) (string, error) {
-	p, err := Policy()
-	if err != nil {
-		return "", err
-	}
-	d := digest(fmt.Sprintf("chronicles-entry-v%d:%d", p.Version, seed))
-	return p.MapIDs[binary.BigEndian.Uint32(d[:4])%uint32(len(p.MapIDs))], nil
-}
-
 // RoutePlanForSeed mirrors chronicles_route_plan_for_seed.
 func RoutePlanForSeed(seed int64) ([]string, error) {
 	p, err := Policy()
