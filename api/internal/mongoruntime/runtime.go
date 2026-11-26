@@ -89,13 +89,6 @@ func (r *Runtime) Database() *mongo.Database {
 	return r.db
 }
 
-func (r *Runtime) QueryTimeout() time.Duration {
-	if r == nil {
-		return DefaultQueryTimeout
-	}
-	return r.timeout
-}
-
 func (r *Runtime) Ping(ctx context.Context) error {
 	if r == nil || r.client == nil {
 		return errors.New("mongodb runtime is not configured")
