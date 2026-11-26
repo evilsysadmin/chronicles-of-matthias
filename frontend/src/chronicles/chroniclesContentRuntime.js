@@ -72,8 +72,31 @@ export function chroniclesPreferredObjectiveQuest(state, map = chroniclesMapForS
   const active = chroniclesQuestEntries(state, 'active').filter(quest => quest.objective);
   const localQuestIds = new Set((map?.interactables || []).flatMap(entry =>
     (entry.when || []).map(rule => rule?.questId).filter(Boolean)));
-  return active.find(quest => quest.id === state?.trackedQuestId)
-    || active.find(quest => localQuestIds.has(quest.id)) || active[0] || null;
+  const tracked = active.find(quest => quest.id === state?.trackedQuestId);
+  if (tracked) return tracked;
+  const local = active.find(quest => localQuestIds.has(quest.id));
+  if (local) return local;
+
+  // Some local objectives are fulfilled by a treasure or a mechanism whose
+  // gate is an item/flag rather than a quest ID. Consider only currently
+  // available advancing/completing actions, not unrelated introductions or
+  // hidden/locked content. This is a read-only preference, never a route hint.
+  const actionableQuestIds = new Set();
+  for (const entry of chroniclesContentEntries(map)) {
+    if (!chroniclesContentVisible(state, entry)
+      || !chroniclesRequirementsMet(state, entry.requirements)) continue;
+    for (const effect of entry.action?.effects || []) {
+      const effects = effect.type === 'claim-reward'
+        ? (chroniclesRequirementsMet(state, effect.requirements) ? effect.effects || [] : [])
+        : [effect];
+      for (const part of effects) {
+        if (part.type === 'advance-quest' || part.type === 'complete-quest') {
+          actionableQuestIds.add(part.questId);
+        }
+      }
+    }
+  }
+  return active.find(quest => actionableQuestIds.has(quest.id)) || active[0] || null;
 }
 
 // Numeric gates must never treat missing HP (null/undefined) or malformed

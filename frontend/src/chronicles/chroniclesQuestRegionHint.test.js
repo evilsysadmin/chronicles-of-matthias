@@ -290,3 +290,37 @@ describe('shared objective quest selection', () => {
     expect(state.trackedQuestId).toBe('banner-contract');
   });
 });
+
+describe('Local objectives with item-gated rewards', () => {
+  it('prioritizes the available real Menagerie cache but not a hidden or collected cache', () => {
+    const base = createChroniclesState('menagerie-of-ash');
+    const unrelated = { id: 'unrelated', status: 'active', order: 0, objective: 'Una misión en otra región.' };
+    const ember = { id: 'embers-under-stone', status: 'active', order: 30, objective: 'Encuentra dónde encaja el Fragmento de Brasa.' };
+    const state = { ...base, emberCacheOpened: false, quests: { unrelated, [ember.id]: ember } };
+    expect(chroniclesPreferredObjectiveQuest(state)).toBe(unrelated);
+    const ready = { ...state, inventory: { 'ember-shard': { quantity: 1 } } };
+    expect(chroniclesPreferredObjectiveQuest(ready)).toBe(ember);
+    expect(chroniclesPreferredObjectiveQuest({ ...ready, trackedQuestId: unrelated.id })).toBe(unrelated);
+    expect(chroniclesPreferredObjectiveQuest({ ...ready, emberCacheOpened: true })).toBe(unrelated);
+    expect(chroniclesPreferredObjectiveQuest({ ...ready, quests: {
+      ...ready.quests, [ember.id]: { ...ember, status: 'completed' },
+    } })).toBe(unrelated);
+  });
+  it('checks inner reward requirements and ignores start-only or locked content', () => {
+    const older = { id: 'older', status: 'active', order: 0, objective: 'Otro encargo.' };
+    const reward = { id: 'reward', status: 'active', order: 1, objective: 'Entrega la llave.' };
+    const intro = { id: 'intro', status: 'active', order: -1, objective: 'Investiga la pista.' };
+    const map = { interactables: [
+      { action: { effects: [{ type: 'start-quest', questId: intro.id }] } },
+      { requirements: [{ key: 'unlocked', truthy: true }], action: {
+        effects: [{ type: 'claim-reward', requirements: [{ itemId: 'key' }], effects: [
+          { type: 'complete-quest', questId: reward.id },
+        ] }],
+      } },
+    ] };
+    const state = { quests: { older, reward, intro }, unlocked: true, inventory: { key: { quantity: 1 } } };
+    expect(chroniclesPreferredObjectiveQuest(state, map)).toBe(reward);
+    expect(chroniclesPreferredObjectiveQuest({ ...state, unlocked: false }, map)).toBe(intro);
+    expect(chroniclesPreferredObjectiveQuest({ ...state, inventory: {} }, map)).toBe(intro);
+  });
+});
