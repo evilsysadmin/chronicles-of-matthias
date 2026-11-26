@@ -4,6 +4,7 @@ import { useEscapeToClose } from '../useEscapeToClose.js';
 import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
+import { chroniclesPreferredObjectiveQuest } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesQuestRecordedEvents, chroniclesQuestsForRecordedEvent } from '../chronicles/chroniclesQuestRecordedEvents.js';
 import './ChroniclesJournalModal.css';
 
@@ -153,7 +154,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   // the reader with every entry closed because an obsolete ID was retained.
   // '' is intentional: clicking the open heading collapses all entries.
   const fallbackQuestId = (active.find((quest) => quest.id === state?.trackedQuestId)
-    || active[0] || quests[0])?.id;
+    || chroniclesPreferredObjectiveQuest(state) || active[0] || quests[0])?.id;
   const selectedId = openedQuestId === '' ? ''
     : openedQuestId && quests.some((quest) => quest.id === openedQuestId)
       ? openedQuestId : fallbackQuestId;

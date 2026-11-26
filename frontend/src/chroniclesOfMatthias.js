@@ -17,6 +17,7 @@ import {
   chroniclesContentInteractions,
   chroniclesContentVisible,
   chroniclesQuestEntries,
+  chroniclesPreferredObjectiveQuest,
   chroniclesRequirementFailure,
   chroniclesRequirementMet,
   chroniclesRequirementsMet,
@@ -1463,13 +1464,7 @@ export function chroniclesObjective(state) {
   const campaignArea = ['settlement', 'wilderness'].includes(map.regionKind)
     || (map.regionKind === 'dungeon' && exit?.requiresReturn === true);
   if (campaignArea) {
-    const active = chroniclesQuestEntries(state, 'active').filter((quest) => quest.objective);
-    const localQuestIds = new Set((map.interactables || []).flatMap((entry) => (
-      (entry.when || []).map((requirement) => requirement?.questId).filter(Boolean)
-    )));
-    // A quest the player chose to follow (Crónica → «Seguir») comes first.
-    const tracked = active.find((quest) => quest.id === state.trackedQuestId)
-      || active.find((quest) => localQuestIds.has(quest.id)) || active[0];
+    const tracked = chroniclesPreferredObjectiveQuest(state, map);
     if (tracked) return tracked.objective;
   }
   if (campaignArea && !exit?.explorationObjective) {

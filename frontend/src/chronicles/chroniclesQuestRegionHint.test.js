@@ -3,6 +3,7 @@ import { chroniclesQuestRegionHint, chroniclesQuestRegionContext, chroniclesHudQ
 import { createChroniclesState, chroniclesObjective } from '../chroniclesOfMatthias.js';
 import questRegionHints from './campaign/quest-region-hints.json';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
+import { chroniclesPreferredObjectiveQuest } from './chroniclesContentRuntime.js';
 
 const active = (id, objective = '') => ({ id, status: 'active', objective });
 
@@ -263,5 +264,29 @@ describe('HUD location for quests outside the current map', () => {
     expect(chroniclesHudQuestDestination(state, objective))
       .toMatchObject({ mapId: 'rookwood-first-book', region: 'Rookwood' });
     expect(chroniclesHudQuestDestination(state, bannerObjective)).toBeNull();
+  });
+});
+
+describe('shared objective quest selection', () => {
+  const quests = {
+    'lost-king': { id: 'lost-king', status: 'active', order: 0, objective: 'Investiga al rey.' },
+    'banner-contract': { id: 'banner-contract', status: 'active', order: 2, objective: 'Recupera el estandarte.' },
+  };
+  it('selects the real local road contract ahead of an older story quest', () => {
+    const state = { ...createChroniclesState('banner-road-first-book'), quests };
+    expect(chroniclesPreferredObjectiveQuest(state)).toBe(quests['banner-contract']);
+    expect(chroniclesObjective(state)).toBe(quests['banner-contract'].objective);
+    expect(chroniclesPreferredObjectiveQuest({ ...state, trackedQuestId: 'lost-king' })).toBe(quests['lost-king']);
+    expect(chroniclesObjective({ ...state, trackedQuestId: 'lost-king' })).toBe(quests['lost-king'].objective);
+    expect(chroniclesPreferredObjectiveQuest({ ...state, trackedQuestId: 'missing' })).toBe(quests['banner-contract']);
+  });
+  it('never picks completed or objective-less contracts and preserves chronological fallback', () => {
+    const state = { ...createChroniclesState('banner-road-first-book'), quests: {
+      ...quests, 'banner-contract': { ...quests['banner-contract'], status: 'completed' },
+      empty: { id: 'empty', status: 'active', order: -1 },
+    }, trackedQuestId: 'banner-contract' };
+    expect(chroniclesPreferredObjectiveQuest(state)).toBe(quests['lost-king']);
+    expect(chroniclesPreferredObjectiveQuest({ ...state, quests: {} })).toBeNull();
+    expect(state.trackedQuestId).toBe('banner-contract');
   });
 });
