@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createChroniclesState, chroniclesPartyAttackStats } from '../chroniclesOfMatthias.js';
-import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from './chroniclesGearCompare.js';
+import { createChroniclesState, chroniclesPartyAttackStats, chroniclesPartyArmorClass } from '../chroniclesOfMatthias.js';
+import { chroniclesGearAttackModes, chroniclesGearSwapPreview, chroniclesDefenseSwapPreview } from './chroniclesGearCompare.js';
 
 function company() {
   const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
@@ -65,5 +65,42 @@ describe('Chronicles MM3 · ficha de doble arma (#134)', () => {
     const preview = chroniclesGearSwapPreview(state, 'matthias', 'wooden-bow');
     expect(preview.before).toMatchObject({ damage: 0, reach: 0 });
     expect(preview.after.reach).toBeGreaterThan(0);
+  });
+});
+
+describe('MM3 effective protection preview', () => {
+  it.each(['bronze-padded', 'iron-shield'])('uses effective combat numbers for %s, including an empty slot', itemId => {
+    const slot = itemId.endsWith('shield') ? 'shield' : 'armor';
+    const base = company();
+    const state = { ...base, equipment: { ...base.equipment, matthias: {
+      weapon: 'bronze-sword', missile: 'wooden-bow',
+    } } };
+    const original = JSON.stringify(state);
+    const preview = chroniclesDefenseSwapPreview(state, 'matthias', itemId);
+    const hypothetical = { ...state, equipment: { ...state.equipment,
+      matthias: { ...state.equipment.matthias, [slot]: itemId } } };
+    expect(preview.currentName).toBe('Sin equipar');
+    expect(preview.stats[0]).toEqual({ key: 'armorClass', label: 'CA efectiva',
+      before: chroniclesPartyArmorClass(state, 'matthias'),
+      after: chroniclesPartyArmorClass(hypothetical, 'matthias'),
+      delta: chroniclesPartyArmorClass(hypothetical, 'matthias') - chroniclesPartyArmorClass(state, 'matthias') });
+    for (const [mode, prefix] of [['melee', 'melee'], ['missile', 'missile']]) {
+      const before = chroniclesPartyAttackStats(state, 'matthias', mode);
+      const after = chroniclesPartyAttackStats(hypothetical, 'matthias', mode);
+      for (const [stat, suffix] of [['toHit', 'Hit'], ['damage', 'Damage']]) {
+        const row = preview.stats.find(entry => entry.key === prefix + suffix);
+        if (after[stat] === before[stat]) expect(row).toBeUndefined();
+        else expect(row).toMatchObject({ before: before[stat], after: after[stat], delta: after[stat] - before[stat] });
+      }
+    }
+    expect(JSON.stringify(state)).toBe(original);
+  });
+  it('does not preview a shield beside a two-handed melee weapon or forbidden gear', () => {
+    const base = company();
+    const state = { ...base, equipment: { ...base.equipment, matthias: { weapon: 'iron-staff' } } };
+    expect(chroniclesDefenseSwapPreview(state, 'matthias', 'iron-shield')).toBeNull();
+    expect(chroniclesDefenseSwapPreview(base, 'bishop', 'iron-plate')).toBeNull();
+    expect(chroniclesDefenseSwapPreview(base, 'matthias', 'bronze-sword')).toBeNull();
+    expect(chroniclesDefenseSwapPreview({ ...base, combatRules: 'tactics' }, 'matthias', 'iron-shield')).toBeNull();
   });
 });

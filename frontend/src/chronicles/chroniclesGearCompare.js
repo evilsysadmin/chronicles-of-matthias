@@ -55,3 +55,37 @@ export function chroniclesGearSwapPreview(state, memberId, itemId) {
       : 0,
   };
 }
+
+// Armor and shields can affect both attack modes as well as effective CA.
+// Use the actual combat calculators (including fatigue and temporary boons)
+// rather than subtracting the two item-catalog bonuses. No equip action.
+export function chroniclesDefenseSwapPreview(state, memberId, itemId) {
+  const member = state?.party?.find(hero => hero.id === memberId);
+  const item = CHRONICLES_EQUIPMENT[itemId];
+  if (state?.combatRules !== 'mm3' || !member || !item
+      || !['armor', 'shield'].includes(item.slot) || !chroniclesMemberCanEquip(member, item)) return null;
+  if (item.slot === 'shield' && chroniclesEquippedItem(state, memberId, 'weapon')?.twoHanded) return null;
+  const hypothetical = {
+    ...state,
+    equipment: { ...state.equipment, [memberId]: {
+      ...chroniclesNormalizeMemberEquipment(state.equipment?.[memberId]), [item.slot]: item.id,
+    } },
+  };
+  const metrics = source => {
+    const melee = chroniclesPartyAttackStats(source, memberId, 'melee');
+    const missile = chroniclesPartyAttackStats(source, memberId, 'missile');
+    return { armorClass: chroniclesPartyArmorClass(source, memberId),
+      meleeHit: melee.toHit, meleeDamage: melee.damage,
+      missileHit: missile.toHit, missileDamage: missile.damage };
+  };
+  const before = metrics(state), after = metrics(hypothetical);
+  const labels = { armorClass: 'CA efectiva', meleeHit: 'Acierto (A)', meleeDamage: 'Daño (A)',
+    missileHit: 'Acierto (S)', missileDamage: 'Daño (S)' };
+  return {
+    currentName: chroniclesEquippedItem(state, memberId, item.slot)?.name || 'Sin equipar',
+    proposedName: item.name,
+    stats: Object.keys(labels).map(key => ({ key, label: labels[key],
+      before: before[key], after: after[key], delta: after[key] - before[key] }))
+      .filter(stat => stat.key === 'armorClass' || stat.delta !== 0),
+  };
+}

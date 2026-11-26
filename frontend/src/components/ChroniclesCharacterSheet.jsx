@@ -52,7 +52,7 @@ import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactic
 import { chroniclesTemporaryFountainName } from '../chronicles/chroniclesTemporaryFountainBoon.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesInventoryShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
-import { chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
+import { chroniclesGearSwapPreview, chroniclesDefenseSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
 import { chroniclesBackpackMoveSelection } from '../chronicles/chroniclesBackpackFilters.js';
@@ -203,6 +203,8 @@ export default function ChroniclesCharacterSheet({
   const weaponSwap = selectedEquipment && mm3
     ? chroniclesGearSwapPreview(state, member.id, selectedEquipment.id)
     : null;
+  const defenseSwap = selectedEquipment && mm3
+    ? chroniclesDefenseSwapPreview(state, member.id, selectedEquipment.id) : null;
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
   // Include genuine equipped items in the MM3 item ledger; a full equipment
   // loadout must never look like an empty inventory just because the bag is empty.
@@ -622,7 +624,19 @@ export default function ChroniclesCharacterSheet({
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
                       </details>
-                    ) : !selectedWornItem && detailEquipped && <small>Diferencia respecto al equipo actual: daño {signed(detailEquipment.attackDamageBonus - detailEquipped.attackDamageBonus)}, acierto {signed(detailEquipment.toHitBonus - detailEquipped.toHitBonus)}, armadura {signed(detailEquipment.armorClassBonus - detailEquipped.armorClassBonus)}.</small>}
+                    ) : !selectedWornItem && defenseSwap ? (
+                      <details className="chronicles-character-sheet__swap-preview" aria-label="Comparación de protección">
+                        <summary>
+                          <span>Si equipas este objeto</span>
+                          <strong>{defenseSwap.stats.map(stat => `${stat.label} ${signed(stat.delta)}`).join(' · ')}</strong>
+                          <small>Ver comparación antes y después</small>
+                        </summary>
+                        {defenseSwap.stats.map(stat => (
+                          <div key={stat.key}><span>{stat.label}</span><strong>{stat.before} → {stat.after}</strong><em>{signed(stat.delta)}</em></div>
+                        ))}
+                        <small>Comparación informativa: nada se equipa hasta confirmar.</small>
+                      </details>
+                    ) : !selectedWornItem && !mm3 && detailEquipped && <small>Diferencia respecto al equipo actual: daño {signed(detailEquipment.attackDamageBonus - detailEquipped.attackDamageBonus)}, acierto {signed(detailEquipment.toHitBonus - detailEquipped.toHitBonus)}, armadura {signed(detailEquipment.armorClassBonus - detailEquipped.armorClassBonus)}.</small>}
 
                   </>}
                   {detailEquipment && <details className="chronicles-character-sheet__item-more" open={expandItemAttributes && inspectItem}>
