@@ -34,3 +34,28 @@ func TestLiveRecipeEncodingAndGenerationRemainDeterministic(t *testing.T) {
 		t.Fatalf("invalid generated map shape or party start: %+v", one)
 	}
 }
+
+func TestGeneratorAndEncoderAgreeOnRecipeValidation(t *testing.T) {
+	valid := Recipe{
+		Theme: " CRYPT ", Width: 15, Height: 11,
+		Verbs: []string{" HUNT ", "lever"},
+		Enemies: 3, Treasures: 1, Secrets: 1, Difficulty: 2, Seed: 17,
+	}
+	invalidTheme, invalidVerbs, invalidSeed := valid, valid, valid
+	invalidTheme.Theme = "unknown"
+	invalidVerbs.Verbs = []string{"hunt", "HUNT"}
+	invalidSeed.Seed = -1
+	for _, recipe := range []Recipe{valid, invalidTheme, invalidVerbs, invalidSeed} {
+		code, encodeErr := Encode(recipe)
+		layout, generateErr := GenerateRecipe(recipe)
+		if encodeErr != nil {
+			if generateErr == nil || generateErr.Error() != encodeErr.Error() {
+				t.Fatalf("validation differs: encoder %v; generator %v", encodeErr, generateErr)
+			}
+			continue
+		}
+		if generateErr != nil || layout.MapCode != code {
+			t.Fatalf("generated code %q, %v; want %q", layout.MapCode, generateErr, code)
+		}
+	}
+}
