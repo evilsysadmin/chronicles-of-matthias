@@ -1405,6 +1405,29 @@ export function chroniclesSnowRockGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+// Gnarled marsh wood: preserve the six-sided, single-segment cylinder
+// topology and its branch attachment envelope. A slight asymmetric taper
+// and off-centre crown break the perfectly straight cut-pole silhouette.
+// Displacement is position-based, including duplicated cap and UV vertices.
+export function chroniclesMarshDeadTrunkGeometry() {
+  const geometry = new THREE.CylinderGeometry(0.14, 0.26, 1, 6);
+  const position = geometry.getAttribute('position');
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const t = y + 0.5;
+    const angle = Math.atan2(z, x);
+    const radial = 1 + 0.09 * Math.cos(angle * 2 + t * 0.8)
+      + 0.06 * Math.sin(angle * 3 - t * 1.1);
+    position.setXYZ(i, x * radial + 0.075 * t, y,
+      z * radial - 0.045 * t);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1444,7 +1467,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       lit(woodland ? 0xffffff : 0xcbdcbd, { map: texture(woodland ? 'woodlandleaves' : 'leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
-    deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
+    deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
     reed: () => [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     // One batched, opaque water surface per marsh. More rounded on desktop,
     // original 14-gon on touch devices; never casts an implausible shadow.
