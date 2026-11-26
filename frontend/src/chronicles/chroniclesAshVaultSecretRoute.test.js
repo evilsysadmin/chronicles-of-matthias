@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
+import { CHRONICLES_EQUIPMENT } from './chroniclesEquipment.js';
 import {
   chroniclesTacticsInteractions,
   chroniclesTacticsUse,
@@ -100,6 +101,14 @@ describe('Chronicles secret Ash Vault route', () => {
     }));
     state = chroniclesTacticsUse(state, 'ash-reliquary');
     expect(state.vaultReliquaryOpened).toBe(true);
+    const shield = CHRONICLES_EQUIPMENT['iron-shield'];
+    expect(shield).toMatchObject({ slot: 'shield', armorClassBonus: 3, toHitBonus: 1 });
+    expect(chroniclesInventoryEntries(state)).toContainEqual(expect.objectContaining({
+      id: shield.id, name: shield.name, description: shield.description, quantity: 1,
+    }));
+    expect(chroniclesTacticsInteractions(state).map(entry => entry.id)).not.toContain('ash-reliquary');
+    const repeated = chroniclesTacticsUse(state, 'ash-reliquary');
+    expect(repeated.inventory['iron-shield'].quantity).toBe(1);
     expect(chroniclesInventoryEntries(state)).toContainEqual(expect.objectContaining({
       id: 'obsidian-idol',
       name: 'Ídolo de Obsidiana',
@@ -119,6 +128,7 @@ describe('Chronicles secret Ash Vault route', () => {
       id: 'obsidian-idol',
       quantity: 1,
     }));
+    expect(enteredArchive.inventory['iron-shield']?.quantity).toBe(1);
     expect(enteredArchive.journal.at(-1)?.id).toBe('ash-vault-archive-crossing');
 
     const atSecretCache = { ...enteredArchive, x: 7, y: 1 };
