@@ -116,8 +116,16 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
   const patches = coarsePointer ? 4 : 8;
   const span = 3.68;
   for (let i = 0; i < patches; i += 1) {
-    const x = ((i + 0.5) / patches - 0.5) * span;
-    const width = (span / patches) * (0.38 + hash(i, 11, 601) * 0.06);
+    // Keep both end patches anchored to avoid exposing tile seams.
+    // Interior clumps grow at uneven intervals and widths instead of
+    // forming a perfectly spaced row; the same mesh and LOD budgets apply.
+    const spacing = span / patches;
+    const endPatch = i === 0 || i === patches - 1;
+    const offset = endPatch ? 0 : (hash(i, 31, 631) - 0.5) * spacing * 0.18;
+    const x = ((i + 0.5) / patches - 0.5) * span + offset;
+    const width = spacing * (endPatch
+      ? 0.38 + hash(i, 11, 601) * 0.06
+      : 0.32 + hash(i, 11, 601) * 0.08);
     // Longer groundcover tongues bridge the newly exposed verge back to
     // the grass; still low, static, deterministic and non-colliding.
     const depth = 0.30 + hash(i, 13, 603) * 0.36;

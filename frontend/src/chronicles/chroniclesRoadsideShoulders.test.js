@@ -139,6 +139,32 @@ describe('Banner Road organic grass/earth shoulders', () => {
     [desktop, touch, restored].forEach(g => g.dispose());
   });
 
+  it.each([true, false])('staggers interior clumps while preserving anchored tile ends (coarse=%s)', coarsePointer => {
+    const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
+    const positions = geometry.getAttribute('position');
+    const count = coarsePointer ? 4 : 8;
+    const spacing = 3.68 / count;
+    const centers = [], widths = [];
+    for (let i = 0; i < count; i++) {
+      const left = positions.getX(i * 12);
+      const right = positions.getX(i * 12 + 2);
+      centers.push((left + right) / 2);
+      widths.push((right - left) / 2);
+      const nominal = ((i + 0.5) / count - 0.5) * 3.68;
+      const end = i === 0 || i === count - 1;
+      if (end) expect(centers[i]).toBeCloseTo(nominal, 6);
+      else {
+        expect(Math.abs(centers[i] - nominal)).toBeLessThan(spacing * 0.09 + 1e-6);
+        expect(widths[i]).toBeGreaterThanOrEqual(spacing * 0.32 - 1e-6);
+        expect(widths[i]).toBeLessThanOrEqual(spacing * 0.40 + 1e-6);
+      }
+      if (i > 0) expect(left).toBeGreaterThan(centers[i - 1] + widths[i - 1]);
+    }
+    expect(centers.slice(1).some((x, i) => Math.abs(x - centers[i] - spacing) > 0.001)).toBe(true);
+    expect(positions.count).toBe(count * 12);
+    geometry.dispose();
+  });
+
   it.each([true, false])('blends the verge into dirt without adding triangles (coarse=%s)', (coarsePointer) => {
     const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
     const colors = geometry.getAttribute('color');
