@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
-import { buildTerraScenery, chroniclesSnowPineGeometry, chroniclesSnowdriftGeometry } from './chroniclesTerraScenery.js';
+import { buildTerraScenery, chroniclesSnowPineGeometry, chroniclesSnowdriftGeometry, chroniclesOrganicRockGeometry, chroniclesSnowRockGeometry } from './chroniclesTerraScenery.js';
 
 describe('Terra snow conifer silhouettes', () => {
   it.each([true, false])('keeps topology and closes seams with a wind-shaped skirt (coarse=%s)', coarsePointer => {
@@ -120,4 +120,64 @@ describe('Terra wind-packed snowdrifts', () => {
     expect(scene.getObjectByName('chronicles-terra-pineSnow')).toBeInstanceOf(THREE.InstancedMesh);
   });
 
+});
+
+describe('Terra wind-scoured snow rocks', () => {
+  it.each([true, false])('keeps the original geometry and grades snow coverage (coarse=%s)', coarsePointer => {
+    const base = chroniclesOrganicRockGeometry({ coarsePointer });
+    const rock = chroniclesSnowRockGeometry({ coarsePointer });
+    const again = chroniclesSnowRockGeometry({ coarsePointer });
+    for (const name of ['position', 'normal', 'uv']) {
+      expect([...rock.getAttribute(name).array]).toEqual([...base.getAttribute(name).array]);
+    }
+    expect(rock.index?.count).toBe(base.index?.count);
+    const position = rock.getAttribute('position');
+    const color = rock.getAttribute('color');
+    expect(color.count).toBe(position.count);
+    expect([...color.array]).toEqual([...again.getAttribute('color').array]);
+    const exposed = new THREE.Color('#85949e');
+    const duplicates = new Map();
+    let snow = 0, stone = 0;
+    for (let i = 0; i < position.count; i++) {
+      const p = new THREE.Vector3().fromBufferAttribute(position, i);
+      const rgb = new THREE.Color().fromBufferAttribute(color, i);
+      const key = [p.x, p.y, p.z].map(v => Math.round(v * 1e6)).join(',');
+      if (duplicates.has(key)) {
+        const other = duplicates.get(key);
+        for (const channel of ['r', 'g', 'b']) expect(rgb[channel]).toBeCloseTo(other[channel], 5);
+      }
+      duplicates.set(key, rgb);
+      for (const channel of ['r', 'g', 'b']) {
+        expect(rgb[channel]).toBeGreaterThanOrEqual(exposed[channel] - 1e-6);
+        expect(rgb[channel]).toBeLessThanOrEqual(1);
+      }
+      if (p.y > 0.8) {
+        expect(rgb.r).toBeCloseTo(1, 5);
+        snow++;
+      }
+      if (p.y < -0.8) {
+        expect(rgb.r).toBeCloseTo(exposed.r, 5);
+        stone++;
+      }
+    }
+    expect(snow).toBeGreaterThan(0);
+    expect(stone).toBeGreaterThan(0);
+    [base, rock, again].forEach(g => g.dispose());
+  });
+
+  it.each([true, false])('uses vertex pigments in the real A1 rock batch (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-a1');
+    const args = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome,
+      mapId: map.id, scenery: map.scenery, coarsePointer };
+    const scene = buildTerraScenery(args);
+    const mesh = scene.getObjectByName('chronicles-terra-boulderSnow');
+    expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
+    expect(mesh.count).toBeGreaterThan(0);
+    expect(mesh.material.vertexColors).toBe(true);
+    expect(scene.children.filter(m => m.name === mesh.name)).toHaveLength(1);
+    const expected = chroniclesSnowRockGeometry({ coarsePointer });
+    expect([...mesh.geometry.getAttribute('color').array])
+      .toEqual([...expected.getAttribute('color').array]);
+    expected.dispose();
+  });
 });

@@ -1383,6 +1383,28 @@ export function chroniclesSnowdriftGeometry() {
   return geometry;
 }
 
+// Exposed stone beneath a wind-scoured snow cap. The existing snow
+// texture is modulated by baked vertex pigments, not another material,
+// overlay or shader. The continuous height field is seam-safe and leaves
+// the original rock geometry and instance transforms untouched.
+export function chroniclesSnowRockGeometry({ coarsePointer = false } = {}) {
+  const geometry = chroniclesOrganicRockGeometry({ coarsePointer });
+  const position = geometry.getAttribute('position');
+  const exposed = new THREE.Color('#85949e');
+  const powder = new THREE.Color('#ffffff');
+  const tint = new THREE.Color();
+  const colors = [];
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const snowline = 0.08 + 0.20 * x + 0.11 * Math.sin(z * 3.2);
+    const cover = THREE.MathUtils.smoothstep(y - snowline, -0.25, 0.38);
+    tint.copy(exposed).lerp(powder, cover);
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1400,7 +1422,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
         flatShading: coarsePointer || brezalBackdrop,
       })],
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
-    boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
+    boulderSnow: () => [chroniclesSnowRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer, vertexColors: true })],
     crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
