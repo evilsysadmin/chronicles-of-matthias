@@ -15,6 +15,8 @@ import {
   chroniclesMapTransitionState,
 } from './chroniclesMapCatalog.js';
 
+import { CHRONICLES_CONSUMABLES } from './chroniclesConsumables.js';
+
 function partyHp(state) {
   return state.party.map((member) => member.hp);
 }
@@ -119,5 +121,32 @@ describe('Chronicles Black Iron Foundry', () => {
     expect(basilica.naveSpiderHp).toBe(6);
     expect(basilica.censerWispHp).toBe(5);
     expect(basilica.journal.at(-1)?.id).toBe('iron-foundry-cleared');
+  });
+});
+
+describe('Optional Foundry maintenance supplies', () => {
+  it('grants portable healing once in addition to immediate recovery', () => {
+    const base = createChroniclesState('iron-foundry', null, { rules: 'mm3' });
+    const goblin = chroniclesMapById('iron-foundry').enemies.find(enemy => enemy.id === 'scrap-goblin');
+    const before = { ...base, x: 5, y: 5, scrapGoblinHp: 0,
+      party: base.party.map(hero => ({ ...hero, hp: Math.max(1, hero.hp - 2) })),
+    };
+    expect(chroniclesTacticsUse(before, 'maintenance-locker').inventory).toEqual(before.inventory);
+    const keyed = chroniclesApplyContentEffects(before, goblin.onDefeat.effects);
+    const potion = CHRONICLES_CONSUMABLES['healing-potion'];
+    const count = keyed.inventory?.[potion.id]?.quantity || 0;
+    const after = chroniclesTacticsUse(keyed, 'maintenance-locker');
+    expect(after.maintenanceLockerOpened).toBe(true);
+    expect(after.inventory['maintenance-key']).toBeUndefined();
+    expect(after.inventory[potion.id]).toMatchObject({
+      name: potion.name, description: potion.description, quantity: count + 1,
+    });
+    expect(partyHp(after)).toEqual(keyed.party.map(hero => Math.min(hero.maxHp, hero.hp + 2)));
+    expect(chroniclesTacticsUse(after, 'maintenance-locker').inventory).toEqual(after.inventory);
+    const basilica = chroniclesMapTransitionState(after, 'chain-basilica');
+    expect(basilica.inventory[potion.id].quantity).toBe(count + 1);
+    const returned = chroniclesMapTransitionState(basilica, 'iron-foundry');
+    expect(returned.maintenanceLockerOpened).toBe(true);
+    expect(chroniclesTacticsUse({ ...returned, x: 5, y: 5 }, 'maintenance-locker').inventory).toEqual(after.inventory);
   });
 });

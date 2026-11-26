@@ -162,7 +162,7 @@
             "type": "grant-item",
             "itemId": "maintenance-key",
             "name": "Llave de Mantenimiento",
-            "description": "Una llave industrial pequeña marcada con el símbolo de un armario de suministros.",
+            "description": "Una llave industrial marcada con un armario de suministros: el plano grabado señala la galería central, al norte del corredor inferior.",
             "quantity": 1
           }
         ]
@@ -348,14 +348,21 @@
         "effects": [
           { "type": "consume-item", "itemId": "maintenance-key", "quantity": 1 },
           { "type": "set", "key": "maintenanceLockerOpened", "value": true },
+          {
+            "type": "grant-item",
+            "itemId": "healing-potion",
+            "name": "Poción de curación",
+            "description": "Cura 15 PV a quien la bebe.",
+            "quantity": 1
+          },
           { "type": "heal-party", "amount": 2 },
           { "type": "refill-class-abilities" }
         ],
-        "message": "El armario guarda vendas, agua y reactivos. El trasgo llevaba la llave de un botiquín. Por supuesto que sí.",
+        "message": "El armario guarda vendas, agua y reactivos para atender a la compañía, y una poción de curación para llevar. El trasgo llevaba la llave de un botiquín. Por supuesto que sí.",
         "journal": {
           "id": "maintenance-locker-opened",
           "title": "Mantenimiento preventivo, por accidente",
-          "body": "La llave del trasgo abre un armario con suministros suficientes para recomponer a la compañía.",
+          "body": "La llave del trasgo abre un armario con suministros para recomponer a la compañía y una poción de curación de reserva.",
           "sigil": "+"
         }
       }
