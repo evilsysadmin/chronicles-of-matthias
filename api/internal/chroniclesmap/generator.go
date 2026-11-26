@@ -216,13 +216,12 @@ func openExtra(
 	height := len(grid)
 	width := len(grid[0])
 
+	// Reuse one row-major candidate pool across openings. As soon as a
+	// loop candidate exists, only loop candidates can be selected.
+	candidates := make([]Point, 0, (height-2)*(width-2)-walkableCount)
 	for walkableCount < target {
-		type candidate struct {
-			x        int
-			y        int
-			adjacent int
-		}
-		candidates := []candidate{}
+		candidates = candidates[:0]
+		preferLoop := false
 		for y := 1; y < height-1; y++ {
 			for x := 1; x < width-1; x++ {
 				if grid[y][x] != '#' {
@@ -234,29 +233,20 @@ func openExtra(
 						adjacent++
 					}
 				}
-				if adjacent > 0 {
-					candidates = append(candidates, candidate{
-						x: x, y: y, adjacent: adjacent,
-					})
+				if adjacent >= 2 && !preferLoop {
+					candidates = candidates[:0]
+					preferLoop = true
+				}
+				if adjacent >= 2 || (adjacent == 1 && !preferLoop) {
+					candidates = append(candidates, Point{X: x, Y: y})
 				}
 			}
 		}
 		if len(candidates) == 0 {
 			return 0, genErr("generator could not reach required walkable capacity")
 		}
-
-		loopCandidates := make([]candidate, 0)
-		for _, candidate := range candidates {
-			if candidate.adjacent >= 2 {
-				loopCandidates = append(loopCandidates, candidate)
-			}
-		}
-		pool := candidates
-		if len(loopCandidates) > 0 {
-			pool = loopCandidates
-		}
-		selected := pool[rng.choice(len(pool))]
-		grid[selected.y][selected.x] = '.'
+		selected := candidates[rng.choice(len(candidates))]
+		grid[selected.Y][selected.X] = '.'
 		walkableCount++
 	}
 
