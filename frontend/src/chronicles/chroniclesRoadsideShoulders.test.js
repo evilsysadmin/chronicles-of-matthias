@@ -139,6 +139,26 @@ describe('Banner Road organic grass/earth shoulders', () => {
     [desktop, touch, restored].forEach(g => g.dispose());
   });
 
+  it.each([true, false])('alternates broad and slender leaf tips at both LODs (coarse=%s)', coarsePointer => {
+    const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
+    const positions = geometry.getAttribute('position');
+    const count = coarsePointer ? 4 : 8;
+    const widths = [], rakes = [];
+    for (let i = 1; i < count; i += 2) {
+      const base = i * 12 + 9;
+      const left = positions.getX(base), right = positions.getX(base + 1);
+      widths.push(right - left);
+      rakes.push(positions.getX(base + 2) - (left + right) / 2);
+      expect(positions.getY(base + 2)).toBeGreaterThan(0.15);
+      expect(positions.getY(base + 2)).toBeLessThan(0.24);
+    }
+    expect(Math.max(...widths) - Math.min(...widths)).toBeGreaterThan(0.08);
+    expect(rakes.some(rake => rake < 0)).toBe(true);
+    expect(rakes.some(rake => rake > 0)).toBe(true);
+    expect(positions.count).toBe(count * 12);
+    geometry.dispose();
+  });
+
   it.each([true, false])('staggers interior clumps while preserving anchored tile ends (coarse=%s)', coarsePointer => {
     const geometry = chroniclesRoadsideShoulderGeometry({ coarsePointer });
     const positions = geometry.getAttribute('position');
