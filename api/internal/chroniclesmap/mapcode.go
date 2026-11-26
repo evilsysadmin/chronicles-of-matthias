@@ -140,6 +140,11 @@ func Encode(recipe Recipe) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return encodeValidated(recipe), nil
+}
+
+// encodeValidated serializes a recipe already normalized by Validate.
+func encodeValidated(recipe Recipe) string {
 	fields := map[string]string{
 		"theme":      recipe.Theme,
 		"size":       fmt.Sprintf("%dx%d", recipe.Width, recipe.Height),
@@ -154,5 +159,5 @@ func Encode(recipe Recipe) (string, error) {
 	for _, key := range fieldOrder {
 		parts = append(parts, key+"="+fields[key])
 	}
-	return strings.Join(parts, "|"), nil
+	return strings.Join(parts, "|")
 }
