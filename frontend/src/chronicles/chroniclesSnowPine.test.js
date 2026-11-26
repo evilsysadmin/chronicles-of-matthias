@@ -84,7 +84,8 @@ describe('Terra wind-packed snowdrifts', () => {
     [base, drift, again].forEach(g => g.dispose());
   });
 
-  it.each([true, false])('keeps real A1 snowdrifts in one low non-shadowing batch (coarse=%s)', coarsePointer => {
+  it('keeps real A1 snowdrifts in one low non-shadowing desktop batch', () => {
+    const coarsePointer = false;
     const map = chroniclesMapById('terra-a1');
     const center = { x: 10, y: 7 };
     const args = { grid: map.grid, center, biome: map.biome, mapId: map.id,
@@ -92,9 +93,9 @@ describe('Terra wind-packed snowdrifts', () => {
     const scene = buildTerraScenery(args);
     const repeated = buildTerraScenery(args);
     const mesh = scene.getObjectByName('chronicles-terra-snowMound');
+    expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
     const twin = repeated.getObjectByName(mesh.name);
     const expected = chroniclesSnowdriftGeometry();
-    expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
     expect(mesh.castShadow).toBe(false);
     expect(mesh.count).toBeGreaterThan(0);
     expect(mesh.count).toBe(twin.count);
@@ -111,4 +112,12 @@ describe('Terra wind-packed snowdrifts', () => {
     }
     expected.dispose();
   });
+  it('preserves the deliberate mobile omission of optional snowdrift clutter', () => {
+    const map = chroniclesMapById('terra-a1');
+    const scene = buildTerraScenery({ grid: map.grid, center: { x: 10, y: 7 },
+      biome: map.biome, mapId: map.id, scenery: map.scenery, coarsePointer: true });
+    expect(scene.getObjectByName('chronicles-terra-snowMound')).toBeUndefined();
+    expect(scene.getObjectByName('chronicles-terra-pineSnow')).toBeInstanceOf(THREE.InstancedMesh);
+  });
+
 });
