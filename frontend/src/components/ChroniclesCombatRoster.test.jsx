@@ -5,7 +5,7 @@ import React from 'react';
 import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesEnemyAttackTarget } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesStartInitiativeCombat } from '../chronicles/chroniclesInitiative.js';
-import ChroniclesCombatRoster, { chroniclesHealthBand, chroniclesThreatBearing, chroniclesRosterActionTarget } from './ChroniclesCombatRoster.jsx';
+import ChroniclesCombatRoster, { chroniclesHealthBand, chroniclesThreatBearing, chroniclesRosterActionTarget, chroniclesRosterActionTargets } from './ChroniclesCombatRoster.jsx';
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 
 describe('ChroniclesCombatRoster', () => {
@@ -167,5 +167,42 @@ describe('MM3 combat roster uses the attack reducer target, not camera direction
     expect(chroniclesRosterActionTarget(enemyTurn)).toBeNull();
     expect(renderToStaticMarkup(<ChroniclesCombatRoster state={enemyTurn} />))
       .not.toContain('data-chronicles-target-mode=');
+  });
+});
+
+describe('MM3 explicit A and S target cues', () => {
+  function encounter() {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const enemy = chroniclesActiveEnemies(base).find(e => e.id === 'banner-road-north-marauder');
+    const fight = chroniclesStartInitiativeCombat({
+      ...base, x: 5, y: 2, direction: 2,
+      equipment: { ...base.equipment, matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' } },
+      enemyPositions: { [enemy.id]: { x: 5, y: 3 } },
+    }, [enemy], { forceEnemyIds: [enemy.id], random: () => 0 });
+    const cursor = fight.initiative.order.findIndex(actor => actor.kind === 'party' && actor.id === 'matthias');
+    return { enemy, state: { ...fight, initiative: { ...fight.initiative, cursor } } };
+  }
+  it('shows both legal attacks while keeping the automatic melee target', () => {
+    const { state, enemy } = encounter();
+    expect(chroniclesRosterActionTargets(state)).toEqual([
+      { id: enemy.id, mode: 'melee' }, { id: enemy.id, mode: 'missile' },
+    ]);
+    expect(chroniclesRosterActionTarget(state)).toEqual({ id: enemy.id, mode: 'melee' });
+    const html = renderToStaticMarkup(<ChroniclesCombatRoster state={state} />);
+    expect(html).toContain('A · AL ALCANCE');
+    expect(html).toContain('S · A TIRO');
+    const shot = chroniclesReduce(state, { type: 'attack', memberId: 'matthias', mode: 'missile' });
+    expect(shot.turns).toBe(state.turns + 1);
+    expect(shot.direction).toBe(state.direction);
+  });
+  it('does not advertise a shot without a missile weapon, or attacks after the slot is spent', () => {
+    const { state, enemy } = encounter();
+    const unarmed = { ...state, equipment: { ...state.equipment, matthias: { weapon: 'bronze-sword' } } };
+    expect(chroniclesRosterActionTargets(unarmed)).toEqual([{ id: enemy.id, mode: 'melee' }]);
+    expect(renderToStaticMarkup(<ChroniclesCombatRoster state={unarmed} />)).not.toContain('S · A TIRO');
+    for (const blocked of [
+      { ...state, combatActionSpent: { matthias: true } },
+      { ...state, combatBlock: { matthias: true } },
+    ]) expect(chroniclesRosterActionTargets(blocked)).toEqual([]);
   });
 });
