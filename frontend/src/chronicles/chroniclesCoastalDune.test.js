@@ -43,8 +43,9 @@ describe('Terra coastal wind-shaped dunes', () => {
     [base, dune, again].forEach(g => g.dispose());
   });
 
-  it.each([true, false])('uses one deterministic dune batch on real B1 (coarse=%s)', coarsePointer => {
-    const map = chroniclesMapById('terra-b1');
+  it.each([true, false])('uses one deterministic dune batch on real A2 (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-a2');
+    expect(map.biome).toBe('coast');
     const args = { grid: map.grid, center: { x: 10, y: 7 }, biome: map.biome,
       mapId: map.id, scenery: map.scenery, coarsePointer };
     const scene = buildTerraScenery(args);
