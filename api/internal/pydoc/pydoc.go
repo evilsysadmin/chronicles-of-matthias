@@ -105,6 +105,10 @@ func decodeValue(dec *json.Decoder) (any, error) {
 // number is json.loads' int/float split plus pymongo's int encoding.
 func number(text string) (any, error) {
 	if !strings.ContainsAny(text, ".eE") {
+		if n, err := strconv.ParseInt(text, 10, 64); err == nil {
+			return Int(n), nil
+		}
+		// Keep the legacy overflow/malformed classification for exceptional inputs.
 		n, ok := new(big.Int).SetString(text, 10)
 		if !ok {
 			return nil, fmt.Errorf("invalid number %q", text)
@@ -149,7 +153,7 @@ func Normalize(value any) any {
 	case []any:
 		return Normalize(bson.A(v))
 	case bson.M:
-		out := bson.D{}
+		out := make(bson.D, 0, len(v))
 		for key, item := range v {
 			out = append(out, bson.E{Key: key, Value: Normalize(item)})
 		}
@@ -207,6 +211,30 @@ func numeric(value any) (*big.Float, bool) {
 // Equal is Python's ==: dicts compare as mappings, numbers by value across
 // bool/int/float, everything else by type and value. NaN is never equal.
 func Equal(a, b any) bool {
+	// Same-type numbers need no arbitrary-precision conversion. Mixed
+	// numeric types still take the exact Python-compatible path below.
+	switch x := a.(type) {
+	case bool:
+		if y, ok := b.(bool); ok {
+			return x == y
+		}
+	case int:
+		if y, ok := b.(int); ok {
+			return x == y
+		}
+	case int32:
+		if y, ok := b.(int32); ok {
+			return x == y
+		}
+	case int64:
+		if y, ok := b.(int64); ok {
+			return x == y
+		}
+	case float64:
+		if y, ok := b.(float64); ok {
+			return x == y
+		}
+	}
 	if fa, ok := a.(float64); ok && math.IsNaN(fa) {
 		return false
 	}
