@@ -1412,16 +1412,25 @@ export function chroniclesSnowRockGeometry({ coarsePointer = false } = {}) {
 export function chroniclesMarshDeadTrunkGeometry() {
   const geometry = new THREE.CylinderGeometry(0.14, 0.26, 1, 6);
   const position = geometry.getAttribute('position');
+  // Damp, moss-stained roots grade into exposed weathered wood.
+  // All duplicate seam vertices share the same position-based pigment.
+  const wet = new THREE.Color('#758477');
+  const dry = new THREE.Color('#e7dfd0');
+  const tint = new THREE.Color();
+  const colors = [];
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
     const t = y + 0.5;
     const angle = Math.atan2(z, x);
+    tint.copy(wet).lerp(dry, THREE.MathUtils.smoothstep(t, 0, 1));
+    colors.push(tint.r, tint.g, tint.b);
     const radial = 1 + 0.09 * Math.cos(angle * 2 + t * 0.8)
       + 0.06 * Math.sin(angle * 3 - t * 1.1);
     position.setXYZ(i, x * radial + 0.075 * t, y,
       z * radial - 0.045 * t);
   }
   position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
@@ -1467,7 +1476,7 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
       lit(woodland ? 0xffffff : 0xcbdcbd, { map: texture(woodland ? 'woodlandleaves' : 'leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [biome === 'snow' ? chroniclesSnowPineGeometry({ coarsePointer }) : new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
-    deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
+    deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3), vertexColors: true })],
     reed: () => [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     // One batched, opaque water surface per marsh. More rounded on desktop,
     // original 14-gon on touch devices; never casts an implausible shadow.
