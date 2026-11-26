@@ -27,14 +27,38 @@ describe('MM3 multiattack spider: one turn, separate strikes',()=>{
   expect(after.initiative).toEqual(before.initiative);
   expect(after.party.reduce((n,m)=>n+m.hp,0)).toBeLessThanOrEqual(
    before.party.reduce((n,m)=>n+m.hp,0));
-  for(const event of after.enemyTurnEvents)
+  expect(after.message).toContain(creature.name.charAt(0).toUpperCase()+creature.name.slice(1));
+  for(const event of after.enemyTurnEvents){
    expect(event.fromHp-event.toHp).toBe(Math.min(event.fromHp,event.damage));
+   const victim=before.party.find(hero=>hero.id===event.targetId);
+   const lost=event.fromHp-event.toHp;
+   const result=event.missed?'falla':lost>0?`−${lost} PV`:'sin daño';
+   expect(after.message).toContain(`${event.attackName} a ${victim.name}: ${result}`);
+  }
  });
  it('approaches one tile without a free bite or zarpazo',()=>{
   const before=setup(2);
   const after=chroniclesResolveEnemyActor(before,SPIDER);
   expect(after.enemyTurnEvents.map(e=>e.type)).toEqual(['move']);
   expect(after.party).toEqual(before.party);
+  expect(after.message).toContain('se mueve; no ataca este turno.');
+ });
+ it('reports exact committed damage rather than nominal overkill',()=>{
+  let found=false;
+  for(let round=1;round<=24;round++){
+   const base=setup();
+   const before={...base,round,initiative:{...base.initiative,round},
+    party:base.party.map(hero=>({...hero,hp:hero.id==='matthias'?1:hero.hp}))};
+   const after=chroniclesResolveEnemyActor(before,SPIDER);
+   const overkill=after.enemyTurnEvents.find(e=>e.type==='attack'&&e.fromHp>0&&e.damage>e.fromHp&&e.toHp===0);
+   if(!overkill)continue;
+   const victim=before.party.find(hero=>hero.id===overkill.targetId);
+   expect(after.message).toContain(`${overkill.attackName} a ${victim.name}: −${overkill.fromHp} PV (cae)`);
+   found=true;
+   break;
+  }
+  // Authored spider rolls and damage are deterministic across rounds.
+  expect(found).toBe(true);
  });
  it('paralysis cancels the full attack sequence',()=>{
   const before=setup();
