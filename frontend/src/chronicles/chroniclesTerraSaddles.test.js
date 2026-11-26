@@ -160,6 +160,43 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
     }
   });
 
+  it.each([true, false])('grades only distant E2 stone pigments using the existing instance colors (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-e2');
+    const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery, coarsePointer };
+    const scene = buildTerraScenery({ ...args, mapId: map.id });
+    const repeated = buildTerraScenery({ ...args, mapId: map.id });
+    const palette = ['#ffffff', '#e5e9e2', '#d9e2d8', '#f0e6da', '#e4e6d7']
+      .map(hex => new THREE.Color(hex));
+    const haze = new THREE.Color('#e1e7ed');
+    const matrix = new THREE.Matrix4(), actual = new THREE.Color(), again = new THREE.Color();
+    for (const part of ['boulder', 'crag']) {
+      const mesh = scene.getObjectByName('chronicles-terra-' + part);
+      const twin = repeated.getObjectByName(mesh.name);
+      const seen = new Set();
+      expect(mesh.instanceColor.count).toBe(mesh.count);
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        const e = matrix.elements;
+        const x = Math.round(e[12] / 4) + center.x;
+        const y = Math.round(e[14] / 4) + center.y;
+        const ring = Math.max(0, -x, x - map.grid[0].length + 1, -y, y - map.grid.length + 1);
+        const n = Math.sin(Math.round(e[12] * 7) * 127.1 + Math.round(e[14] * 7) * 311.7
+          + (part === 'boulder' ? 375 : 377) * 74.7) * 43758.5453;
+        const seed = n - Math.floor(n);
+        const expected = palette[Math.floor(seed * palette.length)].clone()
+          .lerp(haze, ring >= 3 ? 0.50 : ring === 2 ? 0.25 : 0);
+        mesh.getColorAt(i, actual);
+        twin.getColorAt(i, again);
+        for (const channel of ['r', 'g', 'b']) {
+          expect(actual[channel]).toBeCloseTo(expected[channel], 5);
+          expect(actual[channel]).toBe(again[channel]);
+        }
+        seen.add(ring);
+      }
+      expect([...seen].sort()).toEqual([0, 1, 2, 3]);
+    }
+  });
+
   it('keeps B2 interior rock exact while lowering only its three non-colliding outer rings', () => {
     const map = chroniclesMapById('terra-b2');
     const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery };
