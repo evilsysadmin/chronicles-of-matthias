@@ -125,3 +125,35 @@ describe('Chronicles · Swordhaven doors', () => {
     expect(again.quests['weaver-silk'].status).toBe('active');
   });
 });
+
+describe('Swordhaven temple reward capacity', () => {
+  it('does not heal, consume silk or announce payment until the actual reward fits', () => {
+    let state = walkTo(createChroniclesState('swordhaven-first-book'), 14, 6);
+    state = chroniclesTacticsUse(state, 'first-book-temple');
+    state = {
+      ...state,
+      inventory: { ...state.inventory,
+        'weaver-silk': { id: 'weaver-silk', name: 'Seda de tejedora', quantity: 1 },
+        'crown-gold': { id: 'crown-gold', name: 'Monedas de oro', quantity: 9995 },
+      },
+      party: state.party.map(hero => ({ ...hero, hp: 1 })),
+    };
+    const rejected = chroniclesTacticsUse(state, 'first-book-temple-reward');
+    expect(rejected.party).toEqual(state.party);
+    expect(rejected.inventory).toEqual(state.inventory);
+    expect(rejected.quests['weaver-silk'].status).toBe('active');
+    expect(rejected.claimedRewards || []).not.toContain('swordhaven:weaver-silk:v1');
+    expect(rejected.journal).toEqual(state.journal);
+    expect(rejected.message).toContain('No se ha podido entregar');
+    const retry = { ...rejected, inventory: { ...rejected.inventory,
+      'crown-gold': { ...rejected.inventory['crown-gold'], quantity: 9991 },
+    } };
+    const paid = chroniclesTacticsUse(retry, 'first-book-temple-reward');
+    expect(chroniclesGoldBalance(paid)).toBe(9999);
+    expect(paid.quests['weaver-silk'].status).toBe('completed');
+    expect(paid.inventory['weaver-silk']).toBeUndefined();
+    expect(paid.claimedRewards).toContain('swordhaven:weaver-silk:v1');
+    expect(paid.party.some(hero => hero.hp > 1)).toBe(true);
+    expect(paid.journal.at(-1).id).toBe('first-book-temple-reward');
+  });
+});

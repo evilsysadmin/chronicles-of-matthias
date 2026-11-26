@@ -464,7 +464,17 @@ export function chroniclesApplyContentEffects(state, effects, adapters = {}) {
 
 export function chroniclesApplyContentAction(state, action, adapters = {}) {
   if (!action) return state;
-  let next = chroniclesApplyContentEffects(state, action.effects, adapters);
+  let next = state;
+  for (const effect of action.effects || []) {
+    const applied = chroniclesApplyContentEffects(next, [effect], adapters);
+    // A quest hand-in can include healing or other companion effects outside
+    // its atomic reward receipt. If the claim fails, none of the action's
+    // state changes or authored success journal may survive.
+    if (effect.type === 'claim-reward' && applied === next) {
+      return { ...state, message: 'No se ha podido entregar el encargo. Comprueba los requisitos y el espacio disponible para la recompensa.' };
+    }
+    next = applied;
+  }
   // A rejected pure trade must not display its success message or consume a
   // turn. The exchange is atomic: insufficient gold and a full pack are no-ops.
   if (next === state && action.effects?.length === 1
