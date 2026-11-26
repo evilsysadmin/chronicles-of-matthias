@@ -378,3 +378,32 @@ describe('Quest discovery order', () => {
     expect(chroniclesActiveQuest(completed)).toBeNull();
   });
 });
+
+describe('Rejected authored reward actions', () => {
+  it('does not retain companion effects or append the success journal when a reward fails', () => {
+    const state = { journal: [], inventory: { 'crown-gold': { id: 'crown-gold', quantity: 9999 } },
+      party: [{ id: 'a', hp: 1, maxHp: 10 }] };
+    const appendJournal = vi.fn();
+    const action = {
+      effects: [
+        { type: 'set', key: 'handedIn', value: true },
+        { type: 'claim-reward', rewardId: 'example:reward', effects: [{ type: 'grant-gold', amount: 1 }] },
+        { type: 'heal-party', amount: 6 },
+      ],
+      message: 'Pagado.', journal: { id: 'paid', title: 'Pagado' },
+    };
+    const rejected = chroniclesApplyContentAction(state, action, { appendJournal });
+    expect(rejected).toEqual({ ...state, message: expect.stringContaining('No se ha podido entregar') });
+    expect(appendJournal).not.toHaveBeenCalled();
+    const retry = { ...state, inventory: { 'crown-gold': { id: 'crown-gold', quantity: 9998 } } };
+    const paid = chroniclesApplyContentAction(retry, action, {
+      appendJournal: (next, entry) => ({ ...next, journal: [...next.journal, entry] }),
+    });
+    expect(chroniclesGoldBalance(paid)).toBe(9999);
+    expect(paid.party[0].hp).toBe(7);
+    expect(paid.handedIn).toBe(true);
+    expect(paid.claimedRewards).toEqual(['example:reward']);
+    expect(paid.journal).toEqual([action.journal]);
+    expect(paid.message).toBe(action.message);
+  });
+});
