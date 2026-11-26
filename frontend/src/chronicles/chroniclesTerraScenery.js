@@ -2619,6 +2619,19 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         if (mapId === 'rookwood-first-book' && biome === 'forest' && tile === '.') {
           const edges = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
+          // Exposed roots and half-buried stones on a subset of the forest
+          // verge, oriented back toward the actual tree cell. Never add
+          // these to the unbordered clearings or reserved content tiles.
+          if (edges.length && noise(x, y, 1681) < (coarsePointer ? 0.23 : 0.43)) {
+            const [dx, dy] = edges[Math.floor(noise(x, y, 1683) * edges.length)];
+            const drift = (noise(x, y, 1685) - 0.5) * 0.42;
+            const size = 0.83 + 0.19 * noise(x, y, 1687);
+            p.add('microrelief', [wx + dx * 0.68 - dy * drift, 0.012,
+              wz + dy * 0.68 + dx * drift], {
+              yaw: Math.atan2(dy, -dx) + (noise(x, y, 1689) - 0.5) * 0.40,
+              scale: [size, 0.86 + 0.16 * noise(x, y, 1691), size],
+            });
+          }
           const colony = 0.5 + 0.5 * Math.sin(x * 0.52 + y * 0.24)
             * Math.cos(y * 0.39 - x * 0.18);
           if (edges.length && noise(x, y, 1651) < (coarsePointer ? 0.46 : 0.76) * (0.55 + 0.45 * colony)) {
@@ -2687,7 +2700,11 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
 
   const catalog = partCatalog(coarsePointer, biome, denseMeadow, naturalHighlands, brezalBackdrop);
   for (const [part, matrices] of p.parts) {
-    const [geometry, mat] = catalog[part]();
+    const [geometry, mat] = mapId === 'rookwood-first-book' && biome === 'forest'
+      && part === 'microrelief'
+      ? [chroniclesMeadowMicroreliefGeometry({ coarsePointer, woodland: true }),
+        lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })]
+      : catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
     matrices.forEach((matrix, index) => {
       if (groundOffset) {
