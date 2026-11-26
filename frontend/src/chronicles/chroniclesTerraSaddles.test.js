@@ -119,6 +119,47 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
     expect(map.grid).toEqual(chroniclesMapById('terra-e2').grid);
   });
 
+  it.each([true, false])('recedes E2 outer ridge heights without changing footprints (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('terra-e2');
+    const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery, coarsePointer };
+    const natural = buildTerraScenery({ ...args, mapId: map.id });
+    const generic = buildTerraScenery({ ...args, mapId: 'generic-hills' });
+    const width = map.grid[0].length, height = map.grid.length;
+    for (const part of ['boulder', 'crag']) {
+      const a = natural.getObjectByName('chronicles-terra-' + part);
+      const b = generic.getObjectByName('chronicles-terra-' + part);
+      expect(a.count).toBe(b.count);
+      const seen = new Set();
+      for (let x = -3; x < width + 3; x++) {
+        for (let y = -3; y < height + 3; y++) {
+          const ring = Math.max(-x, x - width + 1, -y, y - height + 1);
+          if (ring < 1) continue;
+          const current = cellMatrices(natural, part, x, y);
+          const baseline = cellMatrices(generic, part, x, y);
+          expect(current).toHaveLength(baseline.length);
+          const ridge = chroniclesHighlandRidgeProfile(x, y, 'backdrop');
+          const saddle = chroniclesHighlandBackdropSaddle({ grid: map.grid, x, y, ringDepth: ring });
+          const depth = [1, 1, 0.90, 0.78][ring];
+          for (let i = 0; i < current.length; i++) {
+            const before = scales(baseline[i]), after = scales(current[i]);
+            const foot = (1 + (ridge - 1) * 0.68) * saddle;
+            const rise = 1 + (ridge - 1) * 0.58;
+            const expectedY = part === 'boulder' ? foot * rise * depth : ridge * saddle * depth;
+            const expectedX = part === 'boulder' ? foot : 1 + (ridge - 1) * 0.14;
+            expect(after.y / before.y).toBeCloseTo(expectedY, 4);
+            expect(after.x / before.x).toBeCloseTo(expectedX, 4);
+            if (part === 'boulder') {
+              expect(current[i].elements[12]).toBe(baseline[i].elements[12]);
+              expect(current[i].elements[14]).toBe(baseline[i].elements[14]);
+            }
+            seen.add(ring);
+          }
+        }
+      }
+      expect([...seen].sort()).toEqual([1, 2, 3]);
+    }
+  });
+
   it('keeps B2 interior rock exact while lowering only its three non-colliding outer rings', () => {
     const map = chroniclesMapById('terra-b2');
     const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery };
