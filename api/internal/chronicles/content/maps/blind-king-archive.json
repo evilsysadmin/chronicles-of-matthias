@@ -237,6 +237,30 @@
       }
     },
     {
+      "id": "archive-luminous-ash-brazier",
+      "kind": "lore",
+      "x": 1,
+      "y": 5,
+      "label": "Cambiar Ceniza Luminosa por una poción de maná",
+      "when": [
+        { "itemId": "luminous-ash", "quantity": 1 }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "exchange-item",
+            "costItemId": "luminous-ash",
+            "costQuantity": 1,
+            "itemId": "mana-potion",
+            "name": "Poción de maná",
+            "description": "Devuelve 8 puntos de hechizo a quien la bebe.",
+            "quantity": 1
+          }
+        ],
+        "message": "El pebetero absorbe la Ceniza Luminosa y condensa una poción de maná. Matthias toma nota: hasta los muertos han inventado el reciclaje."
+      }
+    },
+    {
       "id": "sealed-index",
       "kind": "lever",
       "visualType": "lever",

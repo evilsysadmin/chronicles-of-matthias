@@ -15,6 +15,7 @@ import {
   chroniclesMapTransitionState,
 } from './chroniclesMapCatalog.js';
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
+import { CHRONICLES_CONSUMABLES } from './chroniclesConsumables.js';
 
 describe('Chronicles Blind King Archive', () => {
   it('continues the main campaign from Menagerie into a larger fifth map', () => {
@@ -187,5 +188,37 @@ describe('Chronicles Blind King Archive', () => {
       name: 'Cifra Real',
       quantity: 1,
     }));
+  });
+});
+describe('Optional luminous ash exchange in the Archive', () => {
+  const id = 'archive-luminous-ash-brazier';
+  const base = { ...createChroniclesState('blind-king-archive', null, { rules: 'mm3' }), x: 1, y: 5 };
+  function withTrophy() {
+    const wisp = chroniclesMapById('ash-vault').enemies.find(enemy => enemy.id === 'vault-wisp');
+    return chroniclesApplyContentEffects(base, wisp.onDefeat.effects);
+  }
+  it('lets the optional trophy owner choose a practical reward, without a new quest gate', () => {
+    expect(chroniclesTacticsInteractions(base).map(entry => entry.id)).not.toContain(id);
+    const before = withTrophy();
+    expect(chroniclesTacticsInteractions(before)).toContainEqual(expect.objectContaining({ id }));
+    const potion = CHRONICLES_CONSUMABLES['mana-potion'];
+    const count = before.inventory?.[potion.id]?.quantity || 0;
+    const after = chroniclesTacticsUse(before, id);
+    expect(after.inventory['luminous-ash']).toBeUndefined();
+    expect(after.inventory[potion.id]).toMatchObject({
+      name: potion.name, description: potion.description, quantity: count + 1,
+    });
+    expect(after.quests).toEqual(before.quests);
+    expect(chroniclesTacticsInteractions(after).map(entry => entry.id)).not.toContain(id);
+    expect(chroniclesTacticsUse(after, id).inventory).toEqual(after.inventory);
+  });
+  it('keeps the trophy if the potion stack cannot accept the exchange', () => {
+    const state = withTrophy();
+    const before = { ...state, inventory: { ...state.inventory,
+      'mana-potion': { id: 'mana-potion', name: 'Poción de maná', quantity: 9999 },
+    } };
+    const after = chroniclesTacticsUse(before, id);
+    expect(after.inventory).toEqual(before.inventory);
+    expect(after.message).not.toContain('condensa una poción');
   });
 });
