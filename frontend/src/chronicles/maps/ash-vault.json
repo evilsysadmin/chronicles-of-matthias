@@ -41,7 +41,8 @@
         ],
         "engagedMovement": "cardinal-chase",
         "engageRange": 4
-      }
+      },
+      "attacks": ["Golpe de escoria"]
     },
     {
       "id": "soot-mimic",
