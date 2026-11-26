@@ -33,10 +33,13 @@ describe('Common loot at the checkpoint inventory limit', () => {
     const goblin = foes.find(enemy => enemy.id === 'sewers-goblin-west');
     const before = { ...base, x: 1, y: 5, direction: 1,
       ...Object.fromEntries(foes.filter(enemy => enemy.id !== goblin.id).map(enemy => [enemy.hpKey, 0])),
-      [goblin.hpKey]: 1, inventory: {} };
+      [goblin.hpKey]: 1, inventory: {},
+      enemyPositions: { [goblin.id]: { x: 2, y: 5 } },
+      equipment: { ...base.equipment, matthias: { weapon: 'bronze-sword' } } };
     for (let i = 0; i < 200; i++) {
       const state = { ...before, runSeed: 'capped-loot-' + i };
-      const loot = chroniclesCommonLoot(state, goblin);
+      // The defeat reducer increments turns before rolling the loot.
+      const loot = chroniclesCommonLoot({ ...state, turns: state.turns + 1 }, goblin);
       if (!loot.potion) continue;
       const after = chroniclesReduce(state, { type: 'attack', memberId: 'matthias', mode: 'melee' });
       if (after[goblin.hpKey] === 0 && after.inventory?.['healing-potion']?.quantity === 1) {
