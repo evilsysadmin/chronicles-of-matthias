@@ -269,7 +269,9 @@ var (
 
 // LoadManifest mirrors load_chronicles_manifest: a fresh copy each call.
 func LoadManifest(mapID string) (bson.D, string, error) {
-	if !mapIDPattern.MatchString(mapID) {
+	// The embedded catalog is finite and immutable. Never cache arbitrary
+	// missing IDs supplied by callers.
+	if !mapIDPattern.MatchString(mapID) || !isShipped(mapID) {
 		return nil, "", ErrMapNotFound
 	}
 	manifestMu.Lock()
@@ -306,8 +308,7 @@ var (
 	shippedIDs  []string
 )
 
-// ShippedMapIDs is chronicles_shipped_map_ids.
-func ShippedMapIDs() []string {
+func initShippedIDs() {
 	shippedOnce.Do(func() {
 		entries, _ := fs.ReadDir(content, "content/maps")
 		for _, e := range entries {
@@ -317,16 +318,18 @@ func ShippedMapIDs() []string {
 		}
 		sort.Strings(shippedIDs)
 	})
+}
+
+// ShippedMapIDs is chronicles_shipped_map_ids. Callers own the returned copy.
+func ShippedMapIDs() []string {
+	initShippedIDs()
 	return append([]string(nil), shippedIDs...)
 }
 
 func isShipped(mapID string) bool {
-	for _, id := range ShippedMapIDs() {
-		if id == mapID {
-			return true
-		}
-	}
-	return false
+	initShippedIDs()
+	i := sort.SearchStrings(shippedIDs, mapID)
+	return i < len(shippedIDs) && shippedIDs[i] == mapID
 }
 
 // Python's sorted() over bytes digests.
