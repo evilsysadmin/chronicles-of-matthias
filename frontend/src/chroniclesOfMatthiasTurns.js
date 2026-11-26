@@ -660,12 +660,12 @@ function individualEnemySummary(state, enemy, events, withdrew) {
 }
 
 // Paralizar: a held enemy spends its action shaking the spell off.
-function paralysedTurns(state, enemy) {
+export function chroniclesEnemyParalysedTurns(state, enemy) {
   return Math.max(0, Math.floor(Number(state?.enemyStatus?.[enemy.id]?.paralyzed) || 0));
 }
 
 function holdParalysed(state, enemy, events) {
-  const left = paralysedTurns(state, enemy) - 1;
+  const left = chroniclesEnemyParalysedTurns(state, enemy) - 1;
   const { [enemy.id]: current, ...others } = state.enemyStatus || {};
   const status = left > 0 ? { ...others, [enemy.id]: { ...current, paralyzed: left } } : others;
   events.push({ type: 'paralyzed', enemyId: enemy.id, left });
@@ -682,7 +682,7 @@ export function chroniclesResolveEnemyActor(state, enemyId) {
   const enemy = activeEnemies[enemyIndex];
   const events = [];
   let next = chroniclesRememberEnemySight({ ...state, turnPhase: 'enemy', enemyTurnEvents: events }, enemy);
-  if (paralysedTurns(next, enemy) > 0) {
+  if (chroniclesEnemyParalysedTurns(next, enemy) > 0) {
     next = holdParalysed(next, enemy, events);
     return { ...next, enemyTurnEvents: [...events], message: paralysedMessage(enemy, events) };
   }
@@ -732,7 +732,7 @@ export function chroniclesResolveEnemyTurn(state) {
   activeEnemies.forEach((enemy, enemyIndex) => {
     if (partyDefeated(next)) return;
     next = chroniclesRememberEnemySight(next, enemy);
-    if (paralysedTurns(next, enemy) > 0) {
+    if (chroniclesEnemyParalysedTurns(next, enemy) > 0) {
       next = holdParalysed(next, enemy, events);
       return;
     }
