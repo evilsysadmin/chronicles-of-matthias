@@ -12,9 +12,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/pyjson"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/pyval"
 )
 
 var (
@@ -26,20 +26,12 @@ const InvalidKeyDetail = "Idempotency-Key inválida."
 
 var keyPattern = regexp.MustCompile(`^[A-Za-z0-9._:-]{8,96}$`)
 
-// pyStrip is Python str.strip(): Unicode whitespace plus \x1c-\x1f, which
-// Python treats as whitespace and Go's unicode.IsSpace does not.
-func pyStrip(s string) string {
-	return strings.TrimFunc(s, func(r rune) bool {
-		return unicode.IsSpace(r) || (r >= 0x1c && r <= 0x1f)
-	})
-}
-
 // NormalizeKey mirrors normalize_idempotency_key: nil when absent.
 func NormalizeKey(raw *string) (*string, error) {
 	if raw == nil {
 		return nil, nil
 	}
-	key := pyStrip(*raw)
+	key := pyval.Strip(*raw)
 	if !keyPattern.MatchString(key) {
 		return nil, ErrInvalidKey
 	}
