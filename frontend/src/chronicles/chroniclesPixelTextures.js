@@ -76,13 +76,15 @@ const RAMPS = Object.freeze({
   // Native Terra highlands: weathered sandstone/slate, with restrained
   // variation rather than the urban rock atlas's black checkerboard cracks.
   uplandrock: [0x777b70, 0x888d80, 0x9ca091, 0xadb0a0, 0xbcbfac, 0xcbcbb9].map(hex),
+  // Marsh floor: brown peat, grey-green moss and weathered reed litter.
+  marshpeat: [0x393a30, 0x4d4d3e, 0x605d49, 0x73715b, 0x86836c, 0x9a987d].map(hex),
   // Cold saline pools with dark peat, grey-green shallows and muted glints.
   bogwater: [0x11211f, 0x1b302d, 0x29463f, 0x38584e, 0x4a6b5f, 0x688176].map(hex),
 });
 
 const SIZES = Object.freeze({
   grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, woodlandbark: 64, leaves: 32, woodlandleaves: 32,
-  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32, uplandrock: 64,
+  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, marshpeat: 64, bogwater: 64, rock: 32, uplandrock: 64,
 });
 
 // Returns a light value (≈0..1, dithered onto the ramp), SEAM (darkest ramp
@@ -204,6 +206,17 @@ function sample(kind, x, y, size) {
     if (soil > 0.20 && grit > 0.02) return { color: 0x747c58 };
     if (fleck > 0.994) return { color: 0x8b887b };
     return 0.54 + soil * 0.48 + grit * 0.19 + grain * 0.1;
+  }
+  if (kind === 'marshpeat') {
+    // Broad wet peat pockets and muted moss, broken by finer sediment.
+    // No meadow flowers or bright grass blades in the saturated soil.
+    const peat = valueNoise(x, y, size, 4, 301) - 0.5;
+    const moss = valueNoise(x, y, size, 9, 302) - 0.5;
+    const grit = valueNoise(x, y, size, 21, 303) - 0.5;
+    if (peat < -0.16 && moss < 0.06) return 0.18 + grit * 0.12;
+    if (moss > 0.17 && peat > -0.12) return { color: 0x777f60 };
+    if (hash(x, y, 304) > 0.987 && peat > -0.15) return { color: 0x9b9274 };
+    return 0.54 + peat * 0.42 + moss * 0.18 + grit * 0.18 + grain * 0.07;
   }
   if (kind === 'bogwater') {
     // Tileable, static dark-water breakup; concentric-looking ripples are
@@ -372,7 +385,7 @@ export function chroniclesPixelTexture(kind) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
   const softTerrain = kind === 'meadow' || kind === 'terrafield'
-    || kind === 'woodlandpath' || kind === 'uplandrock';
+    || kind === 'woodlandpath' || kind === 'uplandrock' || kind === 'marshpeat';
   texture.magFilter = softTerrain ? THREE.LinearFilter : THREE.NearestFilter;
   texture.minFilter = softTerrain
     ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;
