@@ -1812,10 +1812,24 @@ function reeds(p, wx, wz, x, y, k, count = 7) {
   }
 }
 
-function basalt(p, wx, wz, x, y, k) {
+// Outer volcanic formations form coherent raised shoulders and valleys.
+// Adjacent rings use the same side axis so they don't fill every saddle.
+// No change to authored cells, the first decorative ring or footprint.
+export function chroniclesVolcanicSkylineRise({ grid = [], x, y, ringDepth } = {}) {
+  if (!Number.isInteger(ringDepth) || ringDepth < 2 || ringDepth > TERRA_SCENERY_MARGIN
+    || !Number.isInteger(x) || !Number.isInteger(y)) return 1;
+  const width = grid[0]?.length || 0, height = grid.length;
+  if (!width || !height) return 1;
+  const ring = Math.max(0, -x, x - width + 1, -y, y - height + 1);
+  if (ring !== ringDepth) return 1;
+  const edge = chroniclesHighlandBackdropSaddle({ grid, x, y, ringDepth });
+  return THREE.MathUtils.clamp((ringDepth === 3 ? 1.83 : 1.55) * edge, 1, 2.25);
+}
+
+function basalt(p, wx, wz, x, y, k, rise = 1) {
   const columns = 3 + Math.floor(noise(x, y, k + 61) * 3);
   for (let c = 0; c < columns; c += 1) {
-    const h = 1.2 + noise(x + c, y, k + 63) * 3.2;
+    const h = (1.2 + noise(x + c, y, k + 63) * 3.2) * rise;
     const a = (c / columns) * 6.28 + noise(x, y, k) * 3;
     const r = c === 0 ? 0 : 0.85;
     p.add('basalt', [wx + Math.cos(a) * r, h / 2, wz + Math.sin(a) * r], { yaw: noise(x, y, c) * 1.0, tilt: (noise(x, c, 65) - 0.5) * 0.25, scale: [1.2, h, 1.2] });
@@ -2115,8 +2129,10 @@ const DRESS = {
       if (big) deadTree(p, wx, wz, x, y, 6);
     }
   },
-  ash(p, wx, wz, x, y, big) {
-    if (noise(x, y, 1) < 0.55) basalt(p, wx, wz, x, y, 0);
+  ash(p, wx, wz, x, y, big, _denseMeadow, ringDepth,
+    _gateway, _grove, _tileRecipe, _woodline, _highlands, _coarsePointer, grid) {
+    if (noise(x, y, 1) < 0.55) basalt(p, wx, wz, x, y, 0,
+      chroniclesVolcanicSkylineRise({ grid, x, y, ringDepth }));
     else boulders(p, wx, wz, x, y, { part: noise(x, y, 2) < 0.4 ? 'emberRock' : 'boulderDark', count: 2, size: big ? 1.5 : 1.3 });
   },
 };
