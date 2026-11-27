@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
+import { attachChroniclesBannerWind } from './chroniclesBannerWind.js';
 import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt, chroniclesFoothillTileAt, chroniclesWoodlandVergeTileAt, chroniclesWoodlandBackdropTileAt } from './chroniclesLandscapeTiles.js';
 
 // Terra's scenery: what an impassable cell of the overworld looks like in
@@ -3551,6 +3552,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     mesh.receiveShadow = true;
     group.add(mesh);
   }
+  if (denseMeadow) attachChroniclesBannerWind(group);
   return group;
 }
 
