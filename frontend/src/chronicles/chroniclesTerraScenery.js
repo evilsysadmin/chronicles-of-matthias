@@ -1662,6 +1662,14 @@ function createPlacer() {
 // ─── what stands on one impassable cell, per biome ────────────────────────
 // (wx, wz) is the cell centre; `big` grows the outskirts a little.
 
+// The coastal stone fields alternate low wave-worn shingle and taller
+// coherent outcrops, without moving any root or increasing the footprint.
+export function chroniclesCoastalOutcropHeight(x, y) {
+  const swell = 0.48 * Math.sin(x * 0.48 + y * 0.29)
+    + 0.20 * Math.cos(x * 0.24 - y * 0.51 + 0.8);
+  return THREE.MathUtils.clamp(1 + swell, 0.55, 1.60);
+}
+
 function boulders(p, wx, wz, x, y, { part = 'boulder', count = 2, size = 1.2, height = 1 } = {}) {
   for (let k = 0; k < count; k += 1) {
     const s = size * (0.7 + noise(x, y, k + 1) * 0.7);
@@ -2167,7 +2175,10 @@ const DRESS = {
       });
       reeds(p, wx, wz, x, y, 0, 4);
     }
-    if (roll >= 0.3) boulders(p, wx, wz, x, y, { part: 'boulderDark', count: big ? 3 : 2, size: 1.25 });
+    if (roll >= 0.3) boulders(p, wx, wz, x, y, {
+      part: 'boulderDark', count: big ? 3 : 2, size: 1.25,
+      height: chroniclesCoastalOutcropHeight(x, y),
+    });
     if (roll > 0.85) p.add('drift', [wx, 0.2, wz], { yaw: noise(x, y, 5) * 6.28, roll: Math.PI / 2, scale: [1, 2.6, 1] });
   },
   marsh(p, wx, wz, x, y, big) {
