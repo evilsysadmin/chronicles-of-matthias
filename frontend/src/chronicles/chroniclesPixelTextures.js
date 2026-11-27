@@ -200,13 +200,16 @@ function sample(kind, x, y, size) {
   if (kind === 'heathpath') {
     // Fine foot-worn earth: muted sediment, sparse pebbles and moss at the
     // margins. Tileable and deterministic, no raised cobble seams.
-    const soil = valueNoise(x, y, size, 4, 48) - 0.5;
-    const grit = valueNoise(x, y, size, 12, 49) - 0.5;
+    const soil = valueNoise(x, y, size, 6, 48) - 0.5;
+    const grit = valueNoise(x, y, size, 17, 49) - 0.5;
+    const crumb = valueNoise(x, y, size, 29, 51) - 0.5;
     const fleck = hash(x, y, 50);
-    if (soil < -0.23 && grit < 0.04) return 0.12;
-    if (soil > 0.20 && grit > 0.02) return { color: 0x747c58 };
-    if (fleck > 0.994) return { color: 0x8b887b };
-    return 0.54 + soil * 0.48 + grit * 0.19 + grain * 0.1;
+    // Restrained patches of damp soil, not abrupt black/green islands.
+    // Fine separated moss flecks leave the compacted tread readable.
+    if (soil > 0.10 && grit > 0.04 && fleck > 0.86) return { color: 0x77775f };
+    if (fleck > 0.994) return { color: 0x9e9381 };
+    if (fleck < 0.018) return { color: 0x554e3d };
+    return 0.56 + soil * 0.30 + grit * 0.21 + crumb * 0.15 + grain * 0.07;
   }
   if (kind === 'ashpath') {
     // Foot-worn volcanic dust, compacted charcoal and scattered basalt grit.
@@ -397,7 +400,7 @@ export function chroniclesPixelTexture(kind) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
   const softTerrain = kind === 'meadow' || kind === 'terrafield'
-    || kind === 'woodlandpath' || kind === 'uplandrock' || kind === 'marshpeat' || kind === 'ashpath';
+    || kind === 'woodlandpath' || kind === 'uplandrock' || kind === 'marshpeat' || kind === 'ashpath' || kind === 'heathpath' || kind === 'heath';
   texture.magFilter = softTerrain ? THREE.LinearFilter : THREE.NearestFilter;
   texture.minFilter = softTerrain
     ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;
