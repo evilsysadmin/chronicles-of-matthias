@@ -1064,6 +1064,49 @@ function applyBannerCartWear(material) {
   material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v129';
 }
 
+// Low atmospheric pockets among the distant northern tree roots. Both
+// ribbons live outside the collision grid, with soft ends and vertical
+// fades. A single transparent batch, not volumetric fog or a new light.
+export function createBannerWoodlandMist(center, coarsePointer = false) {
+  const segments = coarsePointer ? 12 : 20;
+  const positions = [], colors = [], indices = [];
+  // Paint far-to-near so the two faint pockets composite in one draw.
+  for (const ring of [2.65, 1.55]) {
+    const offset = positions.length / 3;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const gx = 1 + 18 * t;
+      const x = (gx - center.x) * CELL;
+      const z = (-ring - center.y) * CELL + 0.65 * Math.sin(t * Math.PI * 4 + ring);
+      const base = chroniclesBannerHorizonRise(gx, z / CELL + center.y, 21, 15);
+      const edge = Math.sin(Math.PI * t) ** 1.4;
+      const pocket = 0.55 + 0.45 * Math.cos(t * Math.PI * 5 + ring) ** 2;
+      const alpha = edge * pocket * (ring > 2 ? 0.25 : 0.20);
+      const top = 2.5 + 0.60 * Math.sin(t * Math.PI * 3 + ring);
+      positions.push(x, base + 0.02, z, x, base + 0.85, z, x, base + top, z);
+      colors.push(1, 1, 1, 0, 1, 1, 1, alpha, 1, 1, 1, 0);
+      if (i) {
+        const j = offset + (i - 1) * 3;
+        indices.push(j, j + 3, j + 1, j + 3, j + 4, j + 1,
+          j + 1, j + 4, j + 2, j + 4, j + 5, j + 2);
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  const mist = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+    color: 0xb8c6bb, vertexColors: true, transparent: true,
+    opacity: 0.70, depthWrite: false, side: THREE.DoubleSide,
+    forceSinglePass: true, fog: true, toneMapped: false,
+  }));
+  mist.name = 'chronicles-banner-woodland-mist';
+  return mist;
+}
+
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
   const grid = scenePlan.grid || [];
   const width = Math.max(1, Number(scenePlan.width) || grid[0]?.length || 19);
@@ -1186,6 +1229,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     skyDome.add(createTerraHighlandMassif(coarsePointer));
   }
   scene.add(skyDome);
+  if (bannerTrail && width === 21 && height === 15) {
+    scene.add(createBannerWoodlandMist(sceneCenter, coarsePointer));
+  }
   // Book One shopfronts need a directional key to reveal dressed stone,
   // projecting eaves and recessed windows. Leave wilderness lighting intact.
   // Mobile keeps its existing no-shadow budget and the same light count.
