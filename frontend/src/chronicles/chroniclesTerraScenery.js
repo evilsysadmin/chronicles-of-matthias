@@ -1643,6 +1643,43 @@ export function chroniclesHollinArchGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+// A distant watchtower hints at Swordhaven beyond the northbound road.
+// This is skyline dressing only, never an additional destination or collider.
+// Reuse the stone atlas, with all architectural pieces merged into one mesh.
+export function chroniclesBannerWatchtowerGeometry() {
+  const parts = [];
+  const stone = (geometry, x, y, z, hex, yaw = 0) => {
+    geometry.rotateY(yaw);
+    geometry.translate(x, y, z);
+    const tint = new THREE.Color(hex);
+    const colors = [];
+    const pos = geometry.getAttribute('position');
+    for (let i = 0; i < pos.count; i++) colors.push(tint.r, tint.g, tint.b);
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    parts.push(geometry);
+  };
+  stone(new THREE.CylinderGeometry(1.82, 2.20, 11.8, 8), 0, 5.7, 0, '#cec3ab');
+  stone(new THREE.CylinderGeometry(2.05, 1.82, 0.65, 8), 0, 11.925, 0, '#b4aa99');
+  stone(new THREE.CylinderGeometry(2.08, 2.05, 1.1, 8), 0, 12.80, 0, '#dfd5be');
+  stone(new THREE.CylinderGeometry(2.20, 2.08, 0.28, 8), 0, 13.49, 0, '#bcb29d');
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    stone(new THREE.BoxGeometry(0.91, 0.92, 0.51),
+      1.88 * Math.sin(a), 14.09, 1.88 * Math.cos(a), '#d6cbb4', a);
+  }
+  // Dark inset slits on the road-facing wall, shaded in the same batch.
+  for (const y of [5.2, 9.1]) {
+    const radius = 2.20 - (2.20 - 1.82) * ((y + 0.2) / 11.8);
+    stone(new THREE.BoxGeometry(0.24, 1.12, 0.10),
+      0, y, radius - 0.015, '#4e4b43');
+  }
+  const geometry = mergeGeometries(parts);
+  parts.forEach(part => part.dispose());
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
   // and pebble batches. B2 heath, snow, forest and marsh rock stay intact.
@@ -1652,6 +1689,8 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     map: rockMap, flatShading: coarsePointer, ...opts,
   });
   return {
+    bannerWatchtower: () => [chroniclesBannerWatchtowerGeometry(),
+      roundedRock(0xc4b9a3, { vertexColors: true, flatShading: true })],
     coastalArch: () => [chroniclesHollinArchGeometry({ coarsePointer }),
       roundedRock(0xa69b88, { vertexColors: true, flatShading: true })],
     boulder: () => [brezalBackdrop
@@ -3148,6 +3187,12 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
+  if (denseMeadow && width === 21 && height === 15 && grid[1]?.[10] === '.') {
+    // Align with the actual Swordhaven exit; keep the foundation entirely
+    // beyond the north boundary and the visual target just off the path axis.
+    const [wx, wz] = toWorld(10.65, -2.5);
+    p.add('bannerWatchtower', [wx, 0, wz]);
+  }
   if (mapId === 'terra-a2' && biome === 'coast' && width >= 9 && height >= 3) {
     // North cliff, fully in the decorative ring, independent of LOD thinning.
     const [wx, wz] = toWorld(Math.floor(width / 2), -2.5);
@@ -3502,7 +3547,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
     mesh.name = 'chronicles-terra-' + part;
     const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'heatherGroundcover', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood', 'meadowSedge', 'forestHerb'].includes(part);
-    mesh.castShadow = !coarsePointer && !small;
+    mesh.castShadow = !coarsePointer && !small && part !== 'bannerWatchtower';
     mesh.receiveShadow = true;
     group.add(mesh);
   }
