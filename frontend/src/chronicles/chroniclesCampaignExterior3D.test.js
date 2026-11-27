@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerMeadowRootDistance, chroniclesBannerWoodlandDensityShade, chroniclesBannerHorizonRise } from './chroniclesCampaignExterior3D.js';
+import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing, chroniclesBannerCartWear, chroniclesBannerRoadErosion, chroniclesBannerMeadowDryness, chroniclesBannerMeadowFreshness, chroniclesBannerMeadowRootDistance, chroniclesBannerWoodlandDensityShade, chroniclesBannerHorizonRise, chroniclesBannerGatewayShade } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
@@ -605,11 +605,12 @@ describe('Chronicles file-authored exterior renderer', () => {
         .toBeCloseTo(densityShade, 8);
       const dry = chroniclesBannerMeadowDryness(x, y, nearest);
       const fresh = chroniclesBannerMeadowFreshness(x, y, nearest);
-      expect(red).toBeCloseTo(1 - shade - fresh * 0.095, 6);
+      const gatewayShade = chroniclesBannerGatewayShade(pos.getX(i), pos.getZ(i));
+      expect(red).toBeCloseTo(1 - shade - fresh * 0.095 - gatewayShade * 0.12, 6);
       expect(red).toBeLessThanOrEqual(1);
-      if (nearest < 0.6) expect(red).toBeCloseTo(0.75);
-      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07 - fresh * 0.025, 6);
-      expect(color.getZ(i)).toBeCloseTo(1 - shade * 0.65 - dry * 0.18, 6);
+      if (nearest < 0.6) expect(red).toBeCloseTo(0.75 - gatewayShade * 0.12);
+      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07 - fresh * 0.025 - gatewayShade * 0.09, 6);
+      expect(color.getZ(i)).toBeCloseTo(1 - shade * 0.65 - dry * 0.18 - gatewayShade * 0.06, 6);
       if (nearest <= 1) {
         expect(dry).toBe(0);
         neutral++;
@@ -1011,6 +1012,23 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
   });
 
+  it('creates a bounded dappled north gateway with open clearing beyond it', () => {
+    const shade = chroniclesBannerGatewayShade;
+    expect(shade(0, 0)).toBe(0);
+    expect(shade(0, -24)).toBe(0);
+    expect(shade(0, 12)).toBe(0);
+    expect(shade(5, -12)).toBe(0);
+    expect(shade(0, -12)).toBeGreaterThan(0.55);
+    expect(shade(0.5, -12)).not.toBe(shade(-0.5, -12));
+    for (let x = -5; x <= 5; x += 0.25) {
+      for (let z = -24; z <= 0; z += 0.25) {
+        expect(shade(x, z)).toBeGreaterThanOrEqual(0);
+        expect(shade(x, z)).toBeLessThanOrEqual(1.000001);
+        expect(Math.abs(shade(x, z + 0.0001) - shade(x, z))).toBeLessThan(0.001);
+      }
+    }
+  });
+
   it('adds continuous bounded erosion pigments while preserving the central crossing', () => {
     const pigment = chroniclesBannerRoadErosion;
     let darkest = 1, brightest = 1;
@@ -1132,7 +1150,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = build(bannerRoadFirstBook), other = build(terraC4);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.material.map).toBe(chroniclesPixelTexture('woodlandpath'));
-    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v128:chronicles-c3-bend-width-v102');
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-c3-cart-wear-erosion-v129:chronicles-c3-bend-width-v102');
     expect(other.material.customProgramCacheKey()).not.toContain('chronicles-c3-bend-width-v102');
     const shader = {
       vertexShader: THREE.ShaderLib.standard.vertexShader,
@@ -1147,6 +1165,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(shader.fragmentShader).toContain('wear *= wearStrength;');
     expect(shader.fragmentShader).toContain('0.175 * cos(a.yx * 0.58)');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition)');
+    expect(shader.fragmentShader).toContain('chroniclesGatewayShade(vChroniclesRoadPosition)');
     expect(shader.fragmentShader).toContain('vec3(0.12, 0.075, 0.035) * dry');
     // GLSL reserves "patch": a CPU-equivalent function and a successful
     // screenshot capture do not guarantee this fragment shader compiles.
