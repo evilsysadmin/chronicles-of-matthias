@@ -744,6 +744,18 @@ export function chroniclesBannerRoadErosion(x, z) {
     1 + 0.035 * dry - 0.09 * compact];
 }
 
+// Soft ambient canopy occlusion across the actual north gateway in C3.
+// The darker passage opens into a bright clearing beyond it. This is a
+// static contact-light approximation, not a projected moving sun shadow.
+export function chroniclesBannerGatewayShade(x, z) {
+  const smooth = THREE.MathUtils.smoothstep;
+  const canopy = 1 - smooth(Math.abs(z + 12), 1.2, 6.2);
+  const corridor = 1 - smooth(Math.abs(x), 1.15, 4.4);
+  const dapple = 0.79 + 0.13 * Math.sin(x * 2.5 + z * 1.1)
+    + 0.08 * Math.cos(x * 4.1 - z * 0.85);
+  return canopy * corridor * dapple;
+}
+
 // Two broad sun-dried meadow communities in canonical C3. These are
 // pigments baked into the existing terrain vertices, not gameplay zones.
 // Fade out at woodland roots, so the shaded forest-floor ramp survives.
@@ -1021,6 +1033,13 @@ function applyBannerCartWear(material) {
         wear *= wearStrength;
         return 1.0 - 0.18 * max(wear.x, wear.y);
       }
+      float chroniclesGatewayShade(vec2 p) {
+        float canopy = 1.0 - smoothstep(1.2, 6.2, abs(p.y + 12.0));
+        float corridor = 1.0 - smoothstep(1.15, 4.4, abs(p.x));
+        float dapple = 0.79 + 0.13 * sin(p.x * 2.5 + p.y * 1.1)
+          + 0.08 * cos(p.x * 4.1 - p.y * 0.85);
+        return canopy * corridor * dapple;
+      }
       vec3 chroniclesRoadErosion(vec2 p) {
         bool vertical = abs(p.y) > abs(p.x);
         float along = vertical ? p.y : p.x;
@@ -1038,9 +1057,11 @@ function applyBannerCartWear(material) {
       }`,
     ).replace('#include <color_fragment>', `#include <color_fragment>
       diffuseColor.rgb *= chroniclesCartWear(vChroniclesRoadPosition);
-      diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition);`);
+      diffuseColor.rgb *= chroniclesRoadErosion(vChroniclesRoadPosition);
+      diffuseColor.rgb *= vec3(1.0) - vec3(0.29, 0.23, 0.16)
+        * chroniclesGatewayShade(vChroniclesRoadPosition);`);
   };
-  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v128';
+  material.customProgramCacheKey = () => 'chronicles-c3-cart-wear-erosion-v129';
 }
 
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
@@ -1218,6 +1239,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const x = THREE.MathUtils.clamp(rawX, 0, width - 1);
       const y = THREE.MathUtils.clamp(rawY, 0, height - 1);
       const distance = chroniclesBannerMeadowRootDistance(grid, x, y);
+      const gatewayShade = width === 21 && height === 15
+        ? chroniclesBannerGatewayShade(positions.getX(i), positions.getZ(i)) : 0;
       const shade = 0.25 * (1 - THREE.MathUtils.smoothstep(distance, 0.6, 2.8))
         + (width === 21 && height === 15
           ? chroniclesBannerWoodlandDensityShade(grid, x, y, distance) : 0);
@@ -1229,9 +1252,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         ? chroniclesBannerMeadowFreshness(x, y, distance) : 0;
       // Fresher grass is slightly deeper and cooler, never cyan. Retain
       // the underlying texture detail and root-shadow field.
-      colors[i * 3] = 1 - shade - freshness * 0.095;
-      colors[i * 3 + 1] = 1 - shade * 0.80 - dryness * 0.07 - freshness * 0.025;
-      colors[i * 3 + 2] = 1 - shade * 0.65 - dryness * 0.18;
+      colors[i * 3] = 1 - shade - freshness * 0.095 - gatewayShade * 0.12;
+      colors[i * 3 + 1] = 1 - shade * 0.80 - dryness * 0.07 - freshness * 0.025 - gatewayShade * 0.09;
+      colors[i * 3 + 2] = 1 - shade * 0.65 - dryness * 0.18 - gatewayShade * 0.06;
     }
     terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     positions.needsUpdate = true;
