@@ -71,6 +71,7 @@ const RAMPS = Object.freeze({
   heath: [0x33382e, 0x4c503b, 0x626448, 0x7f7555, 0x999173, 0xb1a587].map(hex),
   // Compacted peat path, quieter and warmer than Swordhaven cobblestones.
   heathpath: [0x35382f, 0x554e3d, 0x71634b, 0x8c795e, 0xa59378, 0xb7a68a].map(hex),
+  ashpath: [0x393332, 0x514744, 0x685c57, 0x80716a, 0x97877f, 0xaf9f96].map(hex),
   // Neutral weathered stone for boulders and crags; materials tint it per biome.
   rock: [0x3c3a38, 0x5e5b56, 0x827e76, 0xa8a399, 0xcbc6ba, 0xe8e4da].map(hex),
   // Native Terra highlands: weathered sandstone/slate, with restrained
@@ -84,7 +85,7 @@ const RAMPS = Object.freeze({
 
 const SIZES = Object.freeze({
   grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, woodlandbark: 64, leaves: 32, woodlandleaves: 32,
-  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, marshpeat: 64, bogwater: 64, rock: 32, uplandrock: 64,
+  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, ashpath: 64, marshpeat: 64, bogwater: 64, rock: 32, uplandrock: 64,
 });
 
 // Returns a light value (≈0..1, dithered onto the ramp), SEAM (darkest ramp
@@ -206,6 +207,17 @@ function sample(kind, x, y, size) {
     if (soil > 0.20 && grit > 0.02) return { color: 0x747c58 };
     if (fleck > 0.994) return { color: 0x8b887b };
     return 0.54 + soil * 0.48 + grit * 0.19 + grain * 0.1;
+  }
+  if (kind === 'ashpath') {
+    // Foot-worn volcanic dust, compacted charcoal and scattered basalt grit.
+    // No moss from the shared heath track, or glowing lava on walkable cells.
+    const dust = valueNoise(x, y, size, 5, 311) - 0.5;
+    const compacted = valueNoise(x, y, size, 13, 312) - 0.5;
+    const grit = valueNoise(x, y, size, 25, 313) - 0.5;
+    const fleck = hash(x, y, 314);
+    if (fleck < 0.025 && compacted < 0.08) return { color: 0x514744 };
+    if (fleck > 0.986 && dust > -0.18) return { color: 0x97877f };
+    return 0.54 + dust * 0.42 + compacted * 0.22 + grit * 0.16 + grain * 0.07;
   }
   if (kind === 'marshpeat') {
     // Broad wet peat pockets and muted moss, broken by finer sediment.
@@ -385,7 +397,7 @@ export function chroniclesPixelTexture(kind) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
   const softTerrain = kind === 'meadow' || kind === 'terrafield'
-    || kind === 'woodlandpath' || kind === 'uplandrock' || kind === 'marshpeat';
+    || kind === 'woodlandpath' || kind === 'uplandrock' || kind === 'marshpeat' || kind === 'ashpath';
   texture.magFilter = softTerrain ? THREE.LinearFilter : THREE.NearestFilter;
   texture.minFilter = softTerrain
     ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;
