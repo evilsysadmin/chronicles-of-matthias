@@ -850,20 +850,37 @@ export function createBannerRoadDistantRidge(coarsePointer = false) {
 export function createTerraHighlandMassif(coarsePointer = false) {
   const segments = coarsePointer ? 64 : 96;
   const positions = [], colors = [], indices = [];
-  for (let i = 0; i <= segments; i++) {
-    const a = i === segments ? 0 : i * Math.PI * 2 / segments;
-    const shoulder = 0.5 + 0.5 * Math.cos(3 * a + 0.7);
-    const spur = Math.abs(Math.sin(7 * a - 0.8));
-    const h = 7.0 + 10.0 * shoulder ** 1.4 + 3.6 * spur
-      + 1.1 * Math.sin(13 * a + 0.4);
-    const x = 55 * Math.cos(a), z = 55 * Math.sin(a);
-    positions.push(x, -7, z, x, h - 0.75, z, x, h, z);
-    colors.push(0.76, 0.82, 0.87, 0.90,
-      0.96, 0.98, 1, 0.82, 0.96, 0.98, 1, 0);
-    if (i) {
-      const j = 3 * (i - 1);
-      indices.push(j, j + 1, j + 3, j + 3, j + 1, j + 4,
-        j + 1, j + 2, j + 4, j + 4, j + 2, j + 5);
+  // Back-to-front index order composites both mountain ranges in one draw.
+  // The near range has a different rhythm and more mineral contrast.
+  for (const near of [false, true]) {
+    const offset = positions.length / 3;
+    const radius = near ? 52 : 55;
+    for (let i = 0; i <= segments; i++) {
+      const a = i === segments ? 0 : i * Math.PI * 2 / segments;
+      const shoulder = 0.5 + 0.5 * Math.cos(3 * a + 0.7);
+      const spur = Math.abs(Math.sin(7 * a - 0.8));
+      const distantHeight = 7.0 + 10.0 * shoulder ** 1.4 + 3.6 * spur
+        + 1.1 * Math.sin(13 * a + 0.4);
+      const h = near ? distantHeight * 0.43 + 1.1
+        + 1.6 * (0.5 + 0.5 * Math.sin(5 * a + 1.8))
+        + 0.85 * Math.abs(Math.sin(11 * a - 0.2)) : distantHeight;
+      const x = radius * Math.cos(a), z = radius * Math.sin(a);
+      positions.push(x, -7, z, x, h - 0.75, z, x, h, z);
+      if (near) {
+        const face = 0.82 + 0.09 * Math.cos(5 * a + 0.3)
+          + 0.06 * Math.sin(11 * a + 0.9);
+        colors.push(0.59, 0.66, 0.72, 0.96,
+          face * 0.89, face * 0.95, face, 0.94,
+          face * 0.89, face * 0.95, face, 0);
+      } else {
+        colors.push(0.76, 0.82, 0.87, 0.90,
+          0.96, 0.98, 1, 0.82, 0.96, 0.98, 1, 0);
+      }
+      if (i) {
+        const j = offset + 3 * (i - 1);
+        indices.push(j, j + 1, j + 3, j + 3, j + 1, j + 4,
+          j + 1, j + 2, j + 4, j + 4, j + 2, j + 5);
+      }
     }
   }
   const geometry = new THREE.BufferGeometry();
