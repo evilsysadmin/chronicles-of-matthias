@@ -1,4 +1,4 @@
-// Six comparable screenshots from the real MM3 world camera, including
+// Comparable screenshots across Terra biomes from the real MM3 world camera, including
 // C3 Banner Road's authored forest approach and real landscape WebGL evidence.
 import assert from 'node:assert/strict';
 import { stat } from 'node:fs/promises';
@@ -9,7 +9,12 @@ const browser = await chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 });
 try {
-  for (const mapId of ['terra-e2', 'terra-c4', 'banner-road-first-book']) {
+  const extraBiomes = {
+    'terra-a2': { biome: 'coast', parts: ['dune', 'boulderDark', 'reed'] },
+    'terra-d5': { biome: 'marsh', parts: ['pool', 'deadTrunk', 'reed', 'bush'] },
+    'terra-f4': { biome: 'ash', parts: ['basalt', 'boulderDark', 'emberRock'] },
+  };
+  for (const mapId of ['terra-e2', 'terra-c4', 'banner-road-first-book', ...Object.keys(extraBiomes)]) {
     const captures = [];
     for (const [width, height, coarse] of [[390, 844, true], [1280, 800, false]]) {
       const context = await browser.newContext({
@@ -42,7 +47,7 @@ try {
         assert.equal(state.cameraCell, mapId === 'terra-c4' ? '7,5'
           : mapId === 'banner-road-first-book' ? '10,13' : '10,7');
         assert.equal(state.coarsePointer, String(coarse));
-        assert.equal(state.biome, mapId === 'terra-e2' ? 'hills' : 'plains');
+        assert.equal(state.biome, extraBiomes[mapId]?.biome ?? (mapId === 'terra-e2' ? 'hills' : 'plains'));
         if (mapId === 'banner-road-first-book') {
           assert.equal(Number(state.cameraYaw), 0,
             'C3 camera must look north from the actual south approach');
@@ -151,6 +156,13 @@ try {
           assert.ok(Number(state.cragCount) > 0, 'Real blocked ridges must render');
           assert.ok(Number(state.pebbleCount) > 10, 'Walkable foothills need scree');
           assert.ok(Number(state.tuftCount) > 10, 'Walkable foothills need short grasses');
+        } else if (extraBiomes[mapId]) {
+          const counts = JSON.parse(state.targetCounts);
+          for (const part of extraBiomes[mapId].parts) {
+            assert.ok(Number(counts[part]) > 0, mapId + ' missing real batch ' + part);
+          }
+          console.log('CHRONICLES_TERRA_BIOME_AUDIT map=' + mapId
+            + ' width=' + width + ' counts=' + JSON.stringify(counts));
         } else {
           assert.ok(Number(state.tuftCount) > 10, 'Real meadows need low grasses');
           assert.ok(Number(state.flowerCount) > 0, 'Real meadows need wildflowers');
@@ -169,8 +181,10 @@ try {
         await context.close();
       }
     }
-    assert.ok(Number(captures[0].tuftCount) <= Number(captures[1].tuftCount),
-      'Touch grass budget cannot exceed desktop grass budget');
+    if (!extraBiomes[mapId]) {
+      assert.ok(Number(captures[0].tuftCount) <= Number(captures[1].tuftCount),
+        'Touch grass budget cannot exceed desktop grass budget');
+    }
     if (mapId === 'terra-e2') {
       assert.ok(Number(captures[0].pebbleCount) <= Number(captures[1].pebbleCount),
         'Touch scree budget cannot exceed desktop scree budget');
