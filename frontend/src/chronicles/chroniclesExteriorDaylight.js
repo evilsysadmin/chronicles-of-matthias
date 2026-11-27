@@ -54,6 +54,25 @@ export function chroniclesBannerWoodlandLight(profile, cloudiness, fogStrength) 
   };
 }
 
+// Daytime atmospheric pigments are specific to native wilderness. The
+// solar/weather blends still own dawn, dusk, overcast and night; these
+// endpoints only replace the generic blue sky that sync used to restore.
+const TERRA_SKY_PALETTES = Object.freeze({
+  coast: Object.freeze({ zenith: 0x76b5d4, horizon: 0xd0e5e9 }),
+  marsh: Object.freeze({ zenith: 0x849d9d, horizon: 0xc1c9b7 }),
+  ash: Object.freeze({ zenith: 0x93847e, horizon: 0xcfb49c }),
+});
+const TERRA_SKY_FALLBACK = Object.freeze({
+  'terra-a2': 'coast', 'terra-d5': 'marsh', 'terra-f4': 'ash',
+});
+
+export function chroniclesTerraDaySky(region = {}) {
+  if (!['wilderness', 'outdoor'].includes(region.regionKind)
+      || !/^terra-/.test(String(region.mapId || ''))) return null;
+  const biome = region.biome ?? TERRA_SKY_FALLBACK[region.mapId];
+  return Object.hasOwn(TERRA_SKY_PALETTES, biome) ? TERRA_SKY_PALETTES[biome] : null;
+}
+
 // Updates existing lights and sky vertices only when the game-world minute
 // changes. No timers, new light sources, new shadow maps or runtime assets.
 // A dungeon lacks the outdoor dome+sun pair and is intentionally ignored.
@@ -75,8 +94,9 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const direction = new THREE.Vector3();
   const sunVector = new THREE.Vector3();
   const color = new THREE.Color();
-  const zenithDay = new THREE.Color(0x65a6d0);
-  const horizonDay = new THREE.Color(0xb8dce9);
+  const regionalSky = chroniclesTerraDaySky(region);
+  const zenithDay = new THREE.Color(regionalSky?.zenith ?? 0x65a6d0);
+  const horizonDay = new THREE.Color(regionalSky?.horizon ?? 0xb8dce9);
   const zenithNight = new THREE.Color(0x09152b);
   const horizonNight = new THREE.Color(0x263b56);
   const warm = new THREE.Color(0xffcb97);
