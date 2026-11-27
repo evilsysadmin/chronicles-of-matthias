@@ -1597,6 +1597,52 @@ export function chroniclesVolcanicRockGeometry({ coarsePointer = false, ember = 
 }
 
 // Parts: one geometry + one material each, instanced across the map.
+// A single eroded sea arch marks the cliffs of Hollín. Its irregular
+// stone cross-sections follow an open arch, not a solid wall or a torus.
+// Both ends sink below the decorative terrain, outside the playable grid.
+export function chroniclesHollinArchGeometry({ coarsePointer = false } = {}) {
+  const spans = coarsePointer ? 12 : 20;
+  const sides = coarsePointer ? 6 : 8;
+  const positions = [], colors = [], uvs = [], indices = [];
+  const damp = new THREE.Color('#848078');
+  const pale = new THREE.Color('#e0d5bf');
+  const pigment = new THREE.Color();
+  for (let i = 0; i <= spans; i++) {
+    const t = i / spans;
+    const a = Math.PI * (1 - t);
+    const cx = 5.2 * Math.cos(a) + 0.36 * Math.sin(3 * a);
+    const cy = -0.45 + 7.4 * Math.sin(a);
+    const cz = 0.32 * Math.sin(2 * a);
+    const n = Math.hypot(7.4 * Math.cos(a), 5.2 * Math.sin(a));
+    const nx = 7.4 * Math.cos(a) / n, ny = 5.2 * Math.sin(a) / n;
+    const width = 1.30 + 0.55 * Math.abs(Math.cos(a)) + 0.15 * Math.sin(5 * a + 0.3);
+    for (let j = 0; j <= sides; j++) {
+      const b = j === sides ? 0 : j * Math.PI * 2 / sides;
+      const erosion = 1 + 0.10 * Math.cos(3 * b + 2 * a) + 0.05 * Math.sin(2 * b - 7 * a);
+      const r = width * erosion * Math.cos(b);
+      const y = cy + ny * r;
+      positions.push(cx + nx * r, y, cz + 1.15 * erosion * Math.sin(b));
+      const strata = 0.5 + 0.5 * Math.sin(y * 1.9 + cx * 0.25);
+      pigment.copy(damp).lerp(pale, 0.26 + 0.46 * THREE.MathUtils.smoothstep(y, 0, 7) + 0.18 * strata);
+      colors.push(pigment.r, pigment.g, pigment.b);
+      uvs.push(j / sides * 2, t * 5);
+      if (i < spans && j < sides) {
+        const k = i * (sides + 1) + j;
+        indices.push(k, k + 1, k + sides + 1, k + 1, k + sides + 2, k + sides + 1);
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
   // and pebble batches. B2 heath, snow, forest and marsh rock stay intact.
@@ -1606,6 +1652,8 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     map: rockMap, flatShading: coarsePointer, ...opts,
   });
   return {
+    coastalArch: () => [chroniclesHollinArchGeometry({ coarsePointer }),
+      roundedRock(0xa69b88, { vertexColors: true, flatShading: true })],
     boulder: () => [brezalBackdrop
       ? chroniclesBrezalStoneGeometry({ coarsePointer })
       : chroniclesOrganicRockGeometry({ coarsePointer,
@@ -3100,6 +3148,11 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
+  if (mapId === 'terra-a2' && biome === 'coast' && width >= 9 && height >= 3) {
+    // North cliff, fully in the decorative ring, independent of LOD thinning.
+    const [wx, wz] = toWorld(Math.floor(width / 2), -2.5);
+    p.add('coastalArch', [wx, 0, wz]);
+  }
   const catalog = partCatalog(coarsePointer, biome, denseMeadow, naturalHighlands, brezalBackdrop);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = mapId === 'rookwood-first-book' && biome === 'forest'
