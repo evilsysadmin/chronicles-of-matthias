@@ -3237,6 +3237,23 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       });
       mesh.instanceColor.needsUpdate = true;
     }
+    // Ash-veiled outer rings are less warm and less contrasted than the
+    // nearby mineral formations. Reuse instance colors; authored map
+    // cells and the first decorative ring keep their original albedo.
+    if (biome === 'ash' && ['basalt', 'boulderDark', 'emberRock'].includes(part)) {
+      const near = new THREE.Color('#ffffff');
+      const haze = new THREE.Color(part === 'emberRock' ? '#c7b7b3' : '#c7ced5');
+      const tint = new THREE.Color();
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const x = Math.round(e[12] / CELL) + center.x;
+        const y = Math.round(e[14] / CELL) + center.y;
+        const ring = Math.max(0, -x, x - width + 1, -y, y - grid.length + 1);
+        const depth = ring >= 3 ? 0.60 : ring === 2 ? 0.32 : 0;
+        mesh.setColorAt(index, tint.copy(near).lerp(haze, depth));
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     // Native highlands get quiet stone/lichen tonality per real rock, not
     // identical chess-pawn grey boulders. Same single instanced batch and
     // deterministic transforms; authored heath B2 retains its own palette.
