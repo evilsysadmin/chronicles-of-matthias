@@ -995,7 +995,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       ash: { texture: 'heathpath', tint: 0xb2aaa7 },
     }[scenePlan.biome] : null;
   const naturalPath = bannerTrail || heathB2 || naturalTerraTrail || Boolean(wildTrackStyle);
-  const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
+  const marshFloor = !settlement && /^terra-/.test(String(scenePlan.mapId || ''))
+    && scenePlan.biome === 'marsh';
+  const earth = material(heathB2 || marshFloor ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
     // Native Terra plains/hills need softer, smaller mottling than the
     // woodland meadow of authored Banner Road. Both share one terrain mesh
     // and seven broad repeats, but use distinct cached 128px atlas kinds so
@@ -1003,6 +1005,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     // B2 heath, settlement grass and other biome materials stay untouched.
     map: bannerTrail ? terraGroundTexture('meadow', 7)
       : naturalTerraTrail ? terraGroundTexture('terrafield', 7)
+      : marshFloor ? terraGroundTexture('marshpeat', 9)
       : heathB2 ? terraGroundTexture('heath')
       : biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture(),
   });
