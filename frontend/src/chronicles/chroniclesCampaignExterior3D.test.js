@@ -605,11 +605,12 @@ describe('Chronicles file-authored exterior renderer', () => {
         .toBeCloseTo(densityShade, 8);
       const dry = chroniclesBannerMeadowDryness(x, y, nearest);
       const fresh = chroniclesBannerMeadowFreshness(x, y, nearest);
-      expect(red).toBeCloseTo(1 - shade - fresh * 0.095, 6);
+      const gatewayShade = chroniclesBannerGatewayShade(pos.getX(i), pos.getZ(i));
+      expect(red).toBeCloseTo(1 - shade - fresh * 0.095 - gatewayShade * 0.12, 6);
       expect(red).toBeLessThanOrEqual(1);
-      if (nearest < 0.6) expect(red).toBeCloseTo(0.75);
-      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07 - fresh * 0.025, 6);
-      expect(color.getZ(i)).toBeCloseTo(1 - shade * 0.65 - dry * 0.18, 6);
+      if (nearest < 0.6) expect(red).toBeCloseTo(0.75 - gatewayShade * 0.12);
+      expect(color.getY(i)).toBeCloseTo(1 - shade * 0.80 - dry * 0.07 - fresh * 0.025 - gatewayShade * 0.09, 6);
+      expect(color.getZ(i)).toBeCloseTo(1 - shade * 0.65 - dry * 0.18 - gatewayShade * 0.06, 6);
       if (nearest <= 1) {
         expect(dry).toBe(0);
         neutral++;
