@@ -5,6 +5,9 @@ import escoria from '../src/chronicles/maps/terra-e2.json';
 import ahorcado from '../src/chronicles/maps/terra-c4.json';
 import temple from '../src/chronicles/maps/terra-a1.json';
 import heath from '../src/chronicles/maps/terra-b2.json';
+import coast from '../src/chronicles/maps/terra-a2.json';
+import marsh from '../src/chronicles/maps/terra-d5.json';
+import volcanic from '../src/chronicles/maps/terra-f4.json';
 import bannerRoad from '../src/chronicles/maps/banner-road-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
@@ -18,6 +21,7 @@ const params = new URLSearchParams(location.search);
 const maps = Object.freeze({
   'terra-e2': escoria, 'terra-c4': ahorcado,
   'terra-a1': temple, 'terra-b2': heath,
+  'terra-a2': coast, 'terra-d5': marsh, 'terra-f4': volcanic,
   'banner-road-first-book': bannerRoad,
 });
 const mapId = params.get('map') || 'terra-e2';
@@ -35,6 +39,9 @@ const targets = Object.freeze({
   // flattering render fabricated around the object.
   'terra-a1': Object.freeze({ boulder: 3, boulderSnow: 2 }),
   'terra-b2': Object.freeze({ boulder: 3, crag: 2 }),
+  'terra-a2': Object.freeze({ dune: 4, boulderDark: 2, reed: 1 }),
+  'terra-d5': Object.freeze({ pool: 4, deadTrunk: 3, reed: 1, bush: 1 }),
+  'terra-f4': Object.freeze({ basalt: 4, boulderDark: 2, emberRock: 2 }),
   'banner-road-first-book': Object.freeze({ bush: 4, crown: 2, forestHerb: 1 }),
 });
 
@@ -412,6 +419,8 @@ try {
     realScenery: String(scenery.children.every(child => child.isInstancedMesh)),
     batchCount: String(scenery.children.length),
     drawCalls: String(renderer.info.render.calls),
+    targetCounts: JSON.stringify(Object.fromEntries(Object.entries(meshes)
+      .map(([part, mesh]) => [part, mesh.count]))),
     cragCount: String(meshes.crag?.count || 0),
     bushCount: String(meshes.bush?.count || 0),
     crownCount: String(meshes.crown?.count || 0),
