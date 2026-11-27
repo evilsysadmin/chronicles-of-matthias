@@ -37,6 +37,21 @@ describe('Terra biome-matched wilderness tracks', () => {
     expect(mobile.material.map).toBe(road.material.map);
     expect(road.material.color.getHex()).toBe(tint);
     expect(road.material.normalMap).toBeNull();
+    expect(road.material.transparent).toBe(false);
+    expect(road.material.depthWrite).toBe(true);
+    expect(road.material.customProgramCacheKey()).toBe('chronicles-terra-wild-track-erosion-v1');
+    expect(mobile.material.customProgramCacheKey()).toBe(road.material.customProgramCacheKey());
+    expect(legacy.material.customProgramCacheKey()).not.toBe(road.material.customProgramCacheKey());
+    const shader = {
+      vertexShader: '#include <common>\n#include <begin_vertex>',
+      fragmentShader: '#include <common>\n#include <color_fragment>',
+    };
+    road.material.onBeforeCompile(shader);
+    expect(shader.vertexShader).toContain('instanceMatrix * trackWorld');
+    expect(shader.vertexShader).toContain('vWildTrackEdge = vec2(0.0)');
+    expect(shader.fragmentShader).toContain('wildTrackCoverage(vWildTrackWorld, vWildTrackEdge)');
+    expect(shader.fragmentShader).toContain('floor(vWildTrackWorld * 18.0)');
+    expect(shader.fragmentShader).toContain('discard;');
     expect(road.geometry.parameters.width).toBe(4);
     expect(road.geometry.parameters.depth).toBe(4);
     expect(legacy.material.map).toBe(swordhavenSurfaceTexture('cobble'));

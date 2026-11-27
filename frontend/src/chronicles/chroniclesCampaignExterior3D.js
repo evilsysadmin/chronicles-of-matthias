@@ -903,6 +903,47 @@ export function createBannerRoadRootContacts(scenery, grid, center) {
   return contacts;
 }
 
+// Native coast/marsh/ash tracks lose their perfectly cut rectangular
+// edges. The existing opaque road batch reveals the real ground through
+// a static world-space erosion mask, continuous across tile boundaries.
+// Intersections and non-axis authored cells retain their full footprint.
+function applyWildTrackErosion(material) {
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>', `#include <common>
+      varying vec2 vWildTrackWorld;
+      varying vec2 vWildTrackEdge;`,
+    ).replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 trackWorld = vec4(position, 1.0);
+      vWildTrackEdge = vec2(0.0);
+      #ifdef USE_INSTANCING
+        trackWorld = instanceMatrix * trackWorld;
+        if (instanceMatrix[0][0] < 0.9) {
+          vWildTrackEdge = vec2(position.x * 0.5, abs(trackWorld.z));
+        } else if (instanceMatrix[2][2] < 0.9) {
+          vWildTrackEdge = vec2(position.z * 0.5, abs(trackWorld.x));
+        }
+      #endif
+      vWildTrackWorld = trackWorld.xz;`);
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>', `#include <common>
+      varying vec2 vWildTrackWorld;
+      varying vec2 vWildTrackEdge;
+      float wildTrackCoverage(vec2 p, vec2 edge) {
+        float approach = smoothstep(2.0, 5.5, edge.y);
+        float ripple = 0.065 * sin(p.x * 2.3 + p.y * 1.7)
+          + 0.035 * cos(p.y * 4.1 - p.x * 2.8);
+        float erosion = smoothstep(0.76, 0.99, abs(edge.x) + ripple);
+        return 1.0 - approach * erosion;
+      }`,
+    ).replace('#include <color_fragment>', `#include <color_fragment>
+      vec2 gritCell = floor(vWildTrackWorld * 18.0);
+      float grit = fract(sin(dot(gritCell, vec2(127.1, 311.7))) * 43758.5453);
+      if (grit > wildTrackCoverage(vWildTrackWorld, vWildTrackEdge)) discard;`);
+  };
+  material.customProgramCacheKey = () => 'chronicles-terra-wild-track-erosion-v1';
+}
+
 function applyBannerCartWear(material) {
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace(
@@ -1030,6 +1071,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   if (bannerTrail) {
     applyBannerCartWear(paver);
     applyBannerRoadBend(paver);
+  } else if (wildTrackStyle) {
+    applyWildTrackErosion(paver);
   }
   const timber = material(0x4d3424);
 
