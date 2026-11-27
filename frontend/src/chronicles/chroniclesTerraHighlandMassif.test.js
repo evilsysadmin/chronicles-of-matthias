@@ -15,7 +15,7 @@ function exterior(mapId, coarsePointer) {
 }
 
 describe('Terra atmospheric mountain massif', () => {
-  it.each([true, false])('builds one seamless bounded background ribbon (coarse=%s)', coarsePointer => {
+  it.each([true, false])('builds two seamless bounded ranges in one background mesh (coarse=%s)', coarsePointer => {
     const { scene, plan } = exterior('terra-e2', coarsePointer);
     const dome = scene.getObjectByName('swordhaven-sky-dome');
     const mesh = dome.getObjectByName('chronicles-terra-highland-massif');
@@ -26,21 +26,38 @@ describe('Terra atmospheric mountain massif', () => {
     expect(mesh.material.forceSinglePass).toBe(true);
     expect(mesh.renderOrder).toBeGreaterThan(dome.getObjectByName('chronicles-sky-cloud-panorama').renderOrder);
     expect(mesh.renderOrder).toBeLessThan(0);
-    expect(mesh.geometry.index.count / 3).toBe(coarsePointer ? 256 : 384);
+    const segments = coarsePointer ? 64 : 96;
+    const layerVertices = (segments + 1) * 3;
+    expect(mesh.geometry.index.count / 3).toBe(coarsePointer ? 512 : 768);
     const pos = mesh.geometry.getAttribute('position');
     const color = mesh.geometry.getAttribute('color');
+    expect(pos.count).toBe(layerVertices * 2);
     const peaks = [];
-    for (let i = 0; i < pos.count; i += 3) {
-      expect(Math.hypot(pos.getX(i), pos.getZ(i))).toBeCloseTo(55, 4);
-      expect(pos.getY(i)).toBe(-7);
-      expect(pos.getY(i + 2) - pos.getY(i + 1)).toBeCloseTo(0.75, 5);
-      expect(color.getW(i + 2)).toBe(0);
-      peaks.push(pos.getY(i + 2));
+    for (let layer = 0; layer < 2; layer++) {
+      const offset = layer * layerVertices;
+      const radius = layer ? 52 : 55;
+      for (let i = offset; i < offset + layerVertices; i += 3) {
+        expect(Math.hypot(pos.getX(i), pos.getZ(i))).toBeCloseTo(radius, 4);
+        expect(pos.getY(i)).toBe(-7);
+        expect(pos.getY(i + 2) - pos.getY(i + 1)).toBeCloseTo(0.75, 5);
+        expect(color.getW(i + 2)).toBe(0);
+        if (!layer) peaks.push(pos.getY(i + 2));
+        else {
+          const far = i - layerVertices;
+          expect(pos.getY(i + 2) / radius).toBeLessThan(pos.getY(far + 2) / 55);
+          expect(color.getX(i + 1)).toBeLessThan(color.getX(far + 1));
+        }
+      }
+      expect([...pos.array.slice(offset * 3, offset * 3 + 9)])
+        .toEqual([...pos.array.slice((offset + layerVertices) * 3 - 9, (offset + layerVertices) * 3)]);
     }
     expect(Math.max(...peaks)).toBeGreaterThan(18);
     expect(Math.max(...peaks)).toBeLessThan(23);
     expect(Math.min(...peaks)).toBeLessThan(10);
-    expect([...pos.array.slice(0, 9)]).toEqual([...pos.array.slice(-9)]);
+    const indices = mesh.geometry.index.array;
+    const half = indices.length / 2;
+    expect([...indices.slice(0, half)].every(i => i < layerVertices)).toBe(true);
+    expect([...indices.slice(half)].every(i => i >= layerVertices)).toBe(true);
     const copy = createTerraHighlandMassif(coarsePointer);
     expect([...copy.geometry.getAttribute('position').array]).toEqual([...pos.array]);
     copy.geometry.dispose();
