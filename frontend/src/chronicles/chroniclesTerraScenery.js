@@ -1790,14 +1790,45 @@ function pine(p, wx, wz, x, y, k, { snowy = false, scale = 1 } = {}) {
   p.add(snowy ? 'pineSnow' : 'pine', [wx + ox, 5.2 * s, wz + oz], { scale: [1.2 * s, 2.6 * s, 1.2 * s] });
 }
 
-function deadTree(p, wx, wz, x, y, k) {
+// Keep one trunk and two existing branch instances, but actually attach
+// their roots to the deformed trunk axis. Seeded asymmetric forks replace
+// the identical detached-looking arms without extra geometry or batches.
+export function chroniclesMarshDeadTreeLayout(wx, wz, x, y, k = 0) {
   const s = 0.9 + noise(x, y, k + 41) * 0.5;
   const ox = (noise(x, y, k + 43) - 0.5) * 2;
   const oz = (noise(y, x, k + 45) - 0.5) * 2;
   const yaw = noise(x, y, k + 47) * 6.28;
-  p.add('deadTrunk', [wx + ox, 2 * s, wz + oz], { yaw, tilt: 0.06, scale: [s, 4 * s, s] });
-  p.add('deadTrunk', [wx + ox + Math.cos(yaw) * 0.6 * s, 3.1 * s, wz + oz + Math.sin(yaw) * 0.6 * s], { yaw, roll: 0.9, scale: [0.6 * s, 1.6 * s, 0.6 * s] });
-  p.add('deadTrunk', [wx + ox - Math.cos(yaw) * 0.5 * s, 3.6 * s, wz + oz - Math.sin(yaw) * 0.5 * s], { yaw, roll: -0.8, scale: [0.5 * s, 1.3 * s, 0.5 * s] });
+  const trunk = { position: [wx + ox, 2 * s, wz + oz],
+    transform: { yaw, tilt: 0.06, scale: [s, 4 * s, s] } };
+  const trunkRotation = new THREE.Euler(0.06, yaw, 0);
+  const up = new THREE.Vector3(0, 1, 0);
+  const branches = [0, 1].map(index => {
+    const t = index === 0 ? 0.61 + noise(x, y, k + 71) * 0.09
+      : 0.79 + noise(x, y, k + 72) * 0.08;
+    const root = new THREE.Vector3(0.075 * t * s, (t - 0.5) * 4 * s, -0.045 * t * s)
+      .applyEuler(trunkRotation).add(new THREE.Vector3(...trunk.position));
+    const azimuth = yaw + index * Math.PI + (noise(x, y, k + 73 + index) - 0.5) * 0.90;
+    const lift = 0.32 + noise(x, y, k + 75 + index) * 0.43;
+    const direction = new THREE.Vector3(Math.cos(azimuth), lift, Math.sin(azimuth)).normalize();
+    const length = (index === 0 ? 1.35 : 0.95) * s
+      + noise(x, y, k + 77 + index) * 0.30 * s;
+    const girth = (index === 0 ? 0.48 : 0.36) * s;
+    const rotation = new THREE.Euler().setFromQuaternion(
+      new THREE.Quaternion().setFromUnitVectors(up, direction));
+    return {
+      position: root.clone().addScaledVector(direction, length / 2).toArray(),
+      transform: { tilt: rotation.x, yaw: rotation.y, roll: rotation.z,
+        scale: [girth, length, girth] },
+      root: root.toArray(),
+    };
+  });
+  return [trunk, ...branches];
+}
+
+function deadTree(p, wx, wz, x, y, k) {
+  for (const { position, transform } of chroniclesMarshDeadTreeLayout(wx, wz, x, y, k)) {
+    p.add('deadTrunk', position, transform);
+  }
 }
 
 function reeds(p, wx, wz, x, y, k, count = 7) {
