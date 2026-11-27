@@ -2667,6 +2667,29 @@ const CLUTTER = {
 };
 
 
+// Marsh groundcover follows damp blocked-cell margins, not uniformly
+// scattered lawn. A bounded colony of low tufts leaves the central lane,
+// reserved content, and authored collision grid untouched.
+function addMarshVergeColony(p, grid, x, y, wx, wz, coarsePointer) {
+  const edges = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
+  if (!edges.length) return;
+  const wetness = 0.5 + 0.5 * Math.sin(x * 0.47 + y * 0.31)
+    * Math.cos(y * 0.39 - x * 0.23);
+  if (noise(x, y, 1711) >= (coarsePointer ? 0.55 : 0.85) * (0.55 + 0.45 * wetness)) return;
+  const [dx, dy] = edges[Math.floor(noise(x, y, 1713) * edges.length)];
+  const count = coarsePointer ? 1 : 2;
+  for (let i = 0; i < count; i++) {
+    const drift = count === 1 ? 0 : (i ? 0.49 : -0.49);
+    const spread = 0.94 + noise(x, y, 1715 + i) * 0.34;
+    p.add('tuft', [wx + dx * 1.10 - dy * drift, 0.012,
+      wz + dy * 1.10 + dx * drift], {
+      yaw: noise(x, y, 1719 + i) * Math.PI * 2,
+      scale: [spread, 0.90 + noise(x, y, 1721 + i) * 0.55, spread],
+    });
+  }
+}
+
 // Native Terra meadow communities share the existing grass, wildflower and
 // woodland-herb geometry batches. Coverage follows coherent 3x3-cell habitat
 // recipes while deterministic sub-cell offsets avoid a painted checkerboard.
@@ -3031,6 +3054,10 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           addReusableFoothillPatch(p, wx, wz, x, y, foothill, coarsePointer);
           if (mapId === 'terra-b2') {
             addBrezalLowHeather(p, wx, wz, x, y, foothill, coarsePointer);
+          }
+        } else if (biome === 'marsh' && /^terra-/.test(String(mapId || '')) && tile === '.') {
+          if (x !== center.x && y !== center.y) {
+            addMarshVergeColony(p, grid, x, y, wx, wz, coarsePointer);
           }
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
