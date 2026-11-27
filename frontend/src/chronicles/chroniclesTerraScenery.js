@@ -1857,6 +1857,20 @@ export function chroniclesVolcanicSkylineRise({ grid = [], x, y, ringDepth } = {
   return THREE.MathUtils.clamp((ringDepth === 3 ? 1.83 : 1.55) * edge, 1, 2.25);
 }
 
+// Distant coastal dune fields form broad wind-shaped crests. Only the
+// outer decorative rings change; all authored dunes and the near ring
+// retain their original transforms. The original shared sand mesh remains.
+export function chroniclesCoastalDuneRise({ grid = [], x, y, ringDepth } = {}) {
+  if (!Number.isInteger(ringDepth) || ringDepth < 2 || ringDepth > TERRA_SCENERY_MARGIN
+      || !Number.isInteger(x) || !Number.isInteger(y)) return 1;
+  const width = grid[0]?.length || 0, height = grid.length;
+  if (!width || !height) return 1;
+  if (Math.max(0, -x, x - width + 1, -y, y - height + 1) !== ringDepth) return 1;
+  const shoulder = chroniclesHighlandBackdropSaddle({ grid, x, y, ringDepth });
+  return 1 + (ringDepth === 3 ? 1.50 : 1.05)
+    * THREE.MathUtils.smoothstep(shoulder, 0.60, 1.25);
+}
+
 function basalt(p, wx, wz, x, y, k, rise = 1) {
   const columns = 3 + Math.floor(noise(x, y, k + 61) * 3);
   for (let c = 0; c < columns; c += 1) {
@@ -2142,10 +2156,15 @@ const DRESS = {
       boulders(p, wx, wz, x, y, { part: 'boulderSnow', count: 2, size: 1.3 });
     }
   },
-  coast(p, wx, wz, x, y, big) {
+  coast(p, wx, wz, x, y, big, _denseMeadow, ringDepth,
+    _gateway, _grove, _tileRecipe, _woodline, _highlands, _coarsePointer, grid) {
     const roll = noise(x, y, 1);
     if (roll < 0.45) {
-      p.add('dune', [wx + (noise(x, y, 2) - 0.5), 0.2, wz + (noise(y, x, 2) - 0.5)], { yaw: noise(x, y, 3) * 6.28, scale: [2.2, 1.0 + noise(x, y, 4) * 0.6, 1.7] });
+      const rise = chroniclesCoastalDuneRise({ grid, x, y, ringDepth });
+      p.add('dune', [wx + (noise(x, y, 2) - 0.5), 0.2, wz + (noise(y, x, 2) - 0.5)], {
+        yaw: noise(x, y, 3) * 6.28,
+        scale: [2.2, (1.0 + noise(x, y, 4) * 0.6) * rise, 1.7],
+      });
       reeds(p, wx, wz, x, y, 0, 4);
     }
     if (roll >= 0.3) boulders(p, wx, wz, x, y, { part: 'boulderDark', count: big ? 3 : 2, size: 1.25 });
