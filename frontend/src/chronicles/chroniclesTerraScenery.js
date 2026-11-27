@@ -1549,6 +1549,27 @@ export function chroniclesVolcanicBasaltGeometry() {
   return geometry;
 }
 
+// Mineral bands follow the local rock surface, rather than adding another
+// texture or glowing geometry. Cold ash rock and ember rock share their
+// existing topology; only the baked albedo multiplier differs.
+export function chroniclesVolcanicRockGeometry({ coarsePointer = false, ember = false } = {}) {
+  const geometry = chroniclesOrganicRockGeometry({ coarsePointer });
+  const position = geometry.getAttribute('position');
+  const shadow = new THREE.Color(ember ? '#9e7868' : '#999ba0');
+  const mineral = new THREE.Color(ember ? '#ffe0bd' : '#e6dbce');
+  const tint = new THREE.Color();
+  const colors = [];
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const layer = 0.5 + 0.5 * Math.sin(y * 7.8 + x * 2.1 + Math.sin(z * 3.4) * 0.7);
+    const weather = THREE.MathUtils.smoothstep(y, -0.85, 0.85);
+    tint.copy(shadow).lerp(mineral, 0.18 + layer * 0.55 + weather * 0.27);
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
@@ -1565,11 +1586,13 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
         weatheredHighland: naturalHighlands }), roundedRock(0xd8d2c4, {
         flatShading: coarsePointer || brezalBackdrop,
       })],
-    boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
+    boulderDark: () => biome === 'ash'
+      ? [chroniclesVolcanicRockGeometry({ coarsePointer }), roundedRock(0x8a857c, { vertexColors: true })]
+      : [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesSnowRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer, vertexColors: true })],
     crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
     basalt: () => [chroniclesVolcanicBasaltGeometry(), lit(0x8a7c74, { map: texture('rock'), flatShading: true, vertexColors: true })],
-    emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
+    emberRock: () => [chroniclesVolcanicRockGeometry({ coarsePointer, ember: true }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35, vertexColors: true })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
     broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer, woodland }), lit(0xffffff, { map: texture(woodland ? 'woodlandbark' : 'bark', 2, 3) })],
     crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer, woodland }),
