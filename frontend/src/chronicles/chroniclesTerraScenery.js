@@ -1495,6 +1495,32 @@ export function chroniclesMarshDeadTrunkGeometry() {
 // Marsh reeds taper into narrow, wind-bent blades instead of uniform rods.
 // Keep the original four-sided topology, stem roots and UV seam. Coast
 // reeds retain their original geometry and material.
+// Coastal marram grass has flattened wind-swept blades rather than the
+// cylindrical marsh reed silhouette. Keep the same four-sided mesh budget,
+// UVs and watertight seams; tint dry tips and sheltered olive roots.
+export function chroniclesCoastalGrassGeometry() {
+  const geometry = new THREE.CylinderGeometry(0.035, 0.05, 1, 4);
+  const position = geometry.getAttribute('position');
+  const root = new THREE.Color('#a3a778');
+  const tip = new THREE.Color('#f0e4ba');
+  const tint = new THREE.Color();
+  const colors = [];
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const t = y + 0.5;
+    position.setXYZ(i, x * (1.65 - 1.25 * t) + 0.20 * t,
+      y, z * (0.55 - 0.25 * t));
+    tint.copy(root).lerp(tip, t);
+    colors.push(tint.r, tint.g, tint.b);
+  }
+  position.needsUpdate = true;
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 export function chroniclesMarshReedGeometry() {
   const geometry = new THREE.CylinderGeometry(0.035, 0.05, 1, 4);
   const position = geometry.getAttribute('position');
@@ -1614,7 +1640,9 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     deadTrunk: () => [chroniclesMarshDeadTrunkGeometry(), lit(0xcab8a0, { map: texture('bark', 1, 3), vertexColors: true })],
     reed: () => biome === 'marsh'
       ? [chroniclesMarshReedGeometry(), lit(0xb2a65e, { vertexColors: true })]
-      : [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
+      : biome === 'coast'
+        ? [chroniclesCoastalGrassGeometry(), lit(0xd2c489, { vertexColors: true })]
+        : [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     // One batched, opaque water surface per marsh. More rounded on desktop,
     // original 14-gon on touch devices; never casts an implausible shadow.
     pool: () => [chroniclesMarshPoolGeometry({ coarsePointer }),
@@ -1839,14 +1867,18 @@ function deadTree(p, wx, wz, x, y, k) {
   }
 }
 
-function reeds(p, wx, wz, x, y, k, count = 7) {
+function reeds(p, wx, wz, x, y, k, count = 7, coastal = false) {
   // Clump centre stays well inside the cell so no reed leans onto a path.
   const cx = wx + (noise(x, y, k + 51) - 0.5) * 1.6;
   const cz = wz + (noise(y, x, k + 53) - 0.5) * 1.6;
   for (let r = 0; r < count; r += 1) {
-    const h = 1.1 + noise(x + r, y, k + 55) * 0.9;
+    const h = coastal ? 0.55 + noise(x + r, y, k + 55) * 0.85
+      : 1.1 + noise(x + r, y, k + 55) * 0.9;
     p.add('reed', [cx + (noise(x, y + r, k) - 0.5) * 0.8, h / 2, cz + (noise(y, x + r, k) - 0.5) * 0.8], {
-      tilt: (noise(x, r, k + 57) - 0.5) * 0.3, roll: (noise(r, y, k + 59) - 0.5) * 0.3, scale: [1, h, 1],
+      tilt: (noise(x, r, k + 57) - 0.5) * 0.3,
+      roll: (noise(r, y, k + 59) - 0.5) * 0.3,
+      yaw: coastal ? 0.65 + (noise(x + r, y, k + 81) - 0.5) * 0.75 : 0,
+      scale: coastal ? [1.35 + noise(x, y + r, k + 83) * 0.65, h, 1] : [1, h, 1],
     });
   }
 }
@@ -2173,7 +2205,7 @@ const DRESS = {
         yaw: noise(x, y, 3) * 6.28,
         scale: [2.2, (1.0 + noise(x, y, 4) * 0.6) * rise, 1.7],
       });
-      reeds(p, wx, wz, x, y, 0, 4);
+      reeds(p, wx, wz, x, y, 0, 4, true);
     }
     if (roll >= 0.3) boulders(p, wx, wz, x, y, {
       part: 'boulderDark', count: big ? 3 : 2, size: 1.25,
