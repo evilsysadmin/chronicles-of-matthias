@@ -158,6 +158,10 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
     && region?.regionKind === 'wilderness';
   // A colour attribute on the same sphere provides compass-dependent
   // illumination without another cloud layer, shader hook or draw call.
+  const woodlandMist = bannerRoadSky
+    ? scene.getObjectByName('chronicles-banner-woodland-mist')?.material : null;
+  const mistDay = new THREE.Color(0xb8c6bb);
+  const mistNight = new THREE.Color(0x354657);
   const cloudPositions = bannerRoadSky ? panorama?.geometry?.getAttribute('position') : null;
   const cloudColors = cloudPositions
     ? new THREE.Float32BufferAttribute(new Float32Array(cloudPositions.count * 3).fill(1), 3)
@@ -316,6 +320,12 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       // nearer sprite banks. One material update per Terra minute, no meshes.
       const fogTint = scene.fog?.color?.isColor ? scene.fog.color : null;
       const horizonFog = fogTint ? clamp01(fogStrength * 0.74) : 0;
+      if (woodlandMist) {
+        woodlandMist.color.copy(mistNight).lerp(mistDay, daylight)
+          .lerp(fogTint || blendedHorizon, fogStrength * 0.65);
+        // Subtle on clear days, more apparent at twilight and in damp air.
+        woodlandMist.opacity = clamp01(0.55 + twilight * 0.16 + fogStrength * 0.29);
+      }
       if (horizonFog > 0) {
         if (panoramaMaterial) {
           panoramaMaterial.color.lerp(fogTint, horizonFog * 0.50);
