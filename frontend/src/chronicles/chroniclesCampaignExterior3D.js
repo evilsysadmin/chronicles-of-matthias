@@ -1115,7 +1115,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const skyFill = settlement ? 1.12 : 1.4;
   const sunKey = settlement ? (coarsePointer ? 1.56 : 1.88)
     : (coarsePointer ? 1.18 : 1.55);
-  scene.add(new THREE.HemisphereLight(0xd4e9ff, 0x60734b, skyFill));
+  const ambient = !settlement && /^terra-/.test(String(scenePlan.mapId || ''))
+    && Object.hasOwn(TERRA_AMBIENT_PIGMENTS, scenePlan.biome)
+    ? TERRA_AMBIENT_PIGMENTS[scenePlan.biome] : null;
+  scene.add(new THREE.HemisphereLight(
+    ambient?.sky ?? 0xd4e9ff, ambient?.ground ?? 0x60734b, skyFill,
+  ));
   const sunlight = new THREE.DirectionalLight(0xffe6ba, sunKey);
   sunlight.name = 'chronicles-campaign-sun';
   sunlight.position.copy(sunDirection).multiplyScalar(75);
@@ -1835,6 +1840,15 @@ const TERRA_BIOMES = Object.freeze({
   coast: Object.freeze({ ground: 0xffffff, rock: 0x8a8478, sky: 0xa6d0ea, texture: 'sand' }),
   snow: Object.freeze({ ground: 0xffffff, rock: 0xd4dce4, sky: 0xdce6ee, texture: 'snow' }),
   ash: Object.freeze({ ground: 0xffffff, rock: 0x3e3634, sky: 0xc0a894, texture: 'ashland' }),
+});
+
+// Reflect the actual landscape in the existing hemispherical fill.
+// Preserve light intensity and shadow budgets; no extra light source.
+const TERRA_AMBIENT_PIGMENTS = Object.freeze({
+  coast: Object.freeze({ sky: 0xd9ebf5, ground: 0x8a795e }),
+  marsh: Object.freeze({ sky: 0xcbdcd8, ground: 0x66644c }),
+  snow: Object.freeze({ sky: 0xdce9ff, ground: 0x8b9cab }),
+  ash: Object.freeze({ sky: 0xe2d8d4, ground: 0x79635b }),
 });
 
 function terraGroundTexture(kind, repeat = 20) {
