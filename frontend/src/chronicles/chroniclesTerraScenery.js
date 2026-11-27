@@ -2061,6 +2061,12 @@ const DRESS = {
     // The first ring and all authored cells retain their original heights.
     const horizonDepth = naturalHighlands && tileRecipe.family === 'backdrop'
       ? (ringDepth === 3 ? 0.78 : ringDepth === 2 ? 0.90 : 1) : 1;
+    // Selectively raise distant crag crests, not the continuous boulder
+    // bank. Valleys remain at their existing low profile and the first
+    // ring stays unchanged, avoiding a solid wall at the player's eye.
+    const distantSummit = naturalHighlands && tileRecipe.family === 'backdrop' && ringDepth >= 2
+      ? 1 + (ringDepth === 3 ? 1.25 : 0.80) * THREE.MathUtils.smoothstep(saddle, 0.72, 1.22)
+      : 1;
     const ridgeFoot = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.68 : 0.50);
     const ridgeRise = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.58 : 0.36);
     // V64: B2's only overgrown layer was the three rings OUTSIDE the
@@ -2086,7 +2092,7 @@ const DRESS = {
         tilt: stagger * (noise(x, y, 902) - 0.5) * 0.13,
         roll: stagger * (noise(x, y, 903) - 0.5) * 0.12,
         scale: [(0.90 + noise(x, y, 9) * 0.20) * (1 + (ridge - 1) * 0.14),
-          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle * heathRelief * horizonDepth,
+          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle * heathRelief * horizonDepth * distantSummit,
           (0.87 + noise(x, y, 10) * 0.25) * (1 + (ridge - 1) * 0.11)],
       });
     }
