@@ -119,7 +119,7 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
     expect(map.grid).toEqual(chroniclesMapById('terra-e2').grid);
   });
 
-  it.each([true, false])('recedes E2 outer ridge heights without changing footprints (coarse=%s)', coarsePointer => {
+  it.each([true, false])('raises selected E2 distant crag summits without changing foothills or footprints (coarse=%s)', coarsePointer => {
     const map = chroniclesMapById('terra-e2');
     const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery, coarsePointer };
     const natural = buildTerraScenery({ ...args, mapId: map.id });
@@ -130,6 +130,7 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
       const b = generic.getObjectByName('chronicles-terra-' + part);
       expect(a.count).toBe(b.count);
       const seen = new Set();
+      let raised = 0, valley = 0;
       for (let x = -3; x < width + 3; x++) {
         for (let y = -3; y < height + 3; y++) {
           const ring = Math.max(-x, x - width + 1, -y, y - height + 1);
@@ -144,7 +145,15 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
             const before = scales(baseline[i]), after = scales(current[i]);
             const foot = (1 + (ridge - 1) * 0.68) * saddle;
             const rise = 1 + (ridge - 1) * 0.58;
-            const expectedY = part === 'boulder' ? foot * rise * depth : ridge * saddle * depth;
+            const summit = ring >= 2
+              ? 1 + (ring === 3 ? 1.25 : 0.80) * THREE.MathUtils.smoothstep(saddle, 0.72, 1.22)
+              : 1;
+            const expectedY = part === 'boulder' ? foot * rise * depth : ridge * saddle * depth * summit;
+            if (part === 'crag' && ring >= 2) {
+              if (summit > 1.35) raised++;
+              if (summit === 1) valley++;
+              expect(summit).toBeLessThanOrEqual(2.25);
+            }
             const expectedX = part === 'boulder' ? foot : 1 + (ridge - 1) * 0.14;
             expect(after.y / before.y).toBeCloseTo(expectedY, 4);
             expect(after.x / before.x).toBeCloseTo(expectedX, 4);
@@ -157,6 +166,10 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
         }
       }
       expect([...seen].sort()).toEqual([1, 2, 3]);
+      if (part === 'crag') {
+        expect(raised).toBeGreaterThan(0);
+        expect(valley).toBeGreaterThan(0);
+      }
     }
   });
 
