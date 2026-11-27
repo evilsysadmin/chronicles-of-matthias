@@ -985,7 +985,16 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // Reuse the already-tested dirt path atlases without changing road cells.
   const naturalTerraTrail = !settlement && /^terra-/.test(String(scenePlan.mapId || ''))
     && (scenePlan.biome === 'plains' || scenePlan.biome === 'hills') && !heathB2;
-  const naturalPath = bannerTrail || heathB2 || naturalTerraTrail;
+  // A2 coast, D5 marsh and F4 ash no longer inherit bright urban paving.
+  // Use existing packed-earth atlases, without altering their ground texture
+  // repeats or the authored collision/road-cell contract.
+  const wildTrackStyle = !settlement && /^terra-/.test(String(scenePlan.mapId || ''))
+    ? {
+      coast: { texture: 'woodlandpath', tint: 0xffedd2 },
+      marsh: { texture: 'heathpath', tint: 0xc3c6ae },
+      ash: { texture: 'heathpath', tint: 0xb2aaa7 },
+    }[scenePlan.biome] : null;
+  const naturalPath = bannerTrail || heathB2 || naturalTerraTrail || Boolean(wildTrackStyle);
   const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
     // Native Terra plains/hills need softer, smaller mottling than the
     // woodland meadow of authored Banner Road. Both share one terrain mesh
@@ -1003,9 +1012,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // cobbles. Existing pixel atlases and one shared road InstancedMesh keep
   // the identical draw-call and memory budget, with no cobble normal relief.
   // Banner Road and B2 retain their bespoke textures and tints untouched.
-  const paver = material(naturalPath ? 0xffffff
+  const paver = material(naturalPath ? (wildTrackStyle?.tint ?? 0xffffff)
     : (roadMap ? 0xcabfa6 : 0xddd3bf), {
-    map: bannerTrail || (naturalTerraTrail && scenePlan.biome === 'plains')
+    map: wildTrackStyle ? chroniclesPixelTexture(wildTrackStyle.texture)
+      : bannerTrail || (naturalTerraTrail && scenePlan.biome === 'plains')
       ? chroniclesPixelTexture('woodlandpath')
       : heathB2 || naturalTerraTrail
         ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
@@ -1219,10 +1229,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
       dummy.scale.set(
-        (bannerTrail || naturalTerraTrail) && x === sceneCenter.x && y !== sceneCenter.y
+        (bannerTrail || naturalTerraTrail || wildTrackStyle) && x === sceneCenter.x && y !== sceneCenter.y
           ? naturalStraightWidth : 1,
         1,
-        (bannerTrail || naturalTerraTrail) && y === sceneCenter.y && x !== sceneCenter.x
+        (bannerTrail || naturalTerraTrail || wildTrackStyle) && y === sceneCenter.y && x !== sceneCenter.x
           ? naturalStraightWidth : 1,
       );
       dummy.updateMatrix();
