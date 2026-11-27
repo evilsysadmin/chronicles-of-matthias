@@ -844,6 +844,43 @@ export function createBannerRoadDistantRidge(coarsePointer = false) {
   return ridge;
 }
 
+// A distant mountain massif belongs to the atmosphere rather than the
+// collision grid. One camera-relative ribbon, with broad summits, shorter
+// spurs and a soft crest, sits behind all real depth-writing scenery.
+export function createTerraHighlandMassif(coarsePointer = false) {
+  const segments = coarsePointer ? 64 : 96;
+  const positions = [], colors = [], indices = [];
+  for (let i = 0; i <= segments; i++) {
+    const a = i === segments ? 0 : i * Math.PI * 2 / segments;
+    const shoulder = 0.5 + 0.5 * Math.cos(3 * a + 0.7);
+    const spur = Math.abs(Math.sin(7 * a - 0.8));
+    const h = 7.0 + 10.0 * shoulder ** 1.4 + 3.6 * spur
+      + 1.1 * Math.sin(13 * a + 0.4);
+    const x = 55 * Math.cos(a), z = 55 * Math.sin(a);
+    positions.push(x, -7, z, x, h - 0.75, z, x, h, z);
+    colors.push(0.76, 0.82, 0.87, 0.90,
+      0.96, 0.98, 1, 0.82, 0.96, 0.98, 1, 0);
+    if (i) {
+      const j = 3 * (i - 1);
+      indices.push(j, j + 1, j + 3, j + 3, j + 1, j + 4,
+        j + 1, j + 2, j + 4, j + 4, j + 2, j + 5);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+  const massif = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+    color: 0x879dac, vertexColors: true, side: THREE.DoubleSide,
+    transparent: true, forceSinglePass: true, fog: false, toneMapped: false, depthWrite: false,
+  }));
+  massif.name = 'chronicles-terra-highland-massif';
+  massif.renderOrder = -96;
+  massif.frustumCulled = false;
+  return massif;
+}
+
 // Small ambient-contact accents for authored trees on shadowless touch
 // devices. These are neither projected solar shadows nor new obstacles.
 export function createBannerRoadRootContacts(scenery, grid, center) {
@@ -1107,6 +1144,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   if (bannerTrail) {
     addSwordhavenClouds(skyDome, coarsePointer, { woodland: true });
     skyDome.add(createBannerRoadDistantRidge(coarsePointer));
+  } else if (naturalTerraTrail && scenePlan.biome === 'hills') {
+    skyDome.add(createTerraHighlandMassif(coarsePointer));
   }
   scene.add(skyDome);
   // Book One shopfronts need a directional key to reveal dressed stone,

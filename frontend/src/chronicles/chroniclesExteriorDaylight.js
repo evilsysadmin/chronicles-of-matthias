@@ -146,8 +146,10 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
     ?.getObjectByName('cloud-soft-bank')?.material;
   const panorama = dome.getObjectByName('chronicles-sky-cloud-panorama');
   const panoramaMaterial = panorama?.material;
-  const distantRidge = dome.getObjectByName('chronicles-banner-distant-ridge')?.material;
-  const ridgeDay = new THREE.Color(0x9eb8b6);
+  const highlandMassif = dome.getObjectByName('chronicles-terra-highland-massif')?.material;
+  const distantRidge = dome.getObjectByName('chronicles-banner-distant-ridge')?.material
+    ?? highlandMassif;
+  const ridgeDay = new THREE.Color(highlandMassif ? 0x879dac : 0x9eb8b6);
   const ridgeNight = new THREE.Color(0x202e42);
   // Banner Road's broad meadow exposes far more sky than a town street.
   // Amplify only clear-day clouds there, keeping every other map/weather
