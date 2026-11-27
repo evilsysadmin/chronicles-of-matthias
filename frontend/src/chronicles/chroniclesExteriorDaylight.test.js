@@ -6,7 +6,7 @@ import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 import { buildChroniclesCampaignExterior, createBannerRoadDistantRidge } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
-import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight, chroniclesBannerWoodlandLight } from './chroniclesExteriorDaylight.js';
+import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight, chroniclesBannerWoodlandLight, chroniclesTerraDaySky } from './chroniclesExteriorDaylight.js';
 import { chroniclesSeasonalSunTimes } from './chroniclesWorldTime.js';
 
 function outdoors() {
@@ -668,5 +668,50 @@ describe('Terra solar cycle', () => {
     expect(createChroniclesExteriorDaylight(scene, renderer)).toBeNull();
     expect(renderer.toneMappingExposure).toBe(0.88);
     expect(scene.fog.color.getHex()).toBe(0x0a0c0f);
+  });
+});
+
+describe('Terra regional daytime sky pigments', () => {
+  it.each([
+    ['terra-a2', 'coast'],
+    ['terra-d5', 'marsh'],
+    ['terra-f4', 'ash'],
+  ])('retains %s atmosphere through weather and solar sync', (mapId, biome) => {
+    const region = { mapId, biome, regionKind: 'wilderness' };
+    const controlRegion = { ...region, regionKind: 'settlement' };
+    expect(chroniclesTerraDaySky(region)).not.toBeNull();
+    expect(chroniclesTerraDaySky({ mapId, regionKind: 'wilderness' }))
+      .toEqual(chroniclesTerraDaySky(region));
+    expect(chroniclesTerraDaySky(controlRegion)).toBeNull();
+    const local = outdoors(), generic = outdoors();
+    const localCycle = createChroniclesExteriorDaylight(local.scene, local.renderer, region);
+    const genericCycle = createChroniclesExteriorDaylight(generic.scene, generic.renderer, controlRegion);
+    const colors = (fixture) => [...fixture.dome.geometry.getAttribute('color').array];
+    const objectCount = local.scene.children.length;
+    const noon = Array.from({ length: 180 }, (_, day) => day * 1440 + 765)
+      .find(worldMinutes => chroniclesRegionalWeatherTransition({ ...region, worldMinutes }).clouds < 0.08);
+    expect(noon).toBeDefined();
+    localCycle.sync(noon);
+    genericCycle.sync(noon);
+    const dayColors = colors(local), genericColors = colors(generic);
+    expect(dayColors.some((value, i) => Math.abs(value - genericColors[i]) > 0.04)).toBe(true);
+    const night = Math.floor(noon / 1440) * 1440 + 23 * 60;
+    localCycle.sync(night);
+    genericCycle.sync(night);
+    expect(colors(local)).toEqual(colors(generic));
+    expect(local.sun.intensity).toBe(generic.sun.intensity);
+    expect(localCycle.sync(noon)).toBe(true);
+    expect(colors(local)).toEqual(dayColors);
+    expect(localCycle.sync(noon)).toBe(false);
+    expect(local.scene.children.length).toBe(objectCount);
+  });
+
+  it('keeps Banner Road, ordinary hills and settlements on the existing palette', () => {
+    for (const region of [
+      {},
+      { mapId: 'banner-road-first-book', biome: 'plains', regionKind: 'wilderness' },
+      { mapId: 'terra-e2', biome: 'hills', regionKind: 'wilderness' },
+      { mapId: 'terra-a2', biome: 'coast', regionKind: 'settlement' },
+    ]) expect(chroniclesTerraDaySky(region)).toBeNull();
   });
 });
