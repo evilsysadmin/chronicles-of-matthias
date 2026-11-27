@@ -992,7 +992,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     ? {
       coast: { texture: 'woodlandpath', tint: 0xffedd2 },
       marsh: { texture: 'heathpath', tint: 0xc3c6ae },
-      ash: { texture: 'heathpath', tint: 0xb2aaa7 },
+      ash: { texture: 'ashpath', tint: 0xffffff },
     }[scenePlan.biome] : null;
   const naturalPath = bannerTrail || heathB2 || naturalTerraTrail || Boolean(wildTrackStyle);
   const marshFloor = !settlement && /^terra-/.test(String(scenePlan.mapId || ''))

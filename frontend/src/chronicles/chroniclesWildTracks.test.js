@@ -23,7 +23,7 @@ describe('Terra biome-matched wilderness tracks', () => {
   it.each([
     [coast, 'woodlandpath', 0xffedd2],
     [marsh, 'heathpath', 0xc3c6ae],
-    [ash, 'heathpath', 0xb2aaa7],
+    [ash, 'ashpath', 0xffffff],
   ])('replaces urban paving on $0.id without changing road cells', (map, texture, tint) => {
     const { scene, road } = roadFor(map, false);
     const { road: mobile } = roadFor(map, true);
@@ -59,5 +59,30 @@ describe('Terra biome-matched wilderness tracks', () => {
     }
     expect(narrowed).toBeGreaterThan(0);
     expect([...road.instanceMatrix.array]).toEqual([...mobile.instanceMatrix.array]);
+  });
+});
+
+describe('Terra volcanic track atlas', () => {
+  it('contains only restrained mineral pigments, never green moss or ember pixels', () => {
+    const texture = chroniclesPixelTexture('ashpath');
+    expect(texture).toBe(chroniclesPixelTexture('ashpath'));
+    expect(texture).not.toBe(chroniclesPixelTexture('ashland'));
+    expect(texture).not.toBe(chroniclesPixelTexture('heathpath'));
+    expect(texture.image.width).toBe(64);
+    expect(texture.image.height).toBe(64);
+    expect(texture.wrapS).toBe(THREE.RepeatWrapping);
+    expect(texture.wrapT).toBe(THREE.RepeatWrapping);
+    expect(texture.generateMipmaps).toBe(true);
+    const tones = new Set();
+    const data = texture.image.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const [r, g, b, a] = data.subarray(i, i + 4);
+      expect(a).toBe(255);
+      expect(r).toBeGreaterThanOrEqual(g);
+      expect(g).toBeGreaterThanOrEqual(b);
+      expect(r - b).toBeLessThan(30);
+      tones.add(r * 65536 + g * 256 + b);
+    }
+    expect(tones.size).toBeGreaterThanOrEqual(4);
   });
 });
