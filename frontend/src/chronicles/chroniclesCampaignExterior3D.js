@@ -814,7 +814,19 @@ export function chroniclesBannerHorizonRise(x, y, width, height) {
   const ramp = THREE.MathUtils.smoothstep(outside, 1.5, 3.5);
   const ridge = 1.15 + 0.65 * Math.sin(x * 0.37 + y * 0.28)
     * Math.cos(y * 0.31 - x * 0.18);
-  return ramp * ridge;
+  // Broad asymmetrical woodland shoulders flank the northbound approach.
+  // Keep the central Swordhaven sightline and all playable ground flat;
+  // only the existing outer-ring vertices receive the additional relief.
+  if (width !== 21 || height !== 15) return ramp * ridge;
+  const north = THREE.MathUtils.smoothstep(-y, 1.5, 3.5);
+  const west = THREE.MathUtils.smoothstep(-x, 1.5, 3.5);
+  const east = THREE.MathUtils.smoothstep(x - width + 1, 1.5, 3.5);
+  const northwest = 2.15 * Math.exp(-( (x - 3.4) / 3.8) ** 2));
+  const northeast = 1.65 * Math.exp(-( (x - 16.8) / 3.1) ** 2));
+  const westShoulder = 1.05 * Math.exp(-( (y - 4.0) / 4.2) ** 2));
+  const eastShoulder = 0.85 * Math.exp(-( (y - 9.8) / 3.8) ** 2));
+  return ramp * ridge + Math.max(north * (northwest + northeast),
+    west * westShoulder, east * eastShoulder);
 }
 
 // An atmospheric distant ridge, not an extension of the collision grid.
