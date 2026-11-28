@@ -630,8 +630,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(full.geometry.boundingBox.min.toArray()).toEqual(other.geometry.boundingBox.min.toArray());
     expect(full.geometry.boundingBox.max.x).toBe(other.geometry.boundingBox.max.x);
     expect(full.geometry.boundingBox.max.z).toBe(other.geometry.boundingBox.max.z);
-    expect(full.geometry.boundingBox.max.y).toBeGreaterThan(0.9);
-    expect(full.geometry.boundingBox.max.y).toBeLessThan(2);
+    // The broader outer woodland hills raise the old 2m ceiling, but
+    // keep the mesh bounded and the entire traversable footprint flat.
+    expect(full.geometry.boundingBox.max.y).toBeGreaterThan(3);
+    expect(full.geometry.boundingBox.max.y).toBeLessThan(4.125);
   });
 
   it('grounds mobile C3 trees with one bounded contact batch and preserves desktop and other maps', () => {
@@ -681,6 +683,23 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
     expect(build(map.id, false).getObjectByName(name)).toBeUndefined();
     expect(build('terra-c4', true).getObjectByName(name)).toBeUndefined();
+  });
+
+  it('sculpts asymmetric northern woodland shoulders around an open central vista', () => {
+    const rise = (x, y) => chroniclesBannerHorizonRise(x, y, 21, 15);
+    expect(rise(3.4, -3.5)).toBeGreaterThan(3);
+    expect(rise(16.8, -3.5)).toBeGreaterThan(3);
+    expect(rise(10, -3.5)).toBeLessThan(1.4);
+    expect(rise(3.4, -3.5)).not.toBeCloseTo(rise(16.8, -3.5), 2);
+    for (let x = -1.5; x <= 21.5; x += 0.5) {
+      for (let y = -1.5; y <= 15.5; y += 0.5) expect(rise(x, y)).toBe(0);
+    }
+    for (let x = -3.5; x <= 23.5; x += 0.25) {
+      for (let y = -3.5; y <= 17.5; y += 0.25) {
+        expect(rise(x, y)).toBeGreaterThanOrEqual(0);
+        expect(rise(x, y)).toBeLessThan(4);
+      }
+    }
   });
 
   it.each([false, true])('raises only non-playable C3 horizon and seats scenery on the rendered surface (coarse=%s)', coarsePointer => {
