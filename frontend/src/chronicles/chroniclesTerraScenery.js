@@ -1681,6 +1681,60 @@ export function chroniclesBannerWatchtowerGeometry() {
   return geometry;
 }
 
+// Fixed waymark standards on the two blocked gateway roots. These are
+// decorative civic colours, not copies of the recoverable quest banner.
+export function chroniclesBannerGatewayStandardGeometry({ coarsePointer = false } = {}) {
+  const parts = [];
+  const add = (g, hex) => {
+    const color = new THREE.Color(hex);
+    const rgb = [];
+    for (let i = 0; i < g.getAttribute('position').count; i++) rgb.push(color.r, color.g, color.b);
+    g.setAttribute('color', new THREE.Float32BufferAttribute(rgb, 3));
+    parts.push(g);
+  };
+  add(new THREE.CylinderGeometry(0.055, 0.085, 3.48, 6).translate(0, 1.74, 0), '#65503a');
+  add(new THREE.BoxGeometry(0.98, 0.065, 0.065).translate(0, 3.13, 0), '#a68b52');
+  add(new THREE.CylinderGeometry(0, 0.105, 0.22, 6).translate(0, 3.55, 0), '#b5a06c');
+  add(new THREE.CylinderGeometry(0.20, 0.25, 0.17, 8).translate(0, 0.085, 0), '#918574');
+  const columns = coarsePointer ? 4 : 8;
+  const rows = 6;
+  const pos = [], uv = [], colors = [], index = [];
+  const crimson = new THREE.Color('#963e3e'), gold = new THREE.Color('#d6b66a');
+  const shade = new THREE.Color();
+  for (let y = 0; y <= rows; y++) {
+    const v = y / rows;
+    for (let x = 0; x <= columns; x++) {
+      const u = x / columns;
+      const px = (u - 0.5) * 0.81;
+      const notch = y === rows ? 0.22 * (1 - Math.abs(2 * u - 1)) : 0;
+      pos.push(px, 3.09 - v * 1.52 + notch,
+        0.06 + 0.085 * Math.sin(u * Math.PI * 3.0) * v);
+      uv.push(u, 1 - v);
+      const trim = x === 0 || x === columns || y === 0 || y === rows;
+      const emblem = Math.abs(u - 0.5) <= 0.25 && (y === 2 || y === 3)
+        || x === columns / 2 && y >= 1 && y <= 4;
+      shade.copy(trim || emblem ? gold : crimson).multiplyScalar(0.87 + 0.13 * Math.cos(u * Math.PI * 3.0) ** 2);
+      colors.push(shade.r, shade.g, shade.b);
+      if (x < columns && y < rows) {
+        const i = y * (columns + 1) + x;
+        index.push(i, i + columns + 1, i + 1, i + 1, i + columns + 1, i + columns + 2);
+      }
+    }
+  }
+  const cloth = new THREE.BufferGeometry();
+  cloth.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  cloth.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  cloth.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  cloth.setIndex(index);
+  cloth.computeVertexNormals();
+  parts.push(cloth);
+  const geometry = mergeGeometries(parts);
+  parts.forEach(g => g.dispose());
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false, brezalBackdrop = false) {
   // The highland-specific stone stays inside the existing boulder, crag
   // and pebble batches. B2 heath, snow, forest and marsh rock stay intact.
@@ -1690,6 +1744,8 @@ function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = 
     map: rockMap, flatShading: coarsePointer, ...opts,
   });
   return {
+    bannerGatewayStandard: () => [chroniclesBannerGatewayStandardGeometry({ coarsePointer }),
+      lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide, roughness: 0.93 })],
     bannerWatchtower: () => [chroniclesBannerWatchtowerGeometry(),
       roundedRock(0xc4b9a3, { vertexColors: true, flatShading: true })],
     coastalArch: () => [chroniclesHollinArchGeometry({ coarsePointer }),
@@ -3188,6 +3244,15 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
+  if (denseMeadow && width === 21 && height === 15
+      && grid[4]?.[9] === '#' && grid[4]?.[10] === '.' && grid[4]?.[11] === '#') {
+    for (const side of [-1, 1]) {
+      const [wx, wz] = toWorld(10 + side, 4);
+      p.add('bannerGatewayStandard', [wx - side * 0.92, 0, wz + 1.28], {
+        yaw: side * 0.12,
+      });
+    }
+  }
   if (denseMeadow && width === 21 && height === 15 && grid[1]?.[10] === '.') {
     // Align with the actual Swordhaven exit; keep the foundation entirely
     // beyond the north boundary and the visual target just off the path axis.
@@ -3548,7 +3613,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
     mesh.name = 'chronicles-terra-' + part;
     const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'heatherGroundcover', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood', 'meadowSedge', 'forestHerb'].includes(part);
-    mesh.castShadow = !coarsePointer && !small && part !== 'bannerWatchtower';
+    mesh.castShadow = !coarsePointer && !small && part !== 'bannerWatchtower' && part !== 'bannerGatewayStandard';
     mesh.receiveShadow = true;
     group.add(mesh);
   }
