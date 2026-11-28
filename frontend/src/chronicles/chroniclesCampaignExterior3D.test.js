@@ -630,8 +630,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(full.geometry.boundingBox.min.toArray()).toEqual(other.geometry.boundingBox.min.toArray());
     expect(full.geometry.boundingBox.max.x).toBe(other.geometry.boundingBox.max.x);
     expect(full.geometry.boundingBox.max.z).toBe(other.geometry.boundingBox.max.z);
-    expect(full.geometry.boundingBox.max.y).toBeGreaterThan(0.9);
-    expect(full.geometry.boundingBox.max.y).toBeLessThan(2);
+    // The broader outer woodland hills raise the old 2m ceiling, but
+    // keep the mesh bounded and the entire traversable footprint flat.
+    expect(full.geometry.boundingBox.max.y).toBeGreaterThan(3);
+    expect(full.geometry.boundingBox.max.y).toBeLessThan(4.125);
   });
 
   it('grounds mobile C3 trees with one bounded contact batch and preserves desktop and other maps', () => {
